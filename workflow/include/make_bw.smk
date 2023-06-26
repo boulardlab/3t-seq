@@ -1,0 +1,25 @@
+rule coverage:
+    input:
+        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
+    output:
+        star_folder.joinpath("{serie}", "{sample}.bw")
+    singularity:
+        # paths to singularity images cannot be PosixPath
+        str(container_folder.joinpath("deeptools.sif"))
+    params:
+        others = lambda wildcards: get_params(wildcards, "bamCoverage")
+    threads:
+        2
+    log:
+        log_folder.joinpath("bamCoverage_se-{serie}-{sample}.log")
+    shell:
+        """
+
+        bamCoverage -b {input[0]} \
+        -o {output} -of bigwig \
+        -p {threads} \
+        --effectiveGenomeSize 2652783500 \
+        {params.others} |& \
+        tee {log}
+        """
