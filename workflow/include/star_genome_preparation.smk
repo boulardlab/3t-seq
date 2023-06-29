@@ -1,17 +1,16 @@
 rule star_genome_preparation:
     input:
         genome_fasta_file=fasta_path,
-        genome_annotation_file=gtf_path
+        genome_annotation_file=gtf_path,
     output:
-        directory(references_folder.joinpath("STAR"))
+        directory(references_folder.joinpath("STAR")),
     params:
-        tmp_folder=tmp_folder.joinpath("STAR_genome_prep")
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
-    threads:
-        8
+        tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
+   conda:
+        "../env/alignment.yml"
+    threads: 8
     log:
-        log_folder.joinpath("star/genome_preparation.log")
+        log_folder.joinpath("star/genome_preparation.log"),
     shell:
         """
         set -x

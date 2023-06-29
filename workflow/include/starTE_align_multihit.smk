@@ -1,25 +1,24 @@
-from utilities.general import giga_to_byte
 
 rule starTE_multihit:
     input:
         get_star_input,
-        star_index_folder=references_folder.joinpath("STAR")
+        star_index_folder=references_folder.joinpath("STAR"),
     threads: 8
     output:
-          starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam")
-
-
+        starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
     params:
-        libtype = lambda wildcards: "SINGLE" if wildcards.serie in library_names_single else "PAIRED",
+        libtype=lambda wildcards: "SINGLE"
+        if wildcards.serie in library_names_single
+        else "PAIRED",
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
-        mem_mb=giga_to_byte(32)
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
+        mem_mb=giga_to_byte(32),
+    conda:
+        "../env/alignment.yml"
     log:
-        log_folder.joinpath("starTE/{serie}/multihit/{sample}.log")
+        log_folder.joinpath("starTE/{serie}/multihit/{sample}.log"),
     shell:
-         """
+        """
          set -x
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
          echo 'tmp: $TMP_FOLDER'
@@ -75,8 +74,8 @@ rule starTE_multihit:
 #     params:
 #         alignments_folder=starTE_folder,
 #         tmp_folder=tmp_folder
-#     singularity:
-#         str(container_folder.joinpath("alignment.sif"))
+#     conda:
+#         "../env/alignment.yml"
 #     log:
 #         log_folder.joinpath("starTE/{se_serie}/multihit/{se_sample}.log")
 #     shell:
@@ -129,8 +128,8 @@ rule starTE_multihit:
 #     params:
 #         alignments_folder=starTE_folder,
 #         tmp_folder=tmp_folder
-#     singularity:
-#         str(container_folder.joinpath("alignment.sif"))
+#     conda:
+#         "../env/alignment.yml"
 #     log:
 #         log_folder.joinpath("starTE/{pe_serie}/multihit/{pe_sample}.log")
 #     shell:

@@ -1,14 +1,13 @@
 rule download_repeatmasker_annotation_file:
     output:
-        rmsk_path
+        rmsk_path,
     params:
-        url=config["genome"]["rmsk_link"]
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
+        url=config["genome"]["rmsk_link"],
+    conda:
+        "../env/alignment.yml"
     log:
-        log_folder.joinpath("download/genome/rmsk.log")
-    threads:
-        4
+        log_folder.joinpath("download/genome/rmsk.log"),
+    threads: 4
     shell:
         """
         set -x

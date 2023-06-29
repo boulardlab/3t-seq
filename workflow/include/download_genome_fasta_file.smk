@@ -1,10 +1,12 @@
 rule download_genome_fasta_file:
     output:
-        fasta_path
+        fasta_path,
     params:
-        url=config["genome"]["fasta_link"]
-    singularity: str(container_folder.joinpath("alignment.sif"))
-    log: log_folder.joinpath("download/genome/fasta.log")
+        url=config["genome"]["fasta_link"],
+    conda:
+        "../env/alignment.yml"
+    log:
+        log_folder.joinpath("download/genome/fasta.log"),
     threads: 8
     shell:
         """

@@ -1,0 +1,47 @@
+Bootstrap: docker
+From: curlimages/curl:7.81.0
+Stage: download
+
+%post
+    cd /opt
+    curl -LO https://github.com/hyunhwan-jeong/SalmonTE/archive/refs/tags/v0.4.tar.gz
+    tar xf v0.4.tar.gz
+    mv SalmonTE-0.4 SalmonTE
+
+Bootstrap: docker
+From: continuumio/miniconda3:4.7.12
+Stage: dist
+
+%labels
+  AUTHOR Francesco Tabaro
+  CONTACT francesco.tabaro@embl.it
+  VERSION v0.3
+
+%help
+    Base: continuumio/miniconda3 4.7.12
+    Available apps: SalmonTE
+
+%files from download
+    /opt/SalmonTE
+
+%post
+    conda update -y -n base -c defaults conda
+    conda config --add channels conda-forge
+    conda config --add channels bioconda
+    conda config --add channels anaconda
+
+    conda install -y icu=69.1 snakemake=5.3.0 pandas=1.0.1 docopt=0.6.2 r-base r-latticeextra r-hmisc r-scales r-writexls r-tidyverse r-rms bioconductor-deseq2
+    export PATH=$PATH:/opt/SalmonTE
+
+%environment
+    export PATH="${PATH}:/conda/bin"
+    export PATH="${PATH}:/opt/SalmonTE"
+	export LC_ALL=C
+    export LC_CTYPE=C 
+    export LC_COLLATE=C 
+    export LC_TIME=C
+    export LC_MESSAGES=C
+    export LC_MONETARY=C
+    export LC_PAPER=C 
+    export LC_MEASUREMENT=C
+    

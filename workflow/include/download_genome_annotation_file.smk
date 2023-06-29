@@ -1,13 +1,13 @@
 rule download_genome_annotation_file:
     output:
-        gtf_path
+        gtf_path,
     params:
-        url = config["genome"]["gtf_link"],
-        tmp = config["globals"]["tmp_folder"]
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
+        url=config["genome"]["gtf_link"],
+        tmp=config["globals"]["tmp_folder"],
+    conda:
+        "../env/alignment.yml"
     log:
-       log_folder.joinpath("download/genome/gtf.log")
+        log_folder.joinpath("download/genome/gtf.log"),
     threads: 8
     shell:
         """

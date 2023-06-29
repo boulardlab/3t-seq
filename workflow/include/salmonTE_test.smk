@@ -3,11 +3,11 @@ rule salmonTE_test:
         salmonTE_folder.joinpath("quant/{serie}"),
         salmonTE_folder.joinpath("quant/{serie}/edit_condition.done"),
     output:
-        directory(salmonTE_folder.joinpath("de_analysis/{serie}"))
+        directory(salmonTE_folder.joinpath("de_analysis/{serie}")),
     log:
-        log_folder.joinpath("salmonTE/{serie}/test_de.log")
+        log_folder.joinpath("salmonTE/{serie}/test_de.log"),
     singularity:
-        str(container_folder.joinpath("SalmonTE.sif"))
+        "docker://registry.embl.de/tabaro/snakemake-rnaseq/salmontTE:latest"
     shell:
         """
         python /opt/SalmonTE/SalmonTE.py test \

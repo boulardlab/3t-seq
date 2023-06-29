@@ -1,0 +1,25 @@
+channels:
+  - r
+  - conda-forge
+  - bioconda
+dependencies:
+  - r-base=4.0.3
+  - r-hexbin
+  - r-data.table
+  - r-pheatmap
+  - r-hmisc
+  - r-latticeextra
+  - r-r.utils
+  - r-scales
+  - r-rcurl
+  - r-ggplot2
+  - r-openxlsx
+  - r-knitr
+  - r-rmarkdown
+  - r-tidyverse
+  - bioconductor-deseq2
+  - bioconductor-rtracklayer
+  - bioconductor-topgo
+  - bioconductor-vsn
+  - bioconductor-apeglm
+  - bioconductor-reactomepa

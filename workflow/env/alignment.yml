@@ -1,0 +1,5 @@
+channels:
+  - bioconda
+dependencies:
+  - star=2.7.6a
+  - subread=2.0.1

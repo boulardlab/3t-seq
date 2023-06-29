@@ -1,61 +1,101 @@
 configfile: "config.yaml"
 
+
 from pathlib import Path
 from pprint import pprint as pp
 from datetime import datetime
+
 # import json
 import re
 import pandas as pd
 
-from utilities.general import get_filename
-from utilities.rnaseq import get_samples
+############
+## HELPERS
+############
+
+
+def giga_to_byte(g):
+    g = g - 2  # leave some memory to other processes
+    return g * (1024**3)
+
+
+def get_filename(link, decompress=False, stem=False):
+    # sometimes we use this function to get filenames of paths instead of links.
+    # convert back Path to str.
+    if isinstance(link, Path):
+        link = str(link)
+    # parse
+    p = urlparse(link)
+
+    # cast to Path and get name attribute
+    if stem:
+        basename = Path(p.path).stem
+    else:
+        basename = Path(p.path).name
+
+    # remove .gz
+    if decompress and str(basename).endswith(".gz"):
+        basename = basename.replace(".gz", "")
+
+    return basename
+
+
+def get_samples(wildcards, samples):
+    if wildcards.serie in samples["single"]:
+        s = samples["single"][wildcards.serie]
+    else:
+        s = samples["paired"][wildcards.serie]
+    return s
+
 
 #######################
 ## DEFINE VARIABLES
 #######################
+
+
 date = datetime.now()
 timestamp = date.strftime("%Y-%m-%d")
 
 log_folder = Path(config["globals"]["log_folder"])
 log_folder = log_folder.joinpath(timestamp)
 
-data_folder       = Path(config["globals"]["data_folder"])
-container_folder  = Path(config["globals"]["container_folder"])
-qc_folder         = Path(config["globals"]["qc_folder"])
-reads_folder      = Path(config["globals"]["reads_folder"])
+data_folder = Path(config["globals"]["data_folder"])
+container_folder = Path(config["globals"]["container_folder"])
+qc_folder = Path(config["globals"]["qc_folder"])
+reads_folder = Path(config["globals"]["reads_folder"])
 references_folder = Path(config["globals"]["references_folder"])
-tmp_folder        = Path(config["globals"]["tmp_folder"])
-analysis_folder   = Path(config["globals"]["analysis_folder"])
+tmp_folder = Path(config["globals"]["tmp_folder"])
+analysis_folder = Path(config["globals"]["analysis_folder"])
 
-raw_reads_folder  = reads_folder.joinpath("raw")
+raw_reads_folder = reads_folder.joinpath("raw")
 trim_reads_folder = reads_folder.joinpath("trim")
-rdata_folder      = analysis_folder.joinpath("rdata")
-pictures_folder   = analysis_folder.joinpath("pictures")
-tables_folder     = analysis_folder.joinpath("tables")
-notebooks_folder  = analysis_folder.joinpath("notebooks")
+rdata_folder = analysis_folder.joinpath("rdata")
+pictures_folder = analysis_folder.joinpath("pictures")
+tables_folder = analysis_folder.joinpath("tables")
+notebooks_folder = analysis_folder.joinpath("notebooks")
 
-fastqc_raw_folder     = qc_folder.joinpath("fastqc-raw")
-fastqc_trim_folder    = qc_folder.joinpath("fastqc-trimmed")
+fastqc_raw_folder = qc_folder.joinpath("fastqc-raw")
+fastqc_trim_folder = qc_folder.joinpath("fastqc-trimmed")
 fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
-fastqc_star_folder    = qc_folder.joinpath("star")
+fastqc_star_folder = qc_folder.joinpath("star")
 
-multiqc_folder         = qc_folder.joinpath("multiqc")
-multiqc_raw_folder     = multiqc_folder.joinpath("raw")
-multiqc_trim_folder    = multiqc_folder.joinpath("trim")
-multiqc_star_folder    = multiqc_folder.joinpath("star")
+multiqc_folder = qc_folder.joinpath("multiqc")
+multiqc_raw_folder = multiqc_folder.joinpath("raw")
+multiqc_trim_folder = multiqc_folder.joinpath("trim")
+multiqc_star_folder = multiqc_folder.joinpath("star")
 multiqc_markdup_folder = multiqc_folder.joinpath("markdup")
 
 alignments_folder = data_folder.joinpath("alignments")
-star_folder       = alignments_folder.joinpath("star")
-markdup_folder    = alignments_folder.joinpath("star_markdup")
-starTE_folder     = alignments_folder.joinpath("starTE")
-salmonTE_folder   = data_folder.joinpath("salmonTE")
+star_folder = alignments_folder.joinpath("star")
+markdup_folder = alignments_folder.joinpath("star_markdup")
+starTE_folder = alignments_folder.joinpath("starTE")
+salmonTE_folder = data_folder.joinpath("salmonTE")
 
 trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
 
 # featureCount_folder = starTE_folder.joinpath("featureCount")
 
-deseq2_working_directory   = Path(config["deseq2"]["working_directory"])
+deseq2_working_directory = Path(config["deseq2"]["working_directory"])
 deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
 
 
@@ -77,40 +117,46 @@ init_folders = [
     # featureCount_folder,
     tables_folder,
     pictures_folder,
-    notebooks_folder
+    notebooks_folder,
 ]
 
 ## Generate paths for sequence data from links
-fasta_path = references_folder.joinpath(get_filename(config["genome"]["fasta_link"], decompress=True))
+fasta_path = references_folder.joinpath(
+    get_filename(config["genome"]["fasta_link"], decompress=True)
+)
 
 if "gtf_link" in config["genome"].keys():
-    gtf_path = references_folder.joinpath(get_filename(config["genome"]["gtf_link"], decompress=True))
+    gtf_path = references_folder.joinpath(
+        get_filename(config["genome"]["gtf_link"], decompress=True)
+    )
     disable_gtf_download = False
 elif "gtf_path" in config["genome"].keys():
-    gtf_path = references_folder.joinpath(get_filename(config["genome"]["gtf_path"], decompress=True))
+    gtf_path = references_folder.joinpath(
+        get_filename(config["genome"]["gtf_path"], decompress=True)
+    )
     disable_gtf_download = True
 else:
     raise ValueError("Invalid config: specify either gtf_link or gtf_path")
 
 if "rmsk_link" in config["genome"]:
-    rmsk_path = references_folder.joinpath(get_filename(config["genome"]["rmsk_link"], decompress=False))
+    rmsk_path = references_folder.joinpath(
+        get_filename(config["genome"]["rmsk_link"], decompress=False)
+    )
 elif "rmsk_path" in config["genome"]:
     rmsk_path = Path(config["genome"]["rmsk_path"])
     config["genome"]["rmsk_link"] = None
 else:
     raise ValueError("Invalid config: specify either rmsk_link or rmsk_path")
 rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
-gaf_path = references_folder.joinpath(get_filename(config["genome"]["gaf_link"], decompress=False))
+gaf_path = references_folder.joinpath(
+    get_filename(config["genome"]["gaf_link"], decompress=False)
+)
 tRNA_annotation_file = config["genome"]["gtrnadb_bed"]
 
 ## Get samples
 libraries = config["sequencing_libraries"]
-samples = {
-    'single': {},
-    'paired': {}
-}
+samples = {"single": {}, "paired": {}}
 for library in libraries:
-
     libname = library["name"]
     # libtype = library["type"]
     # if libtype == 'GeneCore':
@@ -140,22 +186,27 @@ for library in libraries:
 
     if protocol == "pe":
         filelist = sample_sheet.filename_1.tolist()
-        samples['paired'][libname] = [ re.sub(r'_1(?:_sequence)?', '', x) for x in filelist ]
+        samples["paired"][libname] = [
+            re.sub(r"_1(?:_sequence)?", "", x) for x in filelist
+        ]
     else:
         filelist = sample_sheet.filename.tolist()
-        samples['single'][libname] = filelist
+        samples["single"][libname] = filelist
 
-    if any([re.match('.*.f(?:ast)?q(?:.gz)?$', x) for x in filelist]):
-        raise NameError("Filenames should not contain extensions. Remove .fastq.gz or .fq.gz from the filename column(s).")
+    if any([re.match(".*.f(?:ast)?q(?:.gz)?$", x) for x in filelist]):
+        raise NameError(
+            "Filenames should not contain extensions. Remove .fastq.gz or .fq.gz from the filename column(s)."
+        )
 
 pp(samples)
 
-library_names_single = list(samples['single'].keys())
-library_names_paired = list(samples['paired'].keys())
+library_names_single = list(samples["single"].keys())
+library_names_paired = list(samples["paired"].keys())
 
 ####################
 ## ONSTART BLOCK
 ####################
+
 
 def mkdir(p: Path, verbose=False):
     if not p.exists():
@@ -167,6 +218,7 @@ def mkdir(p: Path, verbose=False):
 onstart:
     for folder in init_folders:
         mkdir(folder)
+
 
 ############
 ## HELPERS
@@ -181,7 +233,7 @@ def get_bw(wildcards):
             s = samples["single"][lib]
         else:
             s = samples["paired"][lib]
-        o += expand(star_folder.joinpath("{serie}", "{sample}.bw"), serie = lib, sample = s)
+        o += expand(star_folder.joinpath("{serie}", "{sample}.bw"), serie=lib, sample=s)
     return o
 
 
@@ -190,8 +242,10 @@ def get_star_input(wildcards):
     if wildcards.serie in library_names_single:
         infile = trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz")
     else:
-        infile = [ trim_reads_folder.joinpath("{serie}","{sample}_1.fastq.gz"),
-                   trim_reads_folder.joinpath("{serie}","{sample}_2.fastq.gz") ]
+        infile = [
+            trim_reads_folder.joinpath("{serie}", "{sample}_1.fastq.gz"),
+            trim_reads_folder.joinpath("{serie}", "{sample}_2.fastq.gz"),
+        ]
     return infile
 
 
@@ -213,18 +267,25 @@ def get_sample_sheet(wildcards):
 ## RULES
 ############
 
+
 wildcard_constraints:
-    se_serie='|'.join(library_names_single),
-    pe_serie='|'.join(library_names_paired),
+    se_serie="|".join(library_names_single),
+    pe_serie="|".join(library_names_paired),
     method="multihit|random",
     # se_sample="[^_12]"
+
 
 # include: "../include/download_sra.smk"
 include: "include/fastqc.smk"
 include: "include/trim_single.smk"
 include: "include/download_genome_fasta_file.smk"
+
+
 if not disable_gtf_download:
+
     include: "include/download_genome_annotation_file.smk"
+
+
 include: "include/star_genome_preparation.smk"
 include: "include/star_single.smk"
 include: "include/deseq2.smk"
@@ -249,29 +310,54 @@ include: "include/coverage_tRNA.smk"
 rule all:
     input:
         # MultiQC reports at different steps
-        expand(multiqc_raw_folder.joinpath("{serie}","multiqc_report.html"),serie=library_names_single + library_names_paired),
-        expand(multiqc_trim_folder.joinpath("{serie}","multiqc_report.html"), serie = library_names_single + library_names_paired),
-        expand(multiqc_star_folder.joinpath("{serie}","multiqc_report.html"), serie = library_names_single + library_names_paired),
-        expand(multiqc_markdup_folder.joinpath("{serie}","multiqc_report.html"), serie = library_names_single + library_names_paired),
-
+        expand(
+            multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
+            serie=library_names_single + library_names_paired,
+        ),
+        expand(
+            multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
+            serie=library_names_single + library_names_paired,
+        ),
+        expand(
+            multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
+            serie=library_names_single + library_names_paired,
+        ),
+        expand(
+            multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
+            serie=library_names_single + library_names_paired,
+        ),
         # DESeq2 flags
-        expand(analysis_folder.joinpath("deseq2-{serie}.done"), serie = library_names_single + library_names_paired),
-
+        expand(
+            analysis_folder.joinpath("deseq2-{serie}.done"),
+            serie=library_names_single + library_names_paired,
+        ),
         # SalmonTE results folders
-        expand(data_folder.joinpath("salmonTE/de_analysis/{se_serie}"), se_serie=library_names_single),
-        expand(data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"), pe_serie=library_names_paired),
-
+        expand(
+            data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
+            se_serie=library_names_single,
+        ),
+        expand(
+            data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
+            pe_serie=library_names_paired,
+        ),
         # FeatureCounts tables from STAR-TE
-        expand(starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"), se_serie=library_names_single, method=["multihit", "random"]),
-        expand(starTE_folder.joinpath("{pe_serie}/featureCount/{method}.txt"), pe_serie=library_names_paired, method=["multihit", "random"]),
-
+        expand(
+            starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"),
+            se_serie=library_names_single,
+            method=["multihit", "random"],
+        ),
+        expand(
+            starTE_folder.joinpath("{pe_serie}/featureCount/{method}.txt"),
+            pe_serie=library_names_paired,
+            method=["multihit", "random"],
+        ),
         # Bigwig files
         get_bw,
-
         # tRNA coverage files
-        expand(trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"), serie=library_names_paired + library_names_single)
-
-
+        expand(
+            trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
+            serie=library_names_paired + library_names_single,
+        ),
         # expand(multiqc_folder.joinpath("{se_serie}", "multiqc_report.html"), se_serie=library_names_single),
         # expand(rdata_folder.joinpath("deseq2/{se_serie}/dds.rds"), se_serie=library_names),
         # expand(tables_folder.joinpath("deseq2/{se_serie}/results.csv"), se_serie=library_names),
@@ -284,106 +370,3 @@ rule all:
         # expand(analysis_folder.joinpath("deseq2-report-{serie}.done"), serie = library_names_single + library_names_paired),
 
 
-
-
-# rule multiqc_se:
-#     input:
-#         lambda wildcards: expand(fastqc_folder.joinpath("{se_serie}", "{se_sample}_fastqc.zip"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(fastqc_trim_folder.joinpath("{se_serie}", "{se_sample}_fastqc.zip"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(trim_reads_folder.joinpath("{se_serie}", "{se_sample}.fastq.gz"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(markdup_folder.joinpath("{se_serie}/{se_sample}.markdup.bam"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(starTE_folder.joinpath("{se_serie}/multihit/{se_sample}.Aligned.out.bam"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(starTE_folder.joinpath("{se_serie}/random/{se_sample}.Aligned.out.bam"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#         lambda wildcards: expand(star_folder.joinpath("{se_serie}", "{se_sample}.bw"),
-#                                  se_serie=wildcards.se_serie, se_sample=samples['single'][wildcards.se_serie]),
-#
-#         # lambda wildcards: expand(featureCount_folder.joinpath("{serie}/random.txt"),
-#         #                          serie=wildcards.serie),
-#         # lambda wildcards: expand(featureCount_folder.joinpath("{serie}/multihit.txt"),
-#         #                          serie=wildcards.serie)
-#
-#
-#     output:
-#         multiqc_folder.joinpath("{se_serie}/multiqc_report.html")
-#     params:
-#         fastqc_folder = fastqc_folder,
-#         trim_reads_folder = trim_reads_folder,
-#         alignments_folder = star_folder,
-#         starTE_folder = starTE_folder,
-#         multiqc_folder = multiqc_folder
-#     singularity:
-#         # paths to singularity images cannot be PosixPath
-#         str(container_folder.joinpath("qc.sif"))
-#     log:
-#         log_folder.joinpath("multiqc/{se_serie}.log")
-#     shell:
-#         """
-#         set -x
-#         multiqc --fullnames --dirs --zip-data-dir --export -f \
-#         -o {params.multiqc_folder}/{wildcards.se_serie} \
-#         {params.fastqc_folder}/{wildcards.se_serie} \
-#         {params.trim_reads_folder}/{wildcards.se_serie} \
-#         {params.alignments_folder}/{wildcards.se_serie} \
-#         {params.starTE_folder}/{wildcards.se_serie} |& \
-#         tee {log}
-#         """
-#
-# rule multiqc_pe:
-#     input:
-#         lambda wildcards: expand(fastqc_folder.joinpath("{pe_serie}", "{pe_sample}_1_sequence_fastqc.zip"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(fastqc_trim_folder.joinpath("{pe_serie}", "{pe_sample}_1_fastqc.zip"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(fastqc_folder.joinpath("{pe_serie}", "{pe_sample}_2_sequence_fastqc.zip"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(fastqc_trim_folder.joinpath("{pe_serie}", "{pe_sample}_2_fastqc.zip"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(trim_reads_folder.joinpath("{pe_serie}", "{pe_sample}_1.fastq.gz"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(trim_reads_folder.joinpath("{pe_serie}", "{pe_sample}_2.fastq.gz"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(markdup_folder.joinpath("{pe_serie}/{pe_sample}.markdup.bam"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(starTE_folder.joinpath("{pe_serie}/multihit/{pe_sample}.Aligned.out.bam"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(starTE_folder.joinpath("{pe_serie}/random/{pe_sample}.Aligned.out.bam"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#         lambda wildcards: expand(star_folder.joinpath("{pe_serie}", "{pe_sample}.bw"),
-#                                  pe_serie=wildcards.pe_serie, pe_sample=samples['paired'][wildcards.pe_serie]),
-#
-#         # lambda wildcards: expand(featureCount_folder.joinpath("{serie}/random.txt"),
-#         #                          serie=wildcards.serie),
-#         # lambda wildcards: expand(featureCount_folder.joinpath("{serie}/multihit.txt"),
-#         #                          serie=wildcards.serie)
-#
-#
-#     output:
-#         multiqc_folder.joinpath("{pe_serie}/multiqc_report.html")
-#     params:
-#         fastqc_folder = fastqc_folder,
-#         trim_reads_folder = trim_reads_folder,
-#         alignments_folder = star_folder,
-#         starTE_folder = starTE_folder,
-#         multiqc_folder = multiqc_folder
-#     singularity:
-#         # paths to singularity images cannot be PosixPath
-#         str(container_folder.joinpath("qc.sif"))
-#     log:
-#         log_folder.joinpath("multiqc/{pe_serie}.log")
-#     shell:
-#         """
-#         set -x
-#         multiqc --fullnames --dirs --zip-data-dir --export -f \
-#         -o {params.multiqc_folder}/{wildcards.pe_serie} \
-#         {params.fastqc_folder}/{wildcards.pe_serie} \
-#         {params.trim_reads_folder}/{wildcards.pe_serie} \
-#         {params.alignments_folder}/{wildcards.pe_serie} \
-#         {params.starTE_folder}/{wildcards.pe_serie} |& \
-#         tee {log}
-#         """

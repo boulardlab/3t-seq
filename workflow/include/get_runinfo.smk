@@ -1,9 +1,10 @@
 checkpoint get_runinfo:
-    output: data_folder.joinpath("{serie}_sra.csv")
-    singularity:
-        # paths to singularity images cannot be PosixPath
-        str(container_folder.joinpath("ncbi.sif"))
-    log: log_folder.joinpath("download/{serie}/runinfo.log")
+    output:
+        data_folder.joinpath("{serie}_sra.csv"),
+    conda:
+        "../env/ncbi.yml"
+    log:
+        log_folder.joinpath("download/{serie}/runinfo.log"),
     shell:
         """ 
         set -x

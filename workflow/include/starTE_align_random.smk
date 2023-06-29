@@ -1,23 +1,24 @@
-from utilities.general import giga_to_byte
 
 rule starTE_random:
     input:
         get_star_input,
-        star_index_folder = references_folder.joinpath("STAR")
+        star_index_folder=references_folder.joinpath("STAR"),
     output:
-          starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
+        starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
     threads: 8
     params:
-        libtype = lambda wildcards: "SINGLE" if wildcards.serie in library_names_single else "PAIRED",
+        libtype=lambda wildcards: "SINGLE"
+        if wildcards.serie in library_names_single
+        else "PAIRED",
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
-        mem_mb=giga_to_byte(32)
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
+        mem_mb=giga_to_byte(32),
+   conda:
+        "../env/alignment.yml"
     log:
-        log_folder.joinpath("starTE/random/{serie}/{sample}.log")
+        log_folder.joinpath("starTE/random/{serie}/{sample}.log"),
     shell:
-         """
+        """
          set -x
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
          echo 'tmp: $TMP_FOLDER'
@@ -61,6 +62,7 @@ rule starTE_random:
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
+
 # rule starTE_random_se:
 #     input:
 #         trim_reads_folder.joinpath("{se_serie}", "{sample}.fastq.gz"),
@@ -73,8 +75,8 @@ rule starTE_random:
 #     params:
 #         alignments_folder=starTE_folder,
 #         tmp_folder=tmp_folder
-#     singularity:
-#         str(container_folder.joinpath("alignment.sif"))
+#     conda:
+#         "../env/alignment.yml"
 #     log:
 #         log_folder.joinpath("starTE/random/{se_serie}/{sample}.log")
 #     shell:
@@ -128,8 +130,8 @@ rule starTE_random:
 #     params:
 #         alignments_folder=starTE_folder,
 #         tmp_folder=tmp_folder
-#     singularity:
-#         str(container_folder.joinpath("alignment.sif"))
+#     conda:
+#         "../env/alignment.yml"
 #     log:
 #         log_folder.joinpath("starTE/random/{pe_serie}/{sample}.log")
 #     shell:

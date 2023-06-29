@@ -1,11 +1,14 @@
 checkpoint parse_runinfo:
-    input: expand(data_folder.joinpath("{serie}_sra.csv"), serie=geo_series)
-    output: data_folder.joinpath("serie_sheet.txt")
+    input:
+        expand(data_folder.joinpath("{serie}_sra.csv"), serie=geo_series),
+    output:
+        data_folder.joinpath("serie_sheet.txt"),
     params:
         data_folder=data_folder,
         log_folder=log_folder,
-        alignments_folder=alignments_folder
-    log: log_folder.joinpath("download/parse_runinfo.log")
+        alignments_folder=alignments_folder,
+    log:
+        log_folder.joinpath("download/parse_runinfo.log"),
     shell:
         """
         set -x

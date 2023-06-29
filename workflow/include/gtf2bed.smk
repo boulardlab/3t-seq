@@ -1,13 +1,13 @@
 rule gtf2bed:
     input:
-        gtf=rmsk_path
+        gtf=rmsk_path,
     output:
-        bed=rmsk_bed
+        bed=rmsk_bed,
     threads: 1
     log:
-        log_folder.joinpath("samtools_view/bed2gtf.log")
-    singularity:
-        str(container_folder.joinpath("samtools.sif"))
+        log_folder.joinpath("samtools_view/bed2gtf.log"),
+    conda:
+        "../env/samtools.yml"
     shell:
         """
         IN={input}

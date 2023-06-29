@@ -1,14 +1,13 @@
 rule download_gaf_file:
     output:
-        gaf_path
+        gaf_path,
     params:
-        url=config["genome"]["gaf_link"]
-    singularity:
-        str(container_folder.joinpath("alignment.sif"))
+        url=config["genome"]["gaf_link"],
+    conda:
+        "../env/alignment.yml"
     log:
-        log_folder.joinpath("download/genome/gaf.log")
-    threads:
-        4
+        log_folder.joinpath("download/genome/gaf.log"),
+    threads: 4
     shell:
         """
         set -x

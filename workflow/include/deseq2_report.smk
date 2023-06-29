@@ -1,26 +1,25 @@
-from utilities.general import get_filename
 
 rule deseq2_report:
     input:
         analysis_folder.joinpath("deseq2-{serie}.done"),
         gaf_path,
-        ann_path = str(rdata_folder.joinpath("deseq2/ann.rds"))
+        ann_path=str(rdata_folder.joinpath("deseq2/ann.rds")),
     output:
-        touch(analysis_folder.joinpath("deseq2-report-{serie}.done"))
+        touch(analysis_folder.joinpath("deseq2-report-{serie}.done")),
         # notebooks_folder.joinpath("{serie}/%s.html"%get_filename(deseq2_notebook_input_path, stem=True))
     params:
-        dds_path = str(rdata_folder.joinpath("deseq2/{serie}/dds.rds")),
+        dds_path=str(rdata_folder.joinpath("deseq2/{serie}/dds.rds")),
         # ann_path = str(rdata_folder.joinpath("deseq2/ann.rds")),
-        notebook_path = deseq2_notebook_input_path,
+        notebook_path=deseq2_notebook_input_path,
         # root_path = deseq2_working_directory,
-        output_dir = notebooks_folder,
-        annotation_type = config["genome"]["annotation_type"]
-    singularity:
-        str(container_folder.joinpath("R.sif"))
+        output_dir=notebooks_folder,
+        annotation_type=config["genome"]["annotation_type"],
+    conda:
+        "../env/R.yml"
     log:
-        log_folder.joinpath("R/{serie}/deseq2_report.log")
+        log_folder.joinpath("R/{serie}/deseq2_report.log"),
     shell:
-         """
+        """
          set -x
          if [ -f {params.dds_path} ]; then
             OUTPUT_DIR="{params.output_dir}/{wildcards.serie}"
@@ -32,5 +31,5 @@ rule deseq2_report:
         fi
          """
 
-# knit_root_dir = '{params.root_path}'
 
+# knit_root_dir = '{params.root_path}'
