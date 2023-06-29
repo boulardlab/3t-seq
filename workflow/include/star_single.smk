@@ -51,7 +51,7 @@ rule star:
         tmp_folder=tmp_folder,
         others=lambda wildcards: get_params(wildcards, "star"),
         mem_mb=giga_to_byte(32),
-   conda:
+    conda:
         "../env/alignment.yml"
     log:
         log_folder.joinpath("star/{serie}/{sample}.log"),

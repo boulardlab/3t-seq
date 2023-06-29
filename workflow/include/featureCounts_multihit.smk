@@ -10,7 +10,7 @@ rule featureCounts_multihit:
         annotation=rmsk_path,
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),
-   conda:
+    conda:
         "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/multihit.log"),

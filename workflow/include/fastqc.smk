@@ -2,14 +2,14 @@
 
 rule fastqc_raw_se:
     input:
-        raw_reads_folder.joinpath("{serie}/{sample}.fq.gz"),
+        get_fastq
     output:
         fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
         fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
     params:
         fastqc_folder=fastqc_raw_folder,
     threads: 2
-   conda:
+    conda:
         "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),

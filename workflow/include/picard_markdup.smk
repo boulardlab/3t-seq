@@ -86,7 +86,7 @@ rule multiqc_markdup:
         multiqc_folder=multiqc_markdup_folder,
     log:
         log_folder.joinpath("multiqc-markdup", "multiqc-{serie}.log"),
-   conda:
+    conda:
         "../env/qc.yml"
     shell:
         """

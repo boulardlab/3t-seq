@@ -10,7 +10,7 @@ rule featureCounts_random:
         annotation=rmsk_path,
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
-   conda:
+    conda:
         "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/random.log"),

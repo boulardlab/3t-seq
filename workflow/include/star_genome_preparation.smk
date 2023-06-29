@@ -6,7 +6,7 @@ rule star_genome_preparation:
         directory(references_folder.joinpath("STAR")),
     params:
         tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
-   conda:
+    conda:
         "../env/alignment.yml"
     threads: 8
     log:

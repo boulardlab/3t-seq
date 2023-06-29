@@ -13,7 +13,7 @@ rule starTE_random:
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
         mem_mb=giga_to_byte(32),
-   conda:
+    conda:
         "../env/alignment.yml"
     log:
         log_folder.joinpath("starTE/random/{serie}/{sample}.log"),

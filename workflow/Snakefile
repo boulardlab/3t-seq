@@ -4,6 +4,7 @@ configfile: "config.yaml"
 from pathlib import Path
 from pprint import pprint as pp
 from datetime import datetime
+from urllib.parse import urlparse
 
 # import json
 import re
@@ -59,16 +60,15 @@ timestamp = date.strftime("%Y-%m-%d")
 log_folder = Path(config["globals"]["log_folder"])
 log_folder = log_folder.joinpath(timestamp)
 
-data_folder = Path(config["globals"]["data_folder"])
-container_folder = Path(config["globals"]["container_folder"])
+data_folder = Path(config["globals"]["results_folder"])
 qc_folder = Path(config["globals"]["qc_folder"])
 reads_folder = Path(config["globals"]["reads_folder"])
 references_folder = Path(config["globals"]["references_folder"])
 tmp_folder = Path(config["globals"]["tmp_folder"])
 analysis_folder = Path(config["globals"]["analysis_folder"])
 
-raw_reads_folder = reads_folder.joinpath("raw")
-trim_reads_folder = reads_folder.joinpath("trim")
+raw_reads_folder = reads_folder
+trim_reads_folder = data_folder.joinpath("trim")
 rdata_folder = analysis_folder.joinpath("rdata")
 pictures_folder = analysis_folder.joinpath("pictures")
 tables_folder = analysis_folder.joinpath("tables")
@@ -239,13 +239,28 @@ def get_bw(wildcards):
 
 def get_star_input(wildcards):
     """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
+    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
     if wildcards.serie in library_names_single:
-        infile = trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz")
+        for ext in supported_extensions:
+            infile = trim_reads_folder.joinpath(
+                wildcards.serie, 
+                f"{wildcards.sample}.{ext}")
+            if os.path.exists(infile):
+                break
     else:
-        infile = [
-            trim_reads_folder.joinpath("{serie}", "{sample}_1.fastq.gz"),
-            trim_reads_folder.joinpath("{serie}", "{sample}_2.fastq.gz"),
-        ]
+        for ext in supported_extensions:
+            infile = [
+                trim_reads_folder.joinpath(
+                    wildcards.serie, 
+                    f"{wildcards.sample}_1.{ext}"
+                    ),
+                trim_reads_folder.joinpath(
+                    wildcards.serie, 
+                    f"{wildcards.sample}_2.{ext}"
+                    ),
+            ]
+            if all([os.path.exists(f) for f in infile]):
+                break
     return infile
 
 
@@ -263,6 +278,30 @@ def get_sample_sheet(wildcards):
     return get_params(wildcards, "sample_sheet")
 
 
+def get_fastq(wildcards):
+    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
+    for ext in supported_extensions:
+        candidate = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}.{ext}")
+        if os.path.exists(candidate):
+            return candidate
+    raise ValueError(f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}") 
+
+def get_fastq_paired(wildcards):
+    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
+    supported_suffixes = [
+        ("_1", "_2"),
+        ("_R1", "_R2"),
+        ("_1_sequence", "_2_sequence"),
+    ]
+    for ext in supported_extensions:
+        for suffix in supported_suffixes:
+            candidate1 = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}")
+            candidate2 = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}")
+            if os.path.exists(candidate1) and os.path.exists(candidate2):
+                return {"m1": candidate1, "m2": candidate2}
+    raise ValueError(f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}") 
+    
+
 ############
 ## RULES
 ############
@@ -272,7 +311,6 @@ wildcard_constraints:
     se_serie="|".join(library_names_single),
     pe_serie="|".join(library_names_paired),
     method="multihit|random",
-    # se_sample="[^_12]"
 
 
 # include: "../include/download_sra.smk"
@@ -368,5 +406,3 @@ rule all:
         # expand(notebooks_folder.joinpath("{pe_serie}/%s.html"%get_filename(deseq2_notebook_input_path, stem=True)), pe_serie=library_names_paired),
         # expand(rdata_folder.joinpath("deseq2/{serie}/dds.rds"), serie = library_names_single + library_names_paired)
         # expand(analysis_folder.joinpath("deseq2-report-{serie}.done"), serie = library_names_single + library_names_paired),
-
-
