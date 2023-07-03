@@ -1,2 +1,6 @@
 **/.snakemake
 **/results
+**/.cache
+**/.conda
+**/.java
+**/.config
