@@ -1,14 +1,34 @@
-configfile: "config.yaml"
-
-
 from pathlib import Path
 from pprint import pprint as pp
 from datetime import datetime
 from urllib.parse import urlparse
 
-# import json
 import re
 import pandas as pd
+
+##########################
+## PIN SNAKEMAKE VERSION
+##########################
+
+from snakemake.utils import min_version
+
+min_version("7.21.0")
+
+#################################################
+## CONTAINER
+#################################################
+
+
+container: "docker://condaforge/mambaforge:latest"
+
+
+################
+## CONFIG FILE
+################
+
+
+configfile: "config.yaml"
+
 
 ############
 ## HELPERS
@@ -56,7 +76,6 @@ def get_samples(wildcards, samples):
 
 date = datetime.now()
 timestamp = date.strftime("%Y-%m-%d")
-
 log_folder = Path(config["globals"]["log_folder"])
 log_folder = log_folder.joinpath(timestamp)
 
@@ -90,105 +109,43 @@ star_folder = alignments_folder.joinpath("star")
 markdup_folder = alignments_folder.joinpath("star_markdup")
 starTE_folder = alignments_folder.joinpath("starTE")
 salmonTE_folder = data_folder.joinpath("salmonTE")
-
 trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
-
-# featureCount_folder = starTE_folder.joinpath("featureCount")
-
 deseq2_working_directory = Path(config["deseq2"]["working_directory"])
 deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
 
-
-# disable_trim = config["trim"]["disable"]
-
-## These folders will be create at the beginning of the pipeline
-init_folders = [
-    log_folder,
-    reads_folder,
-    raw_reads_folder,
-    trim_reads_folder,
-    multiqc_folder,
-    alignments_folder,
-    references_folder,
-    tmp_folder,
-    star_folder,
-    starTE_folder,
-    salmonTE_folder,
-    # featureCount_folder,
-    tables_folder,
-    pictures_folder,
-    notebooks_folder,
-]
-
 ## Generate paths for sequence data from links
 fasta_path = references_folder.joinpath(
-    get_filename(config["genome"]["fasta_link"], decompress=True)
+    get_filename(config["genome"]["fasta_url"], decompress=True)
 )
 
-if "gtf_link" in config["genome"].keys():
-    gtf_path = references_folder.joinpath(
-        get_filename(config["genome"]["gtf_link"], decompress=True)
-    )
-    disable_gtf_download = False
-elif "gtf_path" in config["genome"].keys():
-    gtf_path = references_folder.joinpath(
-        get_filename(config["genome"]["gtf_path"], decompress=True)
-    )
-    disable_gtf_download = True
-else:
-    raise ValueError("Invalid config: specify either gtf_link or gtf_path")
+gtf_path = references_folder.joinpath(
+    get_filename(config["genome"]["gtf_url"], decompress=True)
+)
 
-if "rmsk_link" in config["genome"]:
-    rmsk_path = references_folder.joinpath(
-        get_filename(config["genome"]["rmsk_link"], decompress=False)
-    )
-elif "rmsk_path" in config["genome"]:
-    rmsk_path = Path(config["genome"]["rmsk_path"])
-    config["genome"]["rmsk_link"] = None
-else:
-    raise ValueError("Invalid config: specify either rmsk_link or rmsk_path")
+rmsk_path = Path(config["genome"]["rmsk_path"])
+config["genome"]["rmsk_link"] = None
+# rmsk_path = references_folder.joinpath(
+#     get_filename(config["genome"]["rmsk_link"], decompress=False)
+# )
 rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
+
 gaf_path = references_folder.joinpath(
-    get_filename(config["genome"]["gaf_link"], decompress=False)
+    get_filename(config["genome"]["gaf_url"], decompress=False)
 )
-tRNA_annotation_file = config["genome"]["gtrnadb_bed"]
+
+tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
 
 ## Get samples
 libraries = config["sequencing_libraries"]
 samples = {"single": {}, "paired": {}}
 for library in libraries:
     libname = library["name"]
-    # libtype = library["type"]
-    # if libtype == 'GeneCore':
-    #     index_path = library["index"]
-    #
-    #     # extract filelist from json file
-    #     index = json.load(open(index_path))
-    #     filelist = index["data"][0]["lanes"][0]["filelist"]
-    #     filelist = pd.DataFrame(filelist)
-    #
-    #     seqtype = index["data"][0]["lanes"][0]["type"]
-    #
-    #     # get "name" column. Contains entire filenames (with extensions)
-    #     filelist = filelist["name"].tolist()
-    #     filelist = [ filename.split(".")[0] for filename in filelist ]
-    #
-    #     if seqtype == 'paired-end':
-    #         samples['paired'][libname] = [ x.replace('_1_sequence', '') for x in filelist if x.endswith('_1_sequence')]
-    #
-    #     else:
-    #         samples['single'][libname] = filelist
-    #
-    # elif libtype == "SRA":
-
     sample_sheet = pd.read_csv(library["sample_sheet"])
     protocol = "pe" if "filename_2" in sample_sheet.columns else "se"
 
     if protocol == "pe":
         filelist = sample_sheet.filename_1.tolist()
-        samples["paired"][libname] = [
-            re.sub(r"_1(?:_sequence)?", "", x) for x in filelist
-        ]
+        samples["paired"][libname] = [re.sub(r"_1(?:_sequence)?", "", x) for x in filelist]
     else:
         filelist = sample_sheet.filename.tolist()
         samples["single"][libname] = filelist
@@ -198,26 +155,8 @@ for library in libraries:
             "Filenames should not contain extensions. Remove .fastq.gz or .fq.gz from the filename column(s)."
         )
 
-pp(samples)
-
 library_names_single = list(samples["single"].keys())
 library_names_paired = list(samples["paired"].keys())
-
-####################
-## ONSTART BLOCK
-####################
-
-
-def mkdir(p: Path, verbose=False):
-    if not p.exists():
-        p.mkdir(parents=True, exist_ok=True)
-        if verbose:
-            print("Created {}".format(p))
-
-
-onstart:
-    for folder in init_folders:
-        mkdir(folder)
 
 
 ############
@@ -243,21 +182,15 @@ def get_star_input(wildcards):
     if wildcards.serie in library_names_single:
         for ext in supported_extensions:
             infile = trim_reads_folder.joinpath(
-                wildcards.serie, 
-                f"{wildcards.sample}.{ext}")
+                wildcards.serie, f"{wildcards.sample}.{ext}"
+            )
             if os.path.exists(infile):
                 break
     else:
         for ext in supported_extensions:
             infile = [
-                trim_reads_folder.joinpath(
-                    wildcards.serie, 
-                    f"{wildcards.sample}_1.{ext}"
-                    ),
-                trim_reads_folder.joinpath(
-                    wildcards.serie, 
-                    f"{wildcards.sample}_2.{ext}"
-                    ),
+                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_1.{ext}"),
+                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_2.{ext}"),
             ]
             if all([os.path.exists(f) for f in infile]):
                 break
@@ -284,7 +217,10 @@ def get_fastq(wildcards):
         candidate = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}.{ext}")
         if os.path.exists(candidate):
             return candidate
-    raise ValueError(f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}") 
+    raise ValueError(
+        f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}"
+    )
+
 
 def get_fastq_paired(wildcards):
     supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
@@ -295,12 +231,53 @@ def get_fastq_paired(wildcards):
     ]
     for ext in supported_extensions:
         for suffix in supported_suffixes:
-            candidate1 = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}")
-            candidate2 = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}")
+            candidate1 = raw_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}"
+            )
+            candidate2 = raw_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}"
+            )
             if os.path.exists(candidate1) and os.path.exists(candidate2):
                 return {"m1": candidate1, "m2": candidate2}
-    raise ValueError(f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}") 
-    
+    raise ValueError(
+        f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
+    )
+
+
+def mkdir(p: Path, verbose=False):
+    if not p.exists():
+        p.mkdir(parents=True, exist_ok=True)
+        if verbose:
+            print("Created {}".format(p))
+
+
+####################
+## ONSTART BLOCK
+####################
+
+## These folders will be create at the beginning of the pipeline
+init_folders = [
+    log_folder,
+    reads_folder,
+    raw_reads_folder,
+    trim_reads_folder,
+    multiqc_folder,
+    alignments_folder,
+    references_folder,
+    tmp_folder,
+    star_folder,
+    starTE_folder,
+    salmonTE_folder,
+    tables_folder,
+    pictures_folder,
+    notebooks_folder,
+]
+
+
+onstart:
+    for folder in init_folders:
+        mkdir(folder)
+
 
 ############
 ## RULES
@@ -313,34 +290,16 @@ wildcard_constraints:
     method="multihit|random",
 
 
-# include: "../include/download_sra.smk"
+include: "include/download-references.smk"
 include: "include/fastqc.smk"
 include: "include/trim_single.smk"
-include: "include/download_genome_fasta_file.smk"
-
-
-if not disable_gtf_download:
-
-    include: "include/download_genome_annotation_file.smk"
-
-
-include: "include/star_genome_preparation.smk"
-include: "include/star_single.smk"
+include: "include/star.smk"
 include: "include/deseq2.smk"
-include: "include/salmonTE_quant.smk"
-include: "include/salmonTE_test.smk"
-include: "include/edit_condition_file.smk"
-include: "include/starTE_align_random.smk"
-include: "include/starTE_align_multihit.smk"
-include: "include/download_repeatmasker_annotation_file.smk"
-include: "include/featureCounts_random.smk"
-include: "include/featureCounts_multihit.smk"
-include: "include/deseq2_report.smk"
-include: "include/deseq2_subset_gtf.smk"
+include: "include/salmonTE.smk"
+include: "include/starTE.smk"
 include: "include/filter_bam.smk"
 include: "include/gtf2bed.smk"
 include: "include/picard_markdup.smk"
-include: "include/download_gaf_file.smk"
 include: "include/make_bw.smk"
 include: "include/coverage_tRNA.smk"
 
@@ -396,13 +355,3 @@ rule all:
             trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
             serie=library_names_paired + library_names_single,
         ),
-        # expand(multiqc_folder.joinpath("{se_serie}", "multiqc_report.html"), se_serie=library_names_single),
-        # expand(rdata_folder.joinpath("deseq2/{se_serie}/dds.rds"), se_serie=library_names),
-        # expand(tables_folder.joinpath("deseq2/{se_serie}/results.csv"), se_serie=library_names),
-        # expand(notebooks_folder.joinpath("{se_serie}/%s.html"%get_filename(deseq2_notebook_input_path, stem=True)), se_serie=library_names_single),
-        # expand(multiqc_folder.joinpath("{pe_serie}", "multiqc_report.html"), pe_serie=library_names_paired),
-        # expand(rdata_folder.joinpath("deseq2/{pe_serie}/dds.rds"), pe_serie=library_names),
-        # expand(tables_folder.joinpath("deseq2/{pe_serie}/results.csv"), pe_serie=library_names),
-        # expand(notebooks_folder.joinpath("{pe_serie}/%s.html"%get_filename(deseq2_notebook_input_path, stem=True)), pe_serie=library_names_paired),
-        # expand(rdata_folder.joinpath("deseq2/{serie}/dds.rds"), serie = library_names_single + library_names_paired)
-        # expand(analysis_folder.joinpath("deseq2-report-{serie}.done"), serie = library_names_single + library_names_paired),
