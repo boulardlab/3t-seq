@@ -3,10 +3,10 @@
 # Created by: Francesco Tabaro
 # Created on: 10/12/20
 
-options(error=quote({
+options(error = quote({
   fn <- "deseq2_emergency_dump"
   dump.frames(dumpto = fn, to.file = TRUE, include.GlobalEnv = TRUE)
-  cat(sprintf("Emergency dump saved in %s.rds", fn), file=stderr())
+  cat(sprintf("Emergency dump saved in %s.rds", fn), file = stderr())
   quit(status = 1)
 }))
 
@@ -16,7 +16,7 @@ library(DESeq2)
 
 ## Get file paths from Snakemake
 ## INPUTS
-#counts_folder <- snakemake@input[["counts_folder"]]
+# counts_folder <- snakemake@input[["counts_folder"]]
 star_flag <- snakemake@input[["star_flag"]]
 counts_folder <- sub(".done", "", star_flag)
 annotation_file_path <- snakemake@input[["annotation_file"]]
@@ -27,11 +27,11 @@ dds_rds_path <- snakemake@params[["dds"]]
 deg_table_path <- snakemake@params[["deg_table"]]
 deg_table_shrink_path <- snakemake@params[["deg_table_shrink"]]
 
-if(!dir.exists(dirname(dds_rds_path))) {
+if (!dir.exists(dirname(dds_rds_path))) {
   dir.create(dirname(dds_rds_path), recursive = TRUE)
 }
 
-if(!dir.exists(dirname(deg_table_path))) {
+if (!dir.exists(dirname(deg_table_path))) {
   dir.create(dirname(deg_table_path), recursive = TRUE)
 }
 
@@ -67,12 +67,12 @@ colData <- fread(sample_sheet)
 
 if ("filename" %in% colnames(colData)) {
   libtype <- "single"
-  if (! all(colnames(colData) %in% c("name", "filename", "genotype"))) {
+  if (!all(colnames(colData) %in% c("name", "filename", "genotype"))) {
     stop("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename\" and \"genotype\".\nRemove extensions from filename column.")
   }
 } else if ("filename_1" %in% colnames(colData)) {
   libtype <- "paired"
-  if (! all(colnames(colData) %in% c("name", "filename_1", "filename_2", "genotype"))) {
+  if (!all(colnames(colData) %in% c("name", "filename_1", "filename_2", "genotype"))) {
     stop("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename_1\", \"filename_2\", and \"genotype\".\nRemove extensions from filename column.")
   }
 } else {
@@ -84,26 +84,26 @@ colData <- DataFrame(colData)
 # convert design columns to factors
 for (i in seq_along(design_variable)) {
   column <- design_variable[i]
-  colData[,column] <- as.factor(colData[,column])
+  colData[, column] <- as.factor(colData[, column])
   # handle the genotype column so that KO is level 1 and WT is level 2 (DESeq will compute log2 fold change as KO/WT)
   if (column == "genotype" &&
-    length(levels(colData[,column])) == 2 &&
-    all(levels(colData[,column]) %in% c("KO", "WT"))) {
-    colData[,column] <- relevel(colData[,column], ref = "WT")
+    length(levels(colData[, column])) == 2 &&
+    all(levels(colData[, column]) %in% c("KO", "WT"))) {
+    colData[, column] <- relevel(colData[, column], ref = "WT")
   }
 }
 
 if (libtype == "single") {
-  rownames(colData) <- colData[,"filename"]
+  rownames(colData) <- colData[, "filename"]
 } else {
-  rownames(colData) <- gsub("_1_sequence", "", colData[,"filename_1"])
+  rownames(colData) <- gsub("_1_sequence", "", colData[, "filename_1"])
 }
 
 ## Import STAR counts and generate a count matrix
-ls <- list.files(counts_folder, pattern="ReadsPerGene.out.tab", full.names=TRUE)
+ls <- list.files(counts_folder, pattern = "ReadsPerGene.out.tab", full.names = TRUE)
 ls <- setNames(ls, sub("(^.+)\\.ReadsPerGene\\.out\\.tab", "\\1", basename(ls)))
-mat <- sapply(ls, function (p) {
-  dt <- fread(p, skip=4)
+mat <- sapply(ls, function(p) {
+  dt <- fread(p, skip = 4)
   setNames(dt$V2, dt$V1)
 })
 
@@ -112,6 +112,8 @@ if (annotation_type == "gencode" || annotation_type == "ensembl") {
   ann <- ann[ann$gene_id %in% rownames(mat) & ann$type == "gene"]
 } else if (annotation_type == "mgi") {
   ann <- ann[ann$gene_id %in% rownames(mat) & ann$source == "MGI"]
+} else {
+  ann <- ann[ann$gene_id %in% rownames(mat)]
 }
 names(ann) <- ann$gene_id
 ann <- ann[match(rownames(mat), names(ann))]
@@ -121,12 +123,14 @@ if (!all(rownames(mat) %in% ann$gene_id)) {
 }
 
 ## Match mat colnames to sample_sheet rownames
-colData <- colData[match(colnames(mat), rownames(colData)),]
+colData <- colData[match(colnames(mat), rownames(colData)), ]
 
 
 ## Build DESeqDataSet object
-se <- SummarizedExperiment(assays=SimpleList(counts=mat),
-                           rowRanges=ann, colData=colData)
+se <- SummarizedExperiment(
+  assays = SimpleList(counts = mat),
+  rowRanges = ann, colData = colData
+)
 dds <- DESeqDataSet(se, design = design_formula)
 
 
@@ -137,7 +141,7 @@ dds <- DESeqDataSet(se, design = design_formula)
 # dds <- dds[keep,]
 
 # apply light prefiltering (as shown in vignette, quantile filtering may be too harsh)
-dds <- dds[rowSums(counts(dds)) > 10,]
+dds <- dds[rowSums(counts(dds)) > 10, ]
 
 ## Run DESeq2. Export modified dds for later.
 if (test_name == "LRT") {
@@ -150,12 +154,9 @@ saveRDS(dds, file = dds_rds_path)
 
 ## Extract results
 results <- results(dds, name = "genotype_KO_vs_WT")
-#saveRDS(results, file = results_rds_path)
-write.csv(results, file=deg_table_path)
+# saveRDS(results, file = results_rds_path)
+write.csv(results, file = deg_table_path)
 
 results <- lfcShrink(dds, coef = "genotype_KO_vs_WT", type = "apeglm")
-#saveRDS(results, file = results_rds_path)
-write.csv(results, file=deg_table_shrink_path)
-
-
-
+# saveRDS(results, file = results_rds_path)
+write.csv(results, file = deg_table_shrink_path)
