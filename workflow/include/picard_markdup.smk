@@ -12,25 +12,14 @@ rule picard_markdup:
     conda:
         "../env/picard.yml"
     shell:
-        # absolute path to jar file inside the container! If not using Singularity this might break.
         """
-
-        PICARD=/usr/picard/picard.jar # path inside the container
-
         set -x
 
-        java -XX:ParallelGCThreads={threads} \
-
-        -jar $PICARD \
-
-        MarkDuplicates I={input} \
-
+        picard MarkDuplicates \
+        I={input} \
         O={output[0]} \
-
         M={output[1]} |& \
-
         tee {log}
-
         """
 
 
