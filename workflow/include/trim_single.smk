@@ -16,12 +16,12 @@ rule trimmomatic_se:
         "../env/trimmomatic.yml"
     shell:
         """
-        java -jar /opt/Trimmomatic-0.39/trimmomatic-0.39.jar SE \
+        trimmomatic SE \
         -threads {threads} -trimlog {log} \
         -summary {output.summary} \
         {input} \
         {output.fastq} \
-        {params} 2> {output.stats}
+        {params} |& tee {output.stats}
         """
 
 
@@ -44,13 +44,13 @@ rule trimmomatic_pe:
         "../env/trimmomatic.yml"
     shell:
         """
-        java -jar /opt/Trimmomatic-0.39/trimmomatic-0.39.jar PE \
+        trimmomatic PE \
         -threads {threads} -trimlog {log} \
         -summary {output.summary} \
         {input.m1} {input.m2} \
         {output.paired1} {output.unpaired1} \
         {output.paired2} {output.unpaired2} \
-        {params} 2> {output.stats}
+        {params} |& tee {output.stats}
         """
 
 
