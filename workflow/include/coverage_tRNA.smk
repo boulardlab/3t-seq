@@ -4,20 +4,6 @@ localrules:
     download_gtRNAdb,
 
 
-rule download_gtRNAdb:
-    output:
-        tRNA_annotation_file,
-    conda:
-        "../env/alignment.yml"
-    shell:
-        """
-        wget -O http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
-        tar xf mm10-tRNAs.tar.gz
-        mv mm10-tRNAs.bed {output}
-        rm mm10-*
-        """
-
-
 rule mk_genome_tsv:
     input:
         star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam"),
@@ -32,13 +18,18 @@ rule mk_genome_tsv:
         samtools view -H {input[0]} | grep SQ | cut -f 2,3 | sed -r 's/(SN|LN)://g' | tr " " "\t" > {output}
         """
 
+def get_tRNA_annotation_file(wildcards):
+    checkpoint_output = checkpoints.download_gtRNAdb.get(**wildcards).output[0]
+    bed_filename = glob_wildcards(os.path.join(checkpoint_output, "{x}.bed")).x[0]
+    return tRNA_annotation_dir.joinpath(f"{bed_filename}.bed")
+
 
 rule coverage_trna:
     input:
         star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam"),
         star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam.bai"),
         star_folder.joinpath("{serie}", "{sample}.genome"),
-        tRNA_annotation_file,
+        get_tRNA_annotation_file,
     output:
         trna_coverage_folder.joinpath("{serie}", "{sample}.bed"),
     conda:
