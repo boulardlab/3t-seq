@@ -33,7 +33,7 @@ rule edit_condition_file:
                 )
                 sample_sheet = sample_sheet.set_index("tmp")
             else:
-                sample_sheet = sample_sheet.set_index("filename_1")
+                sample_sheet = sample_sheet.set_index("name")
 
         sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 
