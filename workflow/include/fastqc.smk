@@ -74,9 +74,7 @@ def get_fastqc(wildcards):
                         ) + expand(
                             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}" + f"{m[1]}_fastqc.html"), sample=s
                         )
-                else:
-                    print(m1, m2, "FAIL")
-            
+                                    
     return ret
 
 
