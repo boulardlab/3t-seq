@@ -68,6 +68,90 @@ def get_samples(wildcards, samples):
         s = samples["paired"][wildcards.serie]
     return s
 
+def get_bw(wildcards):
+    """Builds bigwig paths for rule all"""
+    o = []
+    for lib in library_names_single + library_names_paired:
+        if lib in samples["single"].keys():
+            s = samples["single"][lib]
+        else:
+            s = samples["paired"][lib]
+        o += expand(star_folder.joinpath("{serie}", "{sample}.bw"), serie=lib, sample=s)
+    return o
+
+
+def get_star_input(wildcards):
+    """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
+    if wildcards.serie in library_names_single:
+        for ext in supported_extensions:
+            infile = trim_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}.{ext}"
+            )
+            if os.path.exists(infile):
+                break
+    else:
+        for ext in supported_extensions:
+            infile = [
+                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_1.{ext}"),
+                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_2.{ext}"),
+            ]
+            if all([os.path.exists(f) for f in infile]):
+                break
+    return infile
+
+
+def get_params(wildcards, key):
+    """Returns the value of a specific key for the current serie"""
+    params = ""
+    for lib in config["sequencing_libraries"]:
+        if lib["name"] == wildcards.serie:
+            params = lib[key]
+    return params
+
+
+def get_sample_sheet(wildcards):
+    """Returns path to sample sheet for current serie"""
+    return get_params(wildcards, "sample_sheet")
+
+
+def get_fastq(wildcards):
+    if wildcards.serie in library_names_single:
+        for ext in supported_extensions:
+            candidate = raw_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}.{ext}"
+            )
+            if os.path.exists(candidate):
+                return candidate
+        raise ValueError(
+            f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}"
+        )
+    return ""
+
+
+def get_fastq_paired(wildcards):
+    if wildcards.serie in library_names_paired:
+        for ext in supported_extensions:
+            for suffix in supported_suffixes:
+                candidate1 = raw_reads_folder.joinpath(
+                    wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}"
+                )
+                candidate2 = raw_reads_folder.joinpath(
+                    wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}"
+                )
+                if os.path.exists(candidate1) and os.path.exists(candidate2):
+                    return {"m1": candidate1, "m2": candidate2}
+        raise ValueError(
+            f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
+        )
+    return ""
+
+
+def mkdir(p: Path, verbose=False):
+    if not p.exists():
+        p.mkdir(parents=True, exist_ok=True)
+        if verbose:
+            print("Created {}".format(p))
+
 
 #######################
 ## DEFINE VARIABLES
@@ -158,97 +242,14 @@ for library in libraries:
 library_names_single = list(samples["single"].keys())
 library_names_paired = list(samples["paired"].keys())
 
+pp(samples)
 
-############
-## HELPERS
-############
-
-
-def get_bw(wildcards):
-    """Builds bigwig paths for rule all"""
-    o = []
-    for lib in library_names_single + library_names_paired:
-        if lib in samples["single"].keys():
-            s = samples["single"][lib]
-        else:
-            s = samples["paired"][lib]
-        o += expand(star_folder.joinpath("{serie}", "{sample}.bw"), serie=lib, sample=s)
-    return o
-
-
-def get_star_input(wildcards):
-    """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
-    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
-    if wildcards.serie in library_names_single:
-        for ext in supported_extensions:
-            infile = trim_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}.{ext}"
-            )
-            if os.path.exists(infile):
-                break
-    else:
-        for ext in supported_extensions:
-            infile = [
-                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_1.{ext}"),
-                trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_2.{ext}"),
-            ]
-            if all([os.path.exists(f) for f in infile]):
-                break
-    return infile
-
-
-def get_params(wildcards, key):
-    """Returns the value of a specific key for the current serie"""
-    params = ""
-    for lib in config["sequencing_libraries"]:
-        if lib["name"] == wildcards.serie:
-            params = lib[key]
-    return params
-
-
-def get_sample_sheet(wildcards):
-    """Returns path to sample sheet for current serie"""
-    return get_params(wildcards, "sample_sheet")
-
-
-def get_fastq(wildcards):
-    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
-    for ext in supported_extensions:
-        candidate = raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}.{ext}")
-        if os.path.exists(candidate):
-            return candidate
-    raise ValueError(
-        f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}"
-    )
-
-
-def get_fastq_paired(wildcards):
-    supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
-    supported_suffixes = [
-        ("_1", "_2"),
-        ("_R1", "_R2"),
-        ("_1_sequence", "_2_sequence"),
-    ]
-    for ext in supported_extensions:
-        for suffix in supported_suffixes:
-            candidate1 = raw_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}"
-            )
-            candidate2 = raw_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}"
-            )
-            if os.path.exists(candidate1) and os.path.exists(candidate2):
-                return {"m1": candidate1, "m2": candidate2}
-    raise ValueError(
-        f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
-    )
-
-
-def mkdir(p: Path, verbose=False):
-    if not p.exists():
-        p.mkdir(parents=True, exist_ok=True)
-        if verbose:
-            print("Created {}".format(p))
+supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
+supported_suffixes = [
+    ("_1", "_2"),
+    ("_R1", "_R2"),
+    ("_1_sequence", "_2_sequence"),
+]
 
 
 ####################

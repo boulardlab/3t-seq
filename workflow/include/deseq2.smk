@@ -40,7 +40,7 @@ rule deseq2:
         ),
         dds=str(rdata_folder.joinpath("deseq2/{serie}/dds.rds")),
         # quantile_threshold=0.25,
-        annotation_type="mgi",
+        annotation_type=config["genome"]["annotation_type"],
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
     conda:

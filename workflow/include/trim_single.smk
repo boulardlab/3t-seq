@@ -1,31 +1,8 @@
-
-
-rule trimmomatic_se:
-    input:
-        get_fastq
-    output:
-        fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
-        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
-        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
-    params:
-        lambda wildcards: get_params(wildcards, "trimmomatic"),
-    threads: 2
-    log:
-        log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
-    conda:
-        "../env/trimmomatic.yml"
-    shell:
-        """
-        trimmomatic SE \
-        -threads {threads} -trimlog {log} \
-        -summary {output.summary} \
-        {input} \
-        {output.fastq} \
-        {params} |& tee {output.stats}
-        """
-
+ruleorder: trimmomatic_pe > trimmomatic_se
 
 rule trimmomatic_pe:
+    wildcard_constraints:
+        serie="|".join(library_names_paired if len(library_names_paired) > 0 else ["none"]),
     input:
         unpack(get_fastq_paired)
     output:
@@ -53,13 +30,52 @@ rule trimmomatic_pe:
         {params} |& tee {output.stats}
         """
 
-
-rule fastqc_trim_se:
+rule trimmomatic_se:
     wildcard_constraints:
-        # sample=".+[^_12]\.fastq\.gz",
+        serie="|".join(library_names_single if len(library_names_single) > 0 else ["none"]),
+    input:
+        get_fastq
+    output:
+        fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
+        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
+        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+    params:
+        lambda wildcards: get_params(wildcards, "trimmomatic"),
+    threads: 2
+    log:
+        log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
+    conda:
+        "../env/trimmomatic.yml"
+    shell:
+        """
+        trimmomatic SE \
+        -threads {threads} -trimlog {log} \
+        -summary {output.summary} \
+        {input} \
+        {output.fastq} \
+        {params} |& tee {output.stats}
+        """
+
+
+
+
+def get_trimmed_fastq(wildcards):
+    if wildcards.serie in library_names_single:
+        return trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}.fastq.gz")
+    elif wildcards.serie in library_names_paired:
+        return [
+            trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_1.fastq.gz"),
+            trim_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}_2.fastq.gz")
+        ]
+    else:
+        raise ValueError(f"Could not determine protocol type for {wildcards.serie}")
+
+
+rule fastqc_trim:        
+    wildcard_constraints:
         serie="|".join(library_names_single),
     input:
-        trim_reads_folder.joinpath("{serie}/{sample}.fastq.gz"),
+        get_trimmed_fastq        
     output:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
         fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.html"),
@@ -105,11 +121,11 @@ rule fastqc_trim_pe:
 
 
 def get_trimmomatic_stats(wildcards):
-    return expand(
-        trim_reads_folder.joinpath("{{serie}}", "{sample}.stats.txt"),
+    ret = expand(
+        trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
         sample=get_samples(wildcards, samples),
     )
-
+    return ret
 
 def get_trimmed_fastqc(wildcards):
     s = wildcards.serie

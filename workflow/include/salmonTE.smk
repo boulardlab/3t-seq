@@ -8,6 +8,8 @@ rule edit_condition_file:
         get_sample_sheet,
     output:
         touch(data_folder.joinpath("salmonTE/quant/{serie}/edit_condition.done")),
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards)
     log:
         log_folder.joinpath("salmonTE/{serie}/edit_condition.log"),
     run:
@@ -36,8 +38,13 @@ rule edit_condition_file:
         sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 
         joined = sample_sheet.join(salmon_condition_sheet)
+        
+        levels = joined[params.variable].tolist()
+        levels = list(set(levels))
+        control_level = levels[0]
+
         joined["condition"] = joined.apply(
-            lambda row: "control" if row["genotype"] == "WT" else "treatment", axis=1
+            lambda row: "control" if row[params.variable] == control_level else "treatment", axis=1
         )
         joined = joined.reset_index()
 
@@ -45,9 +52,36 @@ rule edit_condition_file:
         out.to_csv(serie_folder.joinpath("condition.csv"), index=False)
 
 
+def get_salmonTE_quant_input(wildcards):
+    if wildcards.serie in library_names_single:
+        s = samples["single"][wildcards.serie]
+    else:
+        s = [ f"{s}{mate}" for s in samples["paired"][wildcards.serie] for mate in ["_1", "_2"] ]
+    for extension in supported_extensions:
+        candidates = expand(raw_reads_folder.joinpath(wildcards.serie, "{sample}" + f".{extension}"), sample = s)
+        if all([os.path.exists(f) for f in candidates]):
+            break
+
+    return candidates
+
+def set_salmonTE_genome():
+    genome_label = config["genome"]["label"][:2]
+    salmon_label = ""
+    if genome_label == "mm":
+        salmon_label = "mm"
+    elif genome_label == "hg":
+        salmon_label = "hs"
+    elif genome_label == "dr":
+        salmon_label = "dr"
+    elif genome_label == "dm":
+        salmon_label = "dm"
+    else:
+        raise ValueError(f'Unsupported genome label: {config["genome"]["label"]}')
+    return salmon_label
+
 checkpoint salmonTE_quant:
     input:
-        raw_reads_folder.joinpath("{serie}"),
+        get_salmonTE_quant_input
     output:
         directory(salmonTE_folder.joinpath("quant/{serie}")),
         salmonTE_folder.joinpath("quant/{serie}/EXPR.csv"),
@@ -58,8 +92,7 @@ checkpoint salmonTE_quant:
     params:
         # 13/10/2020 available references: hs mm dr dm
         # https://github.com/LiuzLab/SalmonTE#running-the-quant-mode-to-collect-te-expressions
-        # TODO: validate SalmonTE reference genome string
-        reference_genome="mm",
+        reference_genome=lambda w: set_salmonTE_genome(),
     log:
         log_folder.joinpath("salmonTE/{serie}/quant.log"),
     container:
@@ -67,10 +100,23 @@ checkpoint salmonTE_quant:
     threads: 8
     shell:
         """
+        set -x 
+        I=""
+        T=$(mktemp -d)
+        for F in {input}; do
+            BN=$(basename $F)
+            if [[ $BN == *.gz ]]; then
+                gunzip -c $F > $T/${{BN%.gz}}
+                I="$I $T"
+            else
+                I="$I $F"
+            fi
+        done
+
         python /opt/SalmonTE/SalmonTE.py quant \
         --reference={params.reference_genome} \
         --outpath={output[0]} \
-        --num_threads={threads} {input} |& \
+        --num_threads={threads} $I |& \
         tee {log}
         """
 

@@ -2,8 +2,9 @@
 
 FROM curlimages/curl:7.81.0
 WORKDIR /home/curl_user
-RUN curl -LO https://github.com/hyunhwan-jeong/SalmonTE/archive/refs/tags/v0.4.tar.gz && \
-    tar xf v0.4.tar.gz
+RUN curl -LO "https://github.com/hyunhwan-jeong/SalmonTE/archive/refs/heads/main.zip" && \
+    unzip main.zip && \
+    rm -r SalmonTE-main/example SalmonTE-main/test
 
 
 FROM continuumio/miniconda3:23.3.1-0
@@ -27,4 +28,4 @@ RUN conda install -y  \
     # r-rms \
     
 WORKDIR /opt
-COPY --from=0 /home/curl_user/SalmonTE-0.4 ./SalmonTE
+COPY --from=0 /home/curl_user/SalmonTE-main ./SalmonTE

@@ -1,8 +1,3 @@
-# Title     : Differential gene expression analysis with DESeq2
-# Objective : Generate DEG table and visualizations.
-# Created by: Francesco Tabaro
-# Created on: 10/12/20
-
 options(error = quote({
   fn <- "deseq2_emergency_dump"
   dump.frames(dumpto = fn, to.file = TRUE, include.GlobalEnv = TRUE)
@@ -67,13 +62,15 @@ colData <- fread(sample_sheet)
 
 if ("filename" %in% colnames(colData)) {
   libtype <- "single"
-  if (!all(colnames(colData) %in% c("name", "filename", "genotype"))) {
-    stop("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename\" and \"genotype\".\nRemove extensions from filename column.")
+  if (!all(colnames(colData) %in% c("name", "filename", design_variable))) {
+    stop(
+      sprintf("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename\" and \"%s\".\nRemove extensions from filename column.", design_variable)
+    )
   }
 } else if ("filename_1" %in% colnames(colData)) {
   libtype <- "paired"
-  if (!all(colnames(colData) %in% c("name", "filename_1", "filename_2", "genotype"))) {
-    stop("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename_1\", \"filename_2\", and \"genotype\".\nRemove extensions from filename column.")
+  if (!all(colnames(colData) %in% c("name", "filename_1", "filename_2", design_variable))) {
+    stop(sprintf("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename_1\", \"filename_2\", and \"%s\".\nRemove extensions from filename column.", design_variable))
   }
 } else {
   stop(sprintf("Could not determine sequencing library type. From the following column names: %s\nPlease, check your column names. They should be all lower case.", colnames(colData)))
@@ -96,7 +93,7 @@ for (i in seq_along(design_variable)) {
 if (libtype == "single") {
   rownames(colData) <- colData[, "filename"]
 } else {
-  rownames(colData) <- gsub("_1_sequence", "", colData[, "filename_1"])
+  rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])
 }
 
 ## Import STAR counts and generate a count matrix
@@ -153,10 +150,10 @@ if (test_name == "LRT") {
 saveRDS(dds, file = dds_rds_path)
 
 ## Extract results
-results <- results(dds, name = "genotype_KO_vs_WT")
+results <- results(dds, name = resultsNames(dds)[2])
 # saveRDS(results, file = results_rds_path)
 write.csv(results, file = deg_table_path)
 
-results <- lfcShrink(dds, coef = "genotype_KO_vs_WT", type = "apeglm")
+results <- lfcShrink(dds, coef = resultsNames(dds)[2], type = "apeglm")
 # saveRDS(results, file = results_rds_path)
 write.csv(results, file = deg_table_shrink_path)

@@ -8,7 +8,7 @@ rule star_genome_preparation:
         tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
     conda:
         "../env/alignment.yml"
-    threads: 8
+    threads: 4
     log:
         log_folder.joinpath("star/genome_preparation.log"),
     shell:
@@ -187,15 +187,6 @@ rule multiqc_star:
         "../env/qc.yml"
     shell:
         """
-
         set -x
-
-        multiqc --fullnames --dirs --export -f \
-
-        -o {params.multiqc_folder}/{wildcards.serie} \
-
-        {params.fastqc_folder}/{wildcards.serie} \
-
-        {params.star_folder}/{wildcards.serie} |& tee {log}
-
+        multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.star_folder}/{wildcards.serie} |& tee {log}
         """

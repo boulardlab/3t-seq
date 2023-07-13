@@ -1,13 +1,13 @@
 
 
-rule fastqc_raw_se:
+rule fastqc_raw:
     input:
         get_fastq
     output:
         fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
         fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
     params:
-        fastqc_folder=fastqc_raw_folder,
+        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     threads: 2
     conda:
         "../env/qc.yml"
@@ -16,47 +16,67 @@ rule fastqc_raw_se:
     shell:
         """
         set -x
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
         """
 
-
-rule fastqc_raw_pe:
+use rule fastqc_raw as fastqc_raw_pe with:
     input:
-        raw_reads_folder.joinpath("{serie}/{sample}_1_sequence.fq.gz"),
-        raw_reads_folder.joinpath("{serie}/{sample}_2_sequence.fq.gz"),
+        unpack(get_fastq_paired)
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_sequence.fq.gz_fastqc.zip"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_sequence.fq.gz_fastqc.html"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_sequence.fq.gz_fastqc.zip"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_sequence.fq.gz_fastqc.html"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
     params:
-        fastqc_folder=fastqc_raw_folder,
-    threads: 2
-    conda:
-        "../env/qc.yml"
+        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
-    shell:
-        """
-        set -x
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
-        """
+
+
+# rule fastqc_raw_pe:
+#     input:
+#         unpack(get_fastq_paired)
+#     output:
+#         fastqc_raw_folder.joinpath("{serie}", "{sample}_1_sequence.fq.gz_fastqc.zip"),
+#         fastqc_raw_folder.joinpath("{serie}", "{sample}_1_sequence.fq.gz_fastqc.html"),
+#         fastqc_raw_folder.joinpath("{serie}", "{sample}_2_sequence.fq.gz_fastqc.zip"),
+#         fastqc_raw_folder.joinpath("{serie}", "{sample}_2_sequence.fq.gz_fastqc.html"),
+#     params:
+#         fastqc_folder=fastqc_raw_folder,
+#     threads: 2
+#     conda:
+#         "../env/qc.yml"
+#     log:
+#         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
+#     shell:
+#         """
+#         set -x
+#         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.m1} {input.m2}
+#         """
 
 
 def get_fastqc(wildcards):
+    s = get_samples(wildcards, samples)
     if wildcards.serie in library_names_single:
         ret = expand(
-            fastqc_raw_folder.joinpath("{{serie}}/{sample}_fastqc.html"),
-            sample=get_samples(wildcards, samples),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),
+            sample=s,
         )
     else:
-        ret = expand(
-            fastqc_raw_folder.joinpath("{{serie}}/{sample}_1_sequence_fastqc.html"),
-            sample=get_samples(wildcards, samples),
-        ) + expand(
-            fastqc_raw_folder.joinpath("{{serie}}/{sample}_2_sequence_fastqc.html"),
-            sample=get_samples(wildcards, samples),
-        )
+        for m in supported_suffixes:
+            for ext in supported_extensions:
+                m1 = expand(os.path.join(raw_reads_folder, wildcards.serie, "{sample}" + f"{m[0]}.{ext}"), sample = s)
+                m2 = expand(os.path.join(raw_reads_folder, wildcards.serie, "{sample}" + f"{m[1]}.{ext}"), sample = s)
+                
+                if all([os.path.exists(p) for p in m1 + m2]):
+                    ret = expand(
+                        fastqc_raw_folder.joinpath(wildcards.serie, "{sample}" + f"{m[0]}_fastqc.html"), sample=s
+                        ) + expand(
+                            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}" + f"{m[1]}_fastqc.html"), sample=s
+                        )
+                else:
+                    print(m1, m2, "FAIL")
+            
     return ret
 
 

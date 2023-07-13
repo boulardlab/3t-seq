@@ -1,0 +1,6 @@
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+  - wget=1.21.3
+  - gzip

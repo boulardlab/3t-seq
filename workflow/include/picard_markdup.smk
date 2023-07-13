@@ -82,12 +82,6 @@ rule multiqc_markdup:
 
         set -x
 
-        multiqc --fullnames --dirs --export -f \
-
-        -o {params.multiqc_folder}/{wildcards.serie} \
-
-        {params.fastqc_folder}/{wildcards.serie} \
-
-        {params.markdup_folder}/{wildcards.serie} |& tee {log}
+        multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.markdup_folder}/{wildcards.serie} |& tee {log}
 
         """

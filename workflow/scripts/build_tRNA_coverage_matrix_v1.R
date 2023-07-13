@@ -1,5 +1,5 @@
 library(tidyverse)
-coverage_files <- snakemake@input
+coverage_files <- as.character(snakemake@input)
 coverage_files %>%
   map(read_tsv, col_names = FALSE) %>%
   map(select, c(X4, X14)) %>%
