@@ -7,7 +7,7 @@ printshellcmds: True
 show-failed-logs: True
 use-conda: True
 use-singularity: True
-singularity-args: "--no-home --bind /home/francesco/Projects/snakemake-rnaseq"
+singularity-args: "--no-home --bind ~/Projects/snakemake-rnaseq"
 latency-wait: 20
 
 resources:
