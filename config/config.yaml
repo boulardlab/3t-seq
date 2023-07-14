@@ -1,0 +1,49 @@
+sequencing_libraries:
+  - name: GSE78551-subsample
+    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
+    # E.g.
+    #  Name,Filename,Genotype
+    #  s01,some_complicate_filename_s01,WT
+    #  s02,some_complicate_filename_s02,WT
+    #  s03,some_complicate_filename_s03,KO
+    #  s04,some_complicate_filename_s04,KO
+    sample_sheet: ../tests/sample-sheet.csv
+    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
+    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
+    bamCoverage: "--binSize 25 --normalizeUsing None"
+    deseq2:
+      test: Wald
+      variable: cell_type
+
+globals:
+  reads_folder: ../tests/test-datasets-rnaseq/testdata/
+  results_folder: ../tests/results/
+  qc_folder: ../tests/results/qc
+  log_folder: ../tests/results/log
+  references_folder: ../tests/results/references
+  tmp_folder: /tmp
+  analysis_folder: ../tests/results/analysis
+
+genome:
+  label: hg38
+  annotation_type: other
+
+  # URL for genome fasta file
+  fasta_url: https://s3.embl.de/boulard/GRCh38.p13.chr22.fa?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=LJ7ZKXIZLLMABJBTY2T0%2F20230713%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230713T121255Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJMSjdaS1hJWkxMTUFCSkJUWTJUMCIsImV4cCI6MTY4OTI1MTczMSwibGRhcFVzZXIiOiJjbj1GcmFuY2VzY28gVGFiYXJvLGNuPVVzZXJzLGRjPWVtYmwsZGM9b3JnIiwibGRhcFVzZXJuYW1lIjoidGFiYXJvIn0.eOb38Xy0mIPYpbPWETE73njY-knhF-JsgbdxmwcxeWAY9x7RkqhbBqi8V0VGGPQ1tHiQ4O1O2moNi5jT3DmA6Q&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=e7cf5df4cf63c169dcd87290c860b0f027757de363101590c77cdf0151fc58fe
+
+  # URL for genome GTF file
+  gtf_url: https://s3.embl.de/boulard/gencode.v43.chr22.gtf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=LJ7ZKXIZLLMABJBTY2T0%2F20230713%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230713T121233Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJMSjdaS1hJWkxMTUFCSkJUWTJUMCIsImV4cCI6MTY4OTI1MTczMSwibGRhcFVzZXIiOiJjbj1GcmFuY2VzY28gVGFiYXJvLGNuPVVzZXJzLGRjPWVtYmwsZGM9b3JnIiwibGRhcFVzZXJuYW1lIjoidGFiYXJvIn0.eOb38Xy0mIPYpbPWETE73njY-knhF-JsgbdxmwcxeWAY9x7RkqhbBqi8V0VGGPQ1tHiQ4O1O2moNi5jT3DmA6Q&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=c02e1f7dc3d1af80b3d4d215c67d6b4f194e49dbb17c7afb8193d6d5fdb9e9f0
+
+  # Get a RepeatMasker GTF file from UCSC genome browser
+  rmsk_path: /home/francesco/Projects/snakemake-rnaseq/tests/test-datasets-rnaseq/references/rmsk.gtf.gz
+
+  # URL to Gene Ontology association file
+  gaf_url: http://current.geneontology.org/annotations/mgi.gaf.gz
+
+  # URL to GtRNAdb files
+  gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Hsapi38/hg38-tRNAs.tar.gz
+  #gtrnadb_bed: ../../../data/references/tRNA/mm10-tRNAs.bed
+
+deseq2:
+  working_directory: ../../..
+  notebook_path: ../../../src/Rmd/deseq2_viz.rmd
