@@ -4,7 +4,7 @@ rule download_genome_fasta_file:
     params:
         url=config["genome"]["fasta_url"],
     conda:
-        "../env/wget.yml"
+        "../../env/wget.yml"
     log:
         log_folder.joinpath("download/genome/fasta.log"),
     threads: 1
@@ -26,7 +26,7 @@ rule download_genome_annotation_file:
         url=config["genome"]["gtf_url"],
         tmp=config["globals"]["tmp_folder"],
     conda:
-        "../env/wget.yml"
+        "../../env/wget.yml"
     log:
         log_folder.joinpath("download/genome/gtf.log"),
     threads: 1
@@ -41,7 +41,7 @@ rule download_repeatmasker_annotation_file:
     params:
         url=config["genome"]["rmsk_link"],
     conda:
-        "../env/wget.yml"
+        "../../env/wget.yml"
     log:
         log_folder.joinpath("download/genome/rmsk.log"),
     threads: 1
@@ -62,7 +62,7 @@ checkpoint download_gtRNAdb:
     params:
         url=config["genome"]["gtrnadb_url"]
     conda:
-        "../env/wget.yml"
+        "../../env/wget.yml"
     shell:
         """
         mkdir -p {output}
@@ -78,7 +78,7 @@ rule download_gaf_file:
     params:
         url=config["genome"]["gaf_url"],
     conda:
-        "../env/wget.yml"
+        "../../env/wget.yml"
     log:
         log_folder.joinpath("download/genome/gaf.log"),
     threads: 4

@@ -7,7 +7,7 @@ rule star_genome_preparation:
     params:
         tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     threads: 4
     log:
         log_folder.joinpath("star/genome_preparation.log"),
@@ -52,7 +52,7 @@ rule star:
         others=lambda wildcards: get_params(wildcards, "star"),
         mem_mb=giga_to_byte(32),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     log:
         log_folder.joinpath("star/{serie}/{sample}.log"),
     shell:
@@ -109,9 +109,9 @@ rule fastqc_star:
     threads: 2
     conda:
         # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
+        "../../env/qc.yml"
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     log:
         log_folder.joinpath("fastqc_star/{serie}/{sample}.log"),
     shell:
@@ -161,7 +161,7 @@ rule index_bam:
     log:
         log_folder.joinpath("index-bam/{serie}/{sample}.log"),
     conda:
-        "../env/samtools.yml"
+        "../../env/samtools.yml"
     shell:
         """
 
@@ -184,7 +184,7 @@ rule multiqc_star:
         log_folder.joinpath("multiqc-star", "multiqc-{serie}.log"),
     conda:
         # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
+        "../../env/qc.yml"
     shell:
         """
         set -x

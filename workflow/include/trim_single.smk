@@ -18,7 +18,7 @@ rule trimmomatic_pe:
     log:
         log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),
     conda:
-        "../env/trimmomatic.yml"
+        "../../env/trimmomatic.yml"
     shell:
         """
         trimmomatic PE \
@@ -45,7 +45,7 @@ rule trimmomatic_se:
     log:
         log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
     conda:
-        "../env/trimmomatic.yml"
+        "../../env/trimmomatic.yml"
     shell:
         """
         trimmomatic SE \
@@ -83,7 +83,7 @@ rule fastqc_trim:
         fastqc_folder=fastqc_trim_folder,
     threads: 2
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     log:
         log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
     shell:
@@ -110,7 +110,7 @@ rule fastqc_trim_pe:
         fastqc_folder=fastqc_trim_folder,
     threads: 2
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     log:
         log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
     shell:
@@ -158,7 +158,7 @@ rule multiqc_trim:
     log:
         log_folder.joinpath("multiqc-trim", "multiqc-{serie}.log"),
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     shell:
         """
         set -x

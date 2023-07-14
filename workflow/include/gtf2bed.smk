@@ -7,7 +7,7 @@ rule gtf2bed:
     log:
         log_folder.joinpath("samtools_view/bed2gtf.log"),
     conda:
-        "../env/samtools.yml"
+        "../../env/samtools.yml"
     shell:
         """
         IN={input}

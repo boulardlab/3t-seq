@@ -27,7 +27,7 @@ container: "docker://condaforge/mambaforge:latest"
 ################
 
 
-configfile: "config.yaml"
+configfile: "config/config.yaml"
 
 
 ############
@@ -242,8 +242,6 @@ for library in libraries:
 library_names_single = list(samples["single"].keys())
 library_names_paired = list(samples["paired"].keys())
 
-pp(samples)
-
 supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
 supported_suffixes = [
     ("_1", "_2"),
@@ -276,9 +274,15 @@ init_folders = [
 
 
 onstart:
+    import json
+    from rich import print_json
+
     for folder in init_folders:
         mkdir(folder)
 
+    print_json(json.dumps(config))
+
+    print_json(json.dumps(samples))
 
 ############
 ## RULES

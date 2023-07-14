@@ -10,7 +10,7 @@ rule fastqc_raw:
         fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     threads: 2
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
     shell:
@@ -45,7 +45,7 @@ use rule fastqc_raw as fastqc_raw_pe with:
 #         fastqc_folder=fastqc_raw_folder,
 #     threads: 2
 #     conda:
-#         "../env/qc.yml"
+#         "../../env/qc.yml"
 #     log:
 #         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
 #     shell:
@@ -89,7 +89,7 @@ rule multiqc_raw:
     log:
         log_folder.joinpath("multiqc-raw", "multiqc-{serie}.log"),
     conda:
-        "../env/qc.yml"
+        "../../env/qc.yml"
     shell:
         """
         set -x

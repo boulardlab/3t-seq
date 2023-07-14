@@ -13,7 +13,7 @@ rule starTE_random:
         tmp_folder=tmp_folder,
         mem_mb=giga_to_byte(32),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     log:
         log_folder.joinpath("starTE/random/{serie}/{sample}.log"),
     shell:
@@ -74,7 +74,7 @@ rule featureCounts_random:
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/random.log"),
     threads: 4
@@ -99,7 +99,7 @@ rule starTE_multihit:
         tmp_folder=tmp_folder,
         mem_mb=giga_to_byte(32),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     log:
         log_folder.joinpath("starTE/{serie}/multihit/{sample}.log"),
     shell:
@@ -149,7 +149,7 @@ rule starTE_multihit:
 rule featureCounts_multihit:
     input:
         bam=lambda wildcards: expand(
-            starTE_folder.joinpath("{serie}/filter/random/{sample}.TEonly.bam"),
+            starTE_folder.joinpath("{serie}/filter/multihit/{sample}.TEonly.bam"),
             serie=wildcards.serie,
             sample=samples["single"][wildcards.serie]
             if wildcards.serie in samples["single"]
@@ -159,7 +159,7 @@ rule featureCounts_multihit:
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),
     conda:
-        "../env/alignment.yml"
+        "../../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/multihit.log"),
     threads: 4
