@@ -7,7 +7,7 @@ sequencing_libraries:
     #  s02,some_complicate_filename_s02,WT
     #  s03,some_complicate_filename_s03,KO
     #  s04,some_complicate_filename_s04,KO
-    sample_sheet: tests/sample-sheet.csv
+    sample_sheet: sample-sheet.csv
     trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
     star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
     bamCoverage: "--binSize 25 --normalizeUsing None"
@@ -16,13 +16,13 @@ sequencing_libraries:
       variable: cell_type
 
 globals:
-  reads_folder: tests
-  results_folder: tests/results/
-  qc_folder: tests/results/qc
-  log_folder: tests/results/log
-  references_folder: tests/results/references
+  reads_folder: .
+  results_folder: results/
+  qc_folder: results/qc
+  log_folder: results/log
+  references_folder: results/references
   tmp_folder: /tmp
-  analysis_folder: tests/results/analysis
+  analysis_folder: results/analysis
 
 genome:
   label: hg38
