@@ -1,6 +1,6 @@
 FROM condaforge/mambaforge:latest
 LABEL io.github.snakemake.containerized="true"
-LABEL io.github.snakemake.conda_env_hash="307216c2e491acb1e8c991883cf9f63f8886a4ffb4236f00589097f6db6d6d94"
+LABEL io.github.snakemake.conda_env_hash="be0892cdcc49993a006d749840927a7cda01d4691367a1f13992e78d465fc02e"
 
 # Step 1: Retrieve conda environments
 
@@ -68,6 +68,16 @@ RUN mkdir -p /conda-envs/2f716f46231f821a5e905c39c6060cff
 COPY env/deeptools.yml /conda-envs/2f716f46231f821a5e905c39c6060cff/environment.yaml
 
 # Conda environment:
+#   source: env/pandas.yml
+#   prefix: /conda-envs/4cbe6e4a8fd33debbcca31573b178d17
+#   channels:
+#     - anaconda
+#   dependencies:
+#     - pandas
+RUN mkdir -p /conda-envs/4cbe6e4a8fd33debbcca31573b178d17
+COPY env/pandas.yml /conda-envs/4cbe6e4a8fd33debbcca31573b178d17/environment.yaml
+
+# Conda environment:
 #   source: env/picard.yml
 #   prefix: /conda-envs/5802f2d84ae022c00e054e6c16564f06
 #   channels:
@@ -130,6 +140,7 @@ RUN mamba env create --prefix /conda-envs/40cdd57d2470dfd817a34e1ec7edeaa4 --fil
     mamba env create --prefix /conda-envs/8e96037ab9b9dd95318e6dde69e1b470 --file /conda-envs/8e96037ab9b9dd95318e6dde69e1b470/environment.yaml && \
     mamba env create --prefix /conda-envs/7548059a7c044c6fa179ed2c582570cb --file /conda-envs/7548059a7c044c6fa179ed2c582570cb/environment.yaml && \
     mamba env create --prefix /conda-envs/2f716f46231f821a5e905c39c6060cff --file /conda-envs/2f716f46231f821a5e905c39c6060cff/environment.yaml && \
+    mamba env create --prefix /conda-envs/4cbe6e4a8fd33debbcca31573b178d17 --file /conda-envs/4cbe6e4a8fd33debbcca31573b178d17/environment.yaml && \
     mamba env create --prefix /conda-envs/5802f2d84ae022c00e054e6c16564f06 --file /conda-envs/5802f2d84ae022c00e054e6c16564f06/environment.yaml && \
     mamba env create --prefix /conda-envs/86f8c98916543a9e87d4bc2611d26536 --file /conda-envs/86f8c98916543a9e87d4bc2611d26536/environment.yaml && \
     mamba env create --prefix /conda-envs/0b7012a9a9c4bff84185eb9d96cb0332 --file /conda-envs/0b7012a9a9c4bff84185eb9d96cb0332/environment.yaml && \
