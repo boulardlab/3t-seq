@@ -34,7 +34,7 @@ checkpoint salmonTE_quant:
     log:
         log_folder.joinpath("salmonTE/{serie}/quant.log"),
     container:
-        "docker://registry.git.embl.de/tabaro/snakemake-rna-seq/salmonte:latest"
+        "docker://ftabaro/salmonte:latest"
     threads: 8
     shell:
         """
