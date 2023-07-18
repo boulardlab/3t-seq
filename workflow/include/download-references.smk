@@ -34,7 +34,6 @@ rule download_genome_annotation_file:
         "../scripts/download-gtf.sh"
 
 
-
 rule download_repeatmasker_annotation_file:
     output:
         rmsk_path,
@@ -60,7 +59,9 @@ checkpoint download_gtRNAdb:
     output:
         directory(tRNA_annotation_dir),
     params:
-        url=config["genome"]["gtrnadb_url"]
+        url=config["genome"]["gtrnadb_url"],
+    log:
+        log_folder.joinpath("download/gtrnadb.log"),    
     conda:
         "../../env/wget.yml"
     shell:
@@ -68,9 +69,10 @@ checkpoint download_gtRNAdb:
         mkdir -p {output}
         cd {output}
         F=$(basename {params.url})
-        wget -q {params.url}
-        tar xf $F
+        wget -q {params.url} |& tee {log}
+        tar xvf $F |& tee -a {log}
         """
+
 
 rule download_gaf_file:
     output:

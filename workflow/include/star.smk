@@ -32,7 +32,7 @@ rule star_genome_preparation:
 
 rule star:
     input:
-        get_star_input,
+        bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
@@ -60,12 +60,6 @@ rule star:
          set -x
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
 
-         if [ {params.libtype} == "SINGLE" ]; then
-            INPUTARG="{input[0]}"
-         else
-            INPUTARG="{input[0]} {input[1]}"
-         fi
-
          STAR --quantMode TranscriptomeSAM GeneCounts \
          --outTmpDir $TMP_FOLDER \
          --outSAMtype BAM SortedByCoordinate \
@@ -76,7 +70,7 @@ rule star:
          --genomeDir {input.star_index_folder} \
          --readFilesCommand zcat \
          --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/{wildcards.sample}. \
-         --readFilesIn $INPUTARG \
+         --readFilesIn {input.bam} \
          --limitBAMsortRAM {params.mem_mb} \
          --genomeLoad NoSharedMemory \
          --outSAMunmapped Within \
@@ -123,21 +117,6 @@ rule fastqc_star:
 
         """
 
-
-def get_star_stats(wildcards):
-    return expand(
-        star_folder.joinpath("{{serie}}/{sample}.Log.final.out"),
-        sample=get_samples(wildcards, samples),
-    )
-
-
-def get_star_fastqc(wildcards):
-    return expand(
-        fastqc_star_folder.joinpath(
-            "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.html"
-        ),
-        sample=get_samples(wildcards, samples),
-    )
 
 rule verify_star:
     input:

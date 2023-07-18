@@ -1,6 +1,6 @@
 rule starTE_random:
     input:
-        get_star_input,
+        bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
     output:
         starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
@@ -23,12 +23,6 @@ rule starTE_random:
          echo 'tmp: $TMP_FOLDER'
          sleep 10
          
-         if [ {params.libtype} == "SINGLE" ]; then
-            INPUTARG="{input[0]}"
-         else
-            INPUTARG="{input[0]} {input[1]}"
-         fi
-
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
@@ -53,13 +47,14 @@ rule starTE_random:
             --runThreadN {threads} \
             --genomeDir {input.star_index_folder} \
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
-            --readFilesIn $INPUTARG \
+            --readFilesIn {input.bam} \
             --limitBAMsortRAM {params.mem_mb} \
             --outBAMcompression -1 |& \
          tee {log}
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
 
 rule featureCounts_random:
     input:
@@ -83,6 +78,7 @@ rule featureCounts_random:
          set -x
          featureCounts -M -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} {input.bam}
          """
+
 
 rule starTE_multihit:
     input:
@@ -108,13 +104,7 @@ rule starTE_multihit:
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
          echo 'tmp: $TMP_FOLDER'
          sleep 10
-         
-         if [ {params.libtype} == "SINGLE" ]; then
-            INPUTARG="{input[0]}"
-         else
-            INPUTARG="{input[0]} {input[1]}"
-         fi
-         
+                  
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
@@ -137,7 +127,7 @@ rule starTE_multihit:
             --genomeDir {input.star_index_folder} \
             --readFilesCommand zcat \
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/multihit/{wildcards.sample}. \
-            --readFilesIn $INPUTARG \
+            --readFilesIn {input.bam} \
             --limitBAMsortRAM {params.mem_mb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1 |& \
@@ -145,6 +135,7 @@ rule starTE_multihit:
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
 
 rule featureCounts_multihit:
     input:

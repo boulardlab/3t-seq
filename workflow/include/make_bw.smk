@@ -1,7 +1,7 @@
 rule coverage:
     input:
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
+        bam=star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        bai=star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
     output:
         star_folder.joinpath("{serie}", "{sample}.bw"),
     conda:
@@ -14,7 +14,7 @@ rule coverage:
     shell:
         """
 
-        bamCoverage -b {input[0]} \
+        bamCoverage -b {input.bam} \
         -o {output} -of bigwig \
         -p {threads} \
         --effectiveGenomeSize 2652783500 \

@@ -4,8 +4,8 @@ rule picard_markdup:
     input:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
-        markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
-        markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
+        bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
+        stats=markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
     log:
         log_folder.joinpath("picard/{serie}/{sample}.log"),
     threads: 2
@@ -17,8 +17,8 @@ rule picard_markdup:
 
         picard MarkDuplicates \
         I={input} \
-        O={output[0]} \
-        M={output[1]} |& \
+        O={output.bam} \
+        M={output.stats} |& \
         tee {log}
         """
 
@@ -47,20 +47,6 @@ rule fastqc_markdup:
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
 
         """
-
-
-def get_markdup_bam(wildcards):
-    return expand(
-        markdup_folder.joinpath("{{serie}}/{sample}.markdup.bam"),
-        sample=get_samples(wildcards, samples),
-    )
-
-
-def get_markdup_fastqc(wildcards):
-    return expand(
-        fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.html"),
-        sample=get_samples(wildcards, samples),
-    )
 
 
 rule multiqc_markdup:
