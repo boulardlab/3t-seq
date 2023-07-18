@@ -68,7 +68,7 @@ rule salmonTE_test:
     log:
         log_folder.joinpath("salmonTE/{serie}/test_de.log"),
     container:
-        "docker://registry.git.embl.de/tabaro/snakemake-rna-seq/salmonte:latest"
+        "docker://ftabaro/salmonte:latest"
     shell:
         """
         python /opt/SalmonTE/SalmonTE.py test \
