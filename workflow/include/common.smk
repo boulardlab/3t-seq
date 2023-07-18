@@ -168,10 +168,7 @@ def get_salmonTE_quant_input(wildcards):
             for mate in ["_1", "_2"]
         ]
     for extension in supported_extensions:
-        candidates = expand(
-            raw_reads_folder.joinpath(wildcards.serie, f"{wildcards.sample}.{extension}"),
-            sample=s,
-        )
+        candidates = [ raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}") for sample in s ]
         if all([os.path.exists(f) for f in candidates]):
             break
 
@@ -264,25 +261,13 @@ def get_fastqc(wildcards):
     else:
         for m in supported_suffixes:
             for ext in supported_extensions:
-                m1 = expand(
-                    os.path.join(
-                        raw_reads_folder, wildcards.serie, f"{wildcards.sample}{m[0]}.{ext}"
-                    ),
-                    sample=s,
-                )
-                m2 = expand(
-                    os.path.join(
-                        raw_reads_folder, wildcards.serie, f"{wildcards.sample}{m[1]}.{ext}"
-                    ),
-                    sample=s,
-                )
+                m1 = [os.path.join(raw_reads_folder, wildcards.serie, f"{sample}{m[0]}.{ext}") for sample in s]
+                m2 = [os.path.join(raw_reads_folder, wildcards.serie, f"{sample}{m[1]}.{ext}") for sample in s]
 
                 if all([os.path.exists(p) for p in m1 + m2]):
-                    ret = [
-                        *expand(fastqc_raw_folder.joinpath(wildcards.serie, f"{wildcards.sample}{m[0]}_fastqc.html"
-                        ),
-                        sample=s), 
-                        *expand(fastqc_raw_folder.joinpath(wildcards.serie, f"{wildcards.sample}{m[1]}_fastqc.html"),
-                        sample=s)]
+                    ret = [ 
+                        *[ fastqc_raw_folder.joinpath(wildcards.serie, f"{sample}{m[0]}_fastqc.html") for sample in s ],
+                        *[ fastqc_raw_folder.joinpath(wildcards.serie, f"{sample}{m[1]}_fastqc.html") for sample in s ]
+                        ]
 
     return ret
