@@ -24,13 +24,13 @@ sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 
 joined = sample_sheet.join(salmon_condition_sheet)
 
-levels = joined[params.variable].tolist()
+levels = joined[snakemake.params.variable].tolist()
 levels = list(set(levels))
 control_level = levels[0]
 
 joined["condition"] = joined.apply(
     lambda row: "control"
-    if row[params.variable] == control_level
+    if row[snakemake.params.variable] == control_level
     else "treatment",
     axis=1,
 )
