@@ -19,7 +19,8 @@ def get_filename(link, decompress=False, stem=False):
 
     # remove .gz
     if decompress and str(basename).endswith(".gz"):
-        basename = basename.replace(".gz", "")
+        basename = str(basename).replace(".gz", "")
+        basename = Path(basename)
 
     return basename
 

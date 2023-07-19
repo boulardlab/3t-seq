@@ -38,7 +38,7 @@ rule download_repeatmasker_annotation_file:
     output:
         rmsk_path,
     params:
-        url=config["genome"]["rmsk_link"],
+        url=config["genome"]["rmsk_url"],
     conda:
         "../env/wget.yml"
     log:
