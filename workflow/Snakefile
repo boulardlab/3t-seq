@@ -89,8 +89,6 @@ rmsk_path = references_folder.joinpath(
 )
 rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
 
-rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
-
 gaf_path = references_folder.joinpath(
     get_filename(config["genome"]["gaf_url"], decompress=False)
 )
