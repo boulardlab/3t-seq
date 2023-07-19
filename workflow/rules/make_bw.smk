@@ -5,7 +5,7 @@ rule coverage:
     output:
         star_folder.joinpath("{serie}", "{sample}.bw"),
     conda:
-        "../../env/deeptools.yml"
+        "../env//deeptools.yml"
     params:
         others=lambda wildcards: get_params(wildcards, "bamCoverage"),
     threads: 2

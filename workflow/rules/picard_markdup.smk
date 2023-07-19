@@ -10,7 +10,7 @@ rule picard_markdup:
         log_folder.joinpath("picard/{serie}/{sample}.log"),
     threads: 2
     conda:
-        "../../env/picard.yml"
+        "../env//picard.yml"
     shell:
         """
         set -x
@@ -34,9 +34,9 @@ rule fastqc_markdup:
     threads: 2
     conda:
         # paths to singularity images cannot be PosixPath
-        "../../env/qc.yml"
+        "../env//qc.yml"
     conda:
-        "../../env/qc.yml"
+        "../env//qc.yml"
     log:
         log_folder.joinpath("fastqc_markdup/{serie}/{sample}.log"),
     shell:
@@ -62,7 +62,7 @@ rule multiqc_markdup:
     log:
         log_folder.joinpath("multiqc-markdup", "multiqc-{serie}.log"),
     conda:
-        "../../env/qc.yml"
+        "../env//qc.yml"
     shell:
         """
 

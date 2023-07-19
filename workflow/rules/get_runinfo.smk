@@ -2,7 +2,7 @@ checkpoint get_runinfo:
     output:
         data_folder.joinpath("{serie}_sra.csv"),
     conda:
-        "../../env/ncbi.yml"
+        "../env//ncbi.yml"
     log:
         log_folder.joinpath("download/{serie}/runinfo.log"),
     shell:

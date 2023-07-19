@@ -4,7 +4,7 @@ rule subset_gtf:
     output:
         rdata_folder.joinpath("deseq2/ann.rds"),
     conda:
-        "../../env/R.yml"
+        "../env//R.yml"
     log:
         log_folder.joinpath("R/subset_gtf.log"),
     script:
@@ -34,7 +34,7 @@ rule deseq2:
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
     conda:
-        "../../env/R.yml"
+        "../env//R.yml"
     log:
         log_folder.joinpath("R/{serie}/deseq2.log"),
     script:
@@ -57,7 +57,7 @@ rule deseq2:
 #         output_dir=notebooks_folder,
 #         annotation_type=config["genome"]["annotation_type"],
 #     conda:
-#         "../../env/R.yml"
+#         "../env//R.yml"
 #     log:
 #         log_folder.joinpath("R/{serie}/deseq2_report.log"),
 #     shell:
