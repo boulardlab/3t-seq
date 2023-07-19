@@ -61,7 +61,7 @@ checkpoint download_gtRNAdb:
     params:
         url=config["genome"]["gtrnadb_url"],
     log:
-        log_folder.joinpath("download/gtrnadb.log"),    
+        log_folder.joinpath("download/gtrnadb.log"),
     conda:
         "../env/wget.yml"
     shell:

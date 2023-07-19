@@ -22,7 +22,9 @@ rule mk_genome_tsv:
 rule coverage_trna:
     input:
         bam=star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam"),
-        bai=star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam.bai"),
+        bai=star_folder.joinpath(
+            "{serie}", "{sample}.Aligned.sortedByCoord.out.bam.bai"
+        ),
         genome=star_folder.joinpath("{serie}", "{sample}.genome"),
         annotation=get_tRNA_annotation_file,
     output:

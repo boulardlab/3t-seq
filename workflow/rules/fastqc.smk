@@ -34,8 +34,6 @@ use rule fastqc_raw as fastqc_raw_pe with:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
 
 
-
-
 rule multiqc_raw:
     input:
         get_fastqc,

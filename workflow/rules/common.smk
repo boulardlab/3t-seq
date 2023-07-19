@@ -169,7 +169,10 @@ def get_salmonTE_quant_input(wildcards):
             for mate in ["_1", "_2"]
         ]
     for extension in supported_extensions:
-        candidates = [ raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}") for sample in s ]
+        candidates = [
+            raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}")
+            for sample in s
+        ]
         if all([os.path.exists(f) for f in candidates]):
             break
 
@@ -237,13 +240,16 @@ def get_trimmomatic_stats(wildcards):
 def get_trimmed_fastqc(wildcards):
     s = wildcards.serie
     if s in library_names_paired:
-        ret = [ *expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.html"),
-            sample=get_samples(wildcards, samples),
-        ), *expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.html"),
-            sample=get_samples(wildcards, samples),
-        )]
+        ret = [
+            *expand(
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.html"),
+                sample=get_samples(wildcards, samples),
+            ),
+            *expand(
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.html"),
+                sample=get_samples(wildcards, samples),
+            ),
+        ]
     else:
         ret = expand(
             fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),
@@ -262,13 +268,33 @@ def get_fastqc(wildcards):
     else:
         for m in supported_suffixes:
             for ext in supported_extensions:
-                m1 = [os.path.join(raw_reads_folder, wildcards.serie, f"{sample}{m[0]}.{ext}") for sample in s]
-                m2 = [os.path.join(raw_reads_folder, wildcards.serie, f"{sample}{m[1]}.{ext}") for sample in s]
+                m1 = [
+                    os.path.join(
+                        raw_reads_folder, wildcards.serie, f"{sample}{m[0]}.{ext}"
+                    )
+                    for sample in s
+                ]
+                m2 = [
+                    os.path.join(
+                        raw_reads_folder, wildcards.serie, f"{sample}{m[1]}.{ext}"
+                    )
+                    for sample in s
+                ]
 
                 if all([os.path.exists(p) for p in m1 + m2]):
-                    ret = [ 
-                        *[ fastqc_raw_folder.joinpath(wildcards.serie, f"{sample}{m[0]}_fastqc.html") for sample in s ],
-                        *[ fastqc_raw_folder.joinpath(wildcards.serie, f"{sample}{m[1]}_fastqc.html") for sample in s ]
-                        ]
+                    ret = [
+                        *[
+                            fastqc_raw_folder.joinpath(
+                                wildcards.serie, f"{sample}{m[0]}_fastqc.html"
+                            )
+                            for sample in s
+                        ],
+                        *[
+                            fastqc_raw_folder.joinpath(
+                                wildcards.serie, f"{sample}{m[1]}_fastqc.html"
+                            )
+                            for sample in s
+                        ],
+                    ]
 
     return ret
