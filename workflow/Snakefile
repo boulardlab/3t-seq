@@ -33,7 +33,7 @@ configfile: "config/config.yaml"
 ## INCLUDE COMMON FUNCTIONS
 #############################
 
-include: "include/common.smk"
+include: "rules/common.smk"
 
 #######################
 ## DEFINE VARIABLES
@@ -176,18 +176,18 @@ wildcard_constraints:
 
 
 
-include: "include/download-references.smk"
-include: "include/fastqc.smk"
-include: "include/trim_single.smk"
-include: "include/star.smk"
-include: "include/deseq2.smk"
-include: "include/salmonTE.smk"
-include: "include/starTE.smk"
-include: "include/filter_bam.smk"
-include: "include/gtf2bed.smk"
-include: "include/picard_markdup.smk"
-include: "include/make_bw.smk"
-include: "include/coverage_tRNA.smk"
+include: "rules/download-references.smk"
+include: "rules/fastqc.smk"
+include: "rules/trim_single.smk"
+include: "rules/star.smk"
+include: "rules/deseq2.smk"
+include: "rules/salmonTE.smk"
+include: "rules/starTE.smk"
+include: "rules/filter_bam.smk"
+include: "rules/gtf2bed.smk"
+include: "rules/picard_markdup.smk"
+include: "rules/make_bw.smk"
+include: "rules/coverage_tRNA.smk"
 
 
 rule all:
