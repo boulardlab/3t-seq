@@ -10,7 +10,7 @@ rule mk_genome_tsv:
     output:
         star_folder.joinpath("{serie}", "{sample}.genome"),
     conda:
-        "../env//samtools.yml"
+        "../env/samtools.yml"
     log:
         log_folder.joinpath("mk_genome_tsv/{serie}/{sample}.log"),
     shell:
@@ -28,7 +28,7 @@ rule coverage_trna:
     output:
         trna_coverage_folder.joinpath("{serie}", "{sample}.bed"),
     conda:
-        "../env//bedtools.yml"
+        "../env/bedtools.yml"
     log:
         log_folder.joinpath("bedtools-trna/{serie}/{sample}.log"),
     shell:
@@ -49,7 +49,7 @@ rule build_trna_coverage_matrix:
     output:
         trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
     conda:
-        "../env//R.yml"
+        "../env/R.yml"
     log:
         log_folder.joinpath("bedtools-trna/build_trna_coverage_matrix-{serie}.log"),
     script:

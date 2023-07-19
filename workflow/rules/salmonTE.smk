@@ -13,7 +13,7 @@ rule edit_condition_file:
     log:
         log_folder.joinpath("salmonTE/{serie}/edit_condition.log"),
     conda:
-        "../env//pandas.yml"
+        "../env/pandas.yml"
     script:
         "../scripts/edit_condition_file.py"
 

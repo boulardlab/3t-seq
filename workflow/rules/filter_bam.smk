@@ -8,7 +8,7 @@ rule filter_bam:
         log_folder.joinpath("samtools_view/{serie}/{method}/{sample}.log"),
     threads: 2
     conda:
-        "../env//samtools.yml"
+        "../env/samtools.yml"
     shell:
         """
         set -x
