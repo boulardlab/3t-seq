@@ -29,11 +29,14 @@ container: "docker://condaforge/mambaforge:latest"
 
 configfile: "config/config.yaml"
 
+
 #############################
 ## INCLUDE COMMON FUNCTIONS
 #############################
 
+
 include: "rules/common.smk"
+
 
 #######################
 ## DEFINE VARIABLES
@@ -173,7 +176,6 @@ wildcard_constraints:
     se_serie="|".join(library_names_single),
     pe_serie="|".join(library_names_paired),
     method="multihit|random",
-
 
 
 include: "rules/download-references.smk"
