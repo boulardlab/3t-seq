@@ -14,13 +14,6 @@ from snakemake.utils import min_version
 
 min_version("7.21.0")
 
-#################################################
-## CONTAINER
-#################################################
-
-
-# container: "docker://condaforge/mambaforge:latest"
-
 
 ################
 ## CONFIG FILE
@@ -91,8 +84,12 @@ gtf_path = references_folder.joinpath(
     get_filename(config["genome"]["gtf_url"], decompress=True)
 )
 
-rmsk_path = Path(config["genome"]["rmsk_path"])
-config["genome"]["rmsk_link"] = None
+config["genome"]["rmsk_url"] = None
+rmsk_path = references_folder.joinpath(
+    get_filename(config["genome"]["rmsk_url"], decompress=True)
+)
+rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
+
 rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
 
 gaf_path = references_folder.joinpath(
