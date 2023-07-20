@@ -29,13 +29,13 @@ genome:
   annotation_type: other
 
   # URL for genome fasta file
-  fasta_url: https://s3.embl.de/boulard/GRCh38.p13.chr22.fa?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=LJ7ZKXIZLLMABJBTY2T0%2F20230713%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230713T121255Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJMSjdaS1hJWkxMTUFCSkJUWTJUMCIsImV4cCI6MTY4OTI1MTczMSwibGRhcFVzZXIiOiJjbj1GcmFuY2VzY28gVGFiYXJvLGNuPVVzZXJzLGRjPWVtYmwsZGM9b3JnIiwibGRhcFVzZXJuYW1lIjoidGFiYXJvIn0.eOb38Xy0mIPYpbPWETE73njY-knhF-JsgbdxmwcxeWAY9x7RkqhbBqi8V0VGGPQ1tHiQ4O1O2moNi5jT3DmA6Q&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=e7cf5df4cf63c169dcd87290c860b0f027757de363101590c77cdf0151fc58fe
+  fasta_url: https://s3.embl.de/boulard/GRCh38.p13.chr22.fa
 
   # URL for genome GTF file
-  gtf_url: https://s3.embl.de/boulard/gencode.v43.chr22.gtf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=TE54QSS69RR3AD8NZJYV%2F20230719%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230719T134343Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJURTU0UVNTNjlSUjNBRDhOWkpZViIsImV4cCI6MTY4OTc3Nzc0NCwibGRhcFVzZXIiOiJjbj1GcmFuY2VzY28gVGFiYXJvLGNuPVVzZXJzLGRjPWVtYmwsZGM9b3JnIiwibGRhcFVzZXJuYW1lIjoidGFiYXJvIn0.8xGjPrlr56v2k9ONOrPWhe_swNoVsOcFnl53Qp91uXOSPrXYKVOBf_tCWWhSJ7hfDqKYxLTf6-ThN2_6dOBA2g&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=9fd6b830c518389140a687f4f871c93f05fd2525bc4bd1f27e77e89269ea1e7a
+  gtf_url: https://s3.embl.de/boulard/gencode.v43.chr22.gtf
 
   # Get a RepeatMasker GTF file from UCSC genome browser
-  rmsk_url: https://s3.embl.de/boulard/rmsk.gtf.gz?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=TE54QSS69RR3AD8NZJYV%2F20230719%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Date=20230719T134229Z&X-Amz-Expires=604800&X-Amz-Security-Token=eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3NLZXkiOiJURTU0UVNTNjlSUjNBRDhOWkpZViIsImV4cCI6MTY4OTc3Nzc0NCwibGRhcFVzZXIiOiJjbj1GcmFuY2VzY28gVGFiYXJvLGNuPVVzZXJzLGRjPWVtYmwsZGM9b3JnIiwibGRhcFVzZXJuYW1lIjoidGFiYXJvIn0.8xGjPrlr56v2k9ONOrPWhe_swNoVsOcFnl53Qp91uXOSPrXYKVOBf_tCWWhSJ7hfDqKYxLTf6-ThN2_6dOBA2g&X-Amz-SignedHeaders=host&versionId=null&X-Amz-Signature=9522171726010d130bafcfd340889c9fc54e75f330882f95754f90ae2beee29e
+  rmsk_url: https://s3.embl.de/boulard/rmsk.gtf.gz
 
   # URL to Gene Ontology association file
   gaf_url: http://current.geneontology.org/annotations/mgi.gaf.gz
