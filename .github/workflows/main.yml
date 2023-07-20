@@ -44,6 +44,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
+          lfs: true
       - name: Test workflow
         uses: snakemake/snakemake-github-action@v1.22.0
         with:
