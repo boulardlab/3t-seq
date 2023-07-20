@@ -82,7 +82,7 @@ rule featureCounts_random:
 
 rule starTE_multihit:
     input:
-        get_star_input,
+        bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
     threads: 8
     output:

@@ -11,22 +11,23 @@ rule gtf2bed:
     shell:
         """
         IN={input}
-        if [[ ${{IN: -3}} == ".gz" ]]; then
-            gunzip -c $IN > temp.gtf
+        if [[ "$IN" = *.gz ]]; then
+            T=$(mktemp -u)
+            gunzip -c $IN > $T
         else
-            ln -s $IN temp.gtf
+            T="$IN"
         fi
         
-        gtfToGenePred temp.gtf temp.genePred
+        gtfToGenePred $T temp.genePred
         genePredToBed temp.genePred tmp.bed 
         
         OUT={output}
-        if [[ ${{OUT: -3}} == ".gz" ]]; then
+        if [[ $OUT = *.gz ]]; then
             gzip -c tmp.bed > $OUT
             rm tmp.bed            
         else
             mv tmp.bed $OUT
-        fi        
+        fi
         
-        rm temp.gtf temp.genePred
+        rm temp.genePred
         """
