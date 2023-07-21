@@ -60,7 +60,7 @@ jobs:
           mamba install -c conda-forge -c bioconda snakemake singularity
       - name: Run workflow
         run: |
-          snakemake --directory tests --configfile tests/config --profile tests/profile --snakefile workflow/Snakefile
+          snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
 
   contanerize:
     runs-on: ubuntu-latest
