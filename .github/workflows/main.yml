@@ -44,12 +44,23 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-      - name: Test workflow
-        uses: snakemake/snakemake-github-action@v1.22.0
+          lfs: true
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v2
         with:
-          directory: tests
-          snakefile: workflow/Snakefile
-          args: "--configfile tests/config.yaml --profile tests/profile"
+          python-version: 3.11
+      - name: Add Conda to system path
+        run: |
+          echo $CONDA/bin >> $GITHUB_PATH    
+      - name: Install dependencies
+        run: |
+          conda install -c conda-forge mamba
+      - name: Setup snakemake
+        run: |
+          mamba install -c conda-forge -c bioconda snakemake singularity
+      - name: Run workflow
+        run: |
+          snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
 
   contanerize:
     runs-on: ubuntu-latest

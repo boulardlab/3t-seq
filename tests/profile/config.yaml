@@ -1,6 +1,6 @@
 use-conda: True
 use-singularity: True
-singularity-args: "--fakeroot --userns"
+singularity-args: ""
 show-failed-logs: True
 cores: 2
 conda-cleanup-pkgs: cache
