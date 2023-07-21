@@ -33,16 +33,8 @@ rule coverage_trna:
         "../env/bedtools.yml"
     log:
         log_folder.joinpath("bedtools-trna/{serie}/{sample}.log"),
-    shell:
-        """
-        set -x 
-        SORTED=$(mktemp)
-        JOINED=$(join -o 1.1 <(awk '{{print $1}}' {input.genome} | sort -u) <(awk '{{print $1}}' {input.bai} | sort -u)) 
-        awk -v j="$JOINED" '$1~j' {input.genome} | grep -v 'chrUn' | bedtools sort -faidx {input.bai} -i - > $SORTED
-        
-        bedtools coverage -g {input.genome} -sorted -a $SORTED -b {input.bam} | sort -k1,1 -k2,2n > {output}
-        rm $SORTED
-        """
+    script:
+        "../scripts/coverage_trna.sh"
 
 
 rule build_trna_coverage_matrix:
