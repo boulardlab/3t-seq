@@ -50,6 +50,7 @@ jobs:
         with:
           directory: tests
           snakefile: workflow/Snakefile
+          stagein: "echo 1 > /proc/sys/kernel/unprivileged_userns_clone"
           args: "--configfile tests/config.yaml --profile tests/profile"
 
   contanerize:
