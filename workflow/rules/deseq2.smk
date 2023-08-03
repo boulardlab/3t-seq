@@ -5,6 +5,10 @@ rule subset_gtf:
         rdata_folder.joinpath("deseq2/ann.rds"),
     conda:
         "../env/R.yml"
+    threads: 1
+    resources: 
+        runtime=60
+        mem_mb=20000
     log:
         log_folder.joinpath("R/subset_gtf.log"),
     script:
@@ -33,6 +37,10 @@ rule deseq2:
         annotation_type=config["genome"]["annotation_type"],
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
+    threads: 4
+    resources:
+        runtime=40,
+        mem_mb=20000
     conda:
         "../env/R.yml"
     log:

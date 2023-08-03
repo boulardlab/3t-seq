@@ -17,7 +17,10 @@ rule trimmomatic_pe:
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
-    threads: 2
+    threads: 4
+    resources: 
+        runtime=90,
+        mem_mb=4000
     log:
         log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),
     conda:
@@ -47,7 +50,10 @@ rule trimmomatic_se:
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
-    threads: 2
+    threads: 4
+    resources: 
+        runtime=90,
+        mem_mb=4000
     log:
         log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
     conda:
@@ -73,7 +79,10 @@ rule fastqc_trim:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.html"),
     params:
         fastqc_folder=fastqc_trim_folder,
-    threads: 2
+    threads: 4
+    resources: 
+        runtime=20,
+        mem_mb=4000
     conda:
         "../env/qc.yml"
     log:
@@ -100,7 +109,10 @@ rule fastqc_trim_pe:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
     params:
         fastqc_folder=fastqc_trim_folder,
-    threads: 2
+    threads: 4
+    resources: 
+        runtime=20,
+        mem_mb=4000
     conda:
         "../env/qc.yml"
     log:
@@ -126,6 +138,10 @@ rule multiqc_trim:
         log_folder.joinpath("multiqc-trim", "multiqc-{serie}.log"),
     conda:
         "../env/qc.yml"
+    threads: 1
+    resources: 
+        runtime=10,
+        mem_mb=2048
     shell:
         """
         set -e 

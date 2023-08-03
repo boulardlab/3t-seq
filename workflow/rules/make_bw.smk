@@ -9,6 +9,9 @@ rule coverage:
     params:
         others=lambda wildcards: get_params(wildcards, "bamCoverage"),
     threads: 2
+    resources: 
+        runtime=120,
+        mem_mb=16000
     log:
         log_folder.joinpath("bamCoverage_se-{serie}-{sample}.log"),
     shell:

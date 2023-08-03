@@ -6,7 +6,10 @@ rule filter_bam:
         starTE_folder.joinpath("{serie}/filter/{method}/{sample}.TEonly.bam"),
     log:
         log_folder.joinpath("samtools_view/{serie}/{method}/{sample}.log"),
-    threads: 2
+    threads: 4
+    resources: 
+        runtime=30,
+        mem_mb=16000
     conda:
         "../env/samtools.yml"
     shell:

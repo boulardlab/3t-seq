@@ -14,6 +14,10 @@ rule edit_condition_file:
         log_folder.joinpath("salmonTE/{serie}/edit_condition.log"),
     conda:
         "../env/pandas.yml"
+    threads: 1
+    resources: 
+        runtime=10,
+        mem_mb=2048
     script:
         "../scripts/edit_condition_file.py"
 
@@ -36,6 +40,9 @@ checkpoint salmonTE_quant:
     container:
         "docker://ftabaro/salmonte:latest"
     threads: 8
+    resources: 
+        runtime=360,
+        mem_mb=16000
     shell:
         """
         set -e  
@@ -69,6 +76,10 @@ rule salmonTE_test:
         log_folder.joinpath("salmonTE/{serie}/test_de.log"),
     container:
         "docker://ftabaro/salmonte:latest"
+    threads: 4
+    resources: 
+        runtime=360,
+        mem_mb=16000
     shell:
         """
         python /opt/SalmonTE/SalmonTE.py test \

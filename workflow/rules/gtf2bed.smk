@@ -4,6 +4,9 @@ rule gtf2bed:
     output:
         bed=rmsk_bed,
     threads: 1
+    resources: 
+        runtime=60,
+        mem_mb=4000
     log:
         log_folder.joinpath("samtools_view/bed2gtf.log"),
     conda:

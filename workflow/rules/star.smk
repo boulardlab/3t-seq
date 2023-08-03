@@ -8,7 +8,10 @@ rule star_genome_preparation:
         tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
     conda:
         "../env/alignment.yml"
-    threads: 4
+    threads: 16
+    resources: 
+        runtime=120,
+        mem_mb=32000
     log:
         log_folder.joinpath("star/genome_preparation.log"),
     shell:
@@ -40,9 +43,10 @@ rule star:
         star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
         star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
         star_folder.joinpath("{serie}/{sample}.Log.final.out"),
-    # resources:
-
-    threads: 8
+    threads: 8    
+    resources: 
+        runtime=360,
+        mem_mb=32000
     params:
         libtype=lambda wildcards: "SINGLE"
         if wildcards.serie in library_names_single
@@ -101,6 +105,9 @@ rule fastqc_star:
     params:
         fastqc_folder=fastqc_star_folder,
     threads: 2
+    resources: 
+        runtime=20,
+        mem_mb=4000
     conda:
         "../env/qc.yml"
     log:
@@ -133,7 +140,10 @@ rule index_bam:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
-    threads: 2
+    threads: 1
+    resources: 
+        runtime=30,
+        mem_mb=8000
     log:
         log_folder.joinpath("index-bam/{serie}/{sample}.log"),
     conda:
@@ -158,6 +168,10 @@ rule multiqc_star:
         multiqc_folder=multiqc_star_folder,
     log:
         log_folder.joinpath("multiqc-star", "multiqc-{serie}.log"),
+    threads: 1
+    resources: 
+        runtime=10,
+        mem_mb=2048    
     conda:
         # paths to singularity images cannot be PosixPath
         "../env/qc.yml"

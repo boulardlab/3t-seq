@@ -8,6 +8,9 @@ rule download_genome_fasta_file:
     log:
         log_folder.joinpath("download/genome/fasta.log"),
     threads: 1
+    resources: 
+        runtime=60,
+        mem_mb=4000    
     script:
         "../scripts/download-fasta.sh"
 
@@ -23,6 +26,9 @@ rule download_genome_annotation_file:
     log:
         log_folder.joinpath("download/genome/gtf.log"),
     threads: 1
+    resources: 
+        runtime=60,
+        mem_mb=4000
     script:
         "../scripts/download-gtf.sh"
 
@@ -37,6 +43,9 @@ rule download_repeatmasker_annotation_file:
     log:
         log_folder.joinpath("download/genome/rmsk.log"),
     threads: 1
+    resources: 
+        runtime=20,
+        mem_mb=4000
     script:
         "../scripts/download-rmsk.sh"
 
