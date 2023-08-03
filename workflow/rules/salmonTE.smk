@@ -15,9 +15,9 @@ rule edit_condition_file:
     conda:
         "../env/pandas.yml"
     threads: 1
-    resources: 
+    resources:
         runtime=10,
-        mem_mb=2048
+        mem_mb=2048,
     script:
         "../scripts/edit_condition_file.py"
 
@@ -40,9 +40,9 @@ checkpoint salmonTE_quant:
     container:
         "docker://ftabaro/salmonte:latest"
     threads: 8
-    resources: 
+    resources:
         runtime=360,
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         """
         set -e  
@@ -77,9 +77,9 @@ rule salmonTE_test:
     container:
         "docker://ftabaro/salmonte:latest"
     threads: 4
-    resources: 
+    resources:
         runtime=360,
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         """
         python /opt/SalmonTE/SalmonTE.py test \

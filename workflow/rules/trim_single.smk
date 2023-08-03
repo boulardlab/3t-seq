@@ -18,9 +18,9 @@ rule trimmomatic_pe:
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     threads: 4
-    resources: 
+    resources:
         runtime=90,
-        mem_mb=4000
+        mem_mb=4000,
     log:
         log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),
     conda:
@@ -51,9 +51,9 @@ rule trimmomatic_se:
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     threads: 4
-    resources: 
+    resources:
         runtime=90,
-        mem_mb=4000
+        mem_mb=4000,
     log:
         log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
     conda:
@@ -80,9 +80,9 @@ rule fastqc_trim:
     params:
         fastqc_folder=fastqc_trim_folder,
     threads: 4
-    resources: 
+    resources:
         runtime=20,
-        mem_mb=4000
+        mem_mb=4000,
     conda:
         "../env/qc.yml"
     log:
@@ -110,9 +110,9 @@ rule fastqc_trim_pe:
     params:
         fastqc_folder=fastqc_trim_folder,
     threads: 4
-    resources: 
+    resources:
         runtime=20,
-        mem_mb=4000
+        mem_mb=4000,
     conda:
         "../env/qc.yml"
     log:
@@ -139,9 +139,9 @@ rule multiqc_trim:
     conda:
         "../env/qc.yml"
     threads: 1
-    resources: 
+    resources:
         runtime=10,
-        mem_mb=2048
+        mem_mb=2048,
     shell:
         """
         set -e 

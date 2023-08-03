@@ -13,9 +13,9 @@ rule fastqc_raw:
         "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
-    resources: 
+    resources:
         runtime=20,
-        mem_mb=4000
+        mem_mb=4000,
     shell:
         """
         set -e 
@@ -49,9 +49,9 @@ rule multiqc_raw:
         log_folder.joinpath("multiqc-raw", "multiqc-{serie}.log"),
     conda:
         "../env/qc.yml"
-    resources: 
+    resources:
         runtime=20,
-        mem_mb=2048
+        mem_mb=2048,
     shell:
         """
         set -e 

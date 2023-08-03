@@ -7,9 +7,9 @@ rule filter_bam:
     log:
         log_folder.joinpath("samtools_view/{serie}/{method}/{sample}.log"),
     threads: 4
-    resources: 
+    resources:
         runtime=30,
-        mem_mb=16000
+        mem_mb=16000,
     conda:
         "../env/samtools.yml"
     shell:

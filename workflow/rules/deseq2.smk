@@ -6,9 +6,9 @@ rule subset_gtf:
     conda:
         "../env/R.yml"
     threads: 1
-    resources: 
-        runtime=60
-        mem_mb=20000
+    resources:
+        runtime=60,
+        mem_mb=20000,
     log:
         log_folder.joinpath("R/subset_gtf.log"),
     script:
@@ -40,7 +40,7 @@ rule deseq2:
     threads: 4
     resources:
         runtime=40,
-        mem_mb=20000
+        mem_mb=20000,
     conda:
         "../env/R.yml"
     log:
@@ -70,7 +70,7 @@ rule deseq2:
 #         log_folder.joinpath("R/{serie}/deseq2_report.log"),
 #     shell:
 #         """
-#          set -e 
+#          set -e
 #          if [ -f {params.dds_path} ]; then
 #             OUTPUT_DIR="{params.output_dir}/{wildcards.serie}"
 #             R --no-echo --vanilla \

@@ -5,9 +5,9 @@ rule starTE_random:
     output:
         starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
     threads: 8
-    resources: 
+    resources:
         runtime=720,
-        mem_mb=32000
+        mem_mb=32000,
     params:
         libtype=lambda wildcards: "SINGLE"
         if wildcards.serie in library_names_single
@@ -76,9 +76,9 @@ rule featureCounts_random:
     log:
         log_folder.joinpath("featureCounts/{serie}/random.log"),
     threads: 4
-    resources: 
+    resources:
         runtime=360,
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         """
          set -e 
@@ -91,9 +91,9 @@ rule starTE_multihit:
         bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
     threads: 8
-    resources: 
+    resources:
         runtime=720,
-        mem_mb=32000
+        mem_mb=32000,
     output:
         starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
     params:
@@ -163,9 +163,9 @@ rule featureCounts_multihit:
     log:
         log_folder.joinpath("featureCounts/{serie}/multihit.log"),
     threads: 4
-    resources: 
+    resources:
         runtime=360,
-        mem_mb=16000
+        mem_mb=16000,
     shell:
         """
          set -e 
