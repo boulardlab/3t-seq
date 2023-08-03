@@ -14,7 +14,7 @@ rule fastqc_raw:
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
     resources:
-        runtime=20,
+        runtime=60,
         mem_mb=4000,
     shell:
         """

@@ -19,8 +19,8 @@ rule trimmomatic_pe:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     threads: 4
     resources:
-        runtime=90,
-        mem_mb=4000,
+        runtime=lambda wildcards, attempt: 180 * attempt,
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
         log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),
     conda:
@@ -53,8 +53,8 @@ rule trimmomatic_se:
     retries: 2
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: 90 * attempt,
-        mem_mb=4000,
+        runtime=lambda wildcards, attempt: 180 * attempt,
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
         log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
     conda:
@@ -82,7 +82,7 @@ rule fastqc_trim:
         fastqc_folder=fastqc_trim_folder,
     threads: 4
     resources:
-        runtime=20,
+        runtime=90,
         mem_mb=4000,
     conda:
         "../env/qc.yml"
@@ -110,10 +110,9 @@ rule fastqc_trim_pe:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
     params:
         fastqc_folder=fastqc_trim_folder,
-    retries: 2
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: 90 * attempt,
+        runtime=90,
         mem_mb=4000,
     conda:
         "../env/qc.yml"
