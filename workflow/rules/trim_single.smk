@@ -50,9 +50,10 @@ rule trimmomatic_se:
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
+    retries: 2
     threads: 4
     resources:
-        runtime=90,
+        runtime=lambda wildcards, attempt: 90 * attempt,
         mem_mb=4000,
     log:
         log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
@@ -109,9 +110,10 @@ rule fastqc_trim_pe:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
     params:
         fastqc_folder=fastqc_trim_folder,
+    retries: 2
     threads: 4
     resources:
-        runtime=20,
+        runtime=lambda wildcards, attempt: 90 * attempt,
         mem_mb=4000,
     conda:
         "../env/qc.yml"
