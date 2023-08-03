@@ -61,15 +61,3 @@ jobs:
       - name: Run workflow
         run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
-
-  contanerize:
-    runs-on: ubuntu-latest
-    needs:
-      - run-workflow
-    steps:
-      - name: Create container file
-        uses: snakemake/snakemake-github-action@v1.22.0
-        with:
-          directory: tests
-          snakefile: "workflow/Snakefile"
-          task: "containerize"
