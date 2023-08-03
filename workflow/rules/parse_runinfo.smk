@@ -11,7 +11,7 @@ checkpoint parse_runinfo:
         log_folder.joinpath("download/parse_runinfo.log"),
     shell:
         """
-        set -x
+        set -e 
         for runinfo in {input}; do
             # extract serie id from filename
             SERIE=$(basename $runinfo)

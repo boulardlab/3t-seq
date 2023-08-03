@@ -13,7 +13,7 @@ rule picard_markdup:
         "../env/picard.yml"
     shell:
         """
-        set -x
+        set -e 
 
         picard MarkDuplicates \
         I={input} \
@@ -42,7 +42,7 @@ rule fastqc_markdup:
     shell:
         """
 
-        set -x
+        set -e 
 
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
 
@@ -66,7 +66,7 @@ rule multiqc_markdup:
     shell:
         """
 
-        set -x
+        set -e 
 
         multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.markdup_folder}/{wildcards.serie} |& tee {log}
 

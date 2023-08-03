@@ -13,7 +13,7 @@ rule star_genome_preparation:
         log_folder.joinpath("star/genome_preparation.log"),
     shell:
         """
-        set -x
+        set -e 
         
         [[ -d {params.tmp_folder} ]] && rm -rf {params.tmp_folder}
         
@@ -36,7 +36,7 @@ rule star:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
         star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
         star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
         star_folder.joinpath("{serie}/{sample}.Log.final.out"),
@@ -57,7 +57,7 @@ rule star:
         log_folder.joinpath("star/{serie}/{sample}.log"),
     shell:
         """
-         set -x
+         set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
 
          STAR --quantMode TranscriptomeSAM GeneCounts \
@@ -102,16 +102,13 @@ rule fastqc_star:
         fastqc_folder=fastqc_star_folder,
     threads: 2
     conda:
-        # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
-    conda:
         "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc_star/{serie}/{sample}.log"),
     shell:
         """
 
-        set -x
+        set -e 
 
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
 
@@ -166,6 +163,6 @@ rule multiqc_star:
         "../env/qc.yml"
     shell:
         """
-        set -x
+        set -e 
         multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.star_folder}/{wildcards.serie} |& tee {log}
         """

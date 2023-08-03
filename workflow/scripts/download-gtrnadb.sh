@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-set -x 
+set -e  
 
 sleep $(( $RANDOM % 10 + 2 ))
 

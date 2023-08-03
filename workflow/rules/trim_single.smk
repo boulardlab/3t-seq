@@ -80,7 +80,7 @@ rule fastqc_trim:
         log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
     shell:
         """
-        set -x
+        set -e 
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
         """
 
@@ -107,7 +107,7 @@ rule fastqc_trim_pe:
         log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
     shell:
         """
-        set -x
+        set -e 
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
         """
 
@@ -128,7 +128,7 @@ rule multiqc_trim:
         "../env/qc.yml"
     shell:
         """
-        set -x
+        set -e 
         multiqc --fullnames --dirs --export -f \
         -o {params.multiqc_folder}/{wildcards.serie} \
         {params.reads_folder}/{wildcards.serie} \

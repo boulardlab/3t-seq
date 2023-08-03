@@ -15,7 +15,7 @@ rule fastqc_raw:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
     shell:
         """
-        set -x
+        set -e 
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
         """
 
@@ -48,7 +48,7 @@ rule multiqc_raw:
         "../env/qc.yml"
     shell:
         """
-        set -x
+        set -e 
         multiqc --fullnames --dirs --export -f \
         -o {params.multiqc_folder}/{wildcards.serie} \
         {params.fastqc_folder}/{wildcards.serie} |& tee {log}

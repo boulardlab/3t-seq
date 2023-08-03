@@ -18,7 +18,7 @@ rule starTE_random:
         log_folder.joinpath("starTE/random/{serie}/{sample}.log"),
     shell:
         """
-         set -x
+         set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
          echo 'tmp: $TMP_FOLDER'
          sleep 10
@@ -75,7 +75,7 @@ rule featureCounts_random:
     threads: 4
     shell:
         """
-         set -x
+         set -e 
          featureCounts -M -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} {input.bam}
          """
 
@@ -100,7 +100,7 @@ rule starTE_multihit:
         log_folder.joinpath("starTE/{serie}/multihit/{sample}.log"),
     shell:
         """
-         set -x
+         set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
          echo 'tmp: $TMP_FOLDER'
          sleep 10
@@ -156,6 +156,6 @@ rule featureCounts_multihit:
     threads: 4
     shell:
         """
-         set -x
+         set -e 
          featureCounts -M --fraction -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} {input.bam}
          """

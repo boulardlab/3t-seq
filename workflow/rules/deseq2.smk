@@ -62,7 +62,7 @@ rule deseq2:
 #         log_folder.joinpath("R/{serie}/deseq2_report.log"),
 #     shell:
 #         """
-#          set -x
+#          set -e 
 #          if [ -f {params.dds_path} ]; then
 #             OUTPUT_DIR="{params.output_dir}/{wildcards.serie}"
 #             R --no-echo --vanilla \

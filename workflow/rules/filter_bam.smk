@@ -11,6 +11,6 @@ rule filter_bam:
         "../env/samtools.yml"
     shell:
         """
-        set -x
+        set -e 
         samtools view -L {input.annotation} -@ {threads} -o {output} {input.alignment} |& tee {log}
         """

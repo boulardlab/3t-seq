@@ -38,7 +38,7 @@ checkpoint salmonTE_quant:
     threads: 8
     shell:
         """
-        set -x 
+        set -e  
         I=""
         T=$(mktemp -d)
         for F in {input}; do
