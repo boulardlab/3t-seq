@@ -19,7 +19,7 @@ rule trimmomatic_pe:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     threads: 4
     resources:
-        runtime=lambda wildcards, attempt: 180 * attempt,
+        runtime=lambda wildcards, attempt: 240 * attempt,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
         log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),

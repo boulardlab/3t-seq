@@ -41,7 +41,7 @@ checkpoint salmonTE_quant:
         "docker://ftabaro/salmonte:latest"
     threads: 8
     resources:
-        runtime=360,
+        runtime=720,
         mem_mb=16000,
     shell:
         """
