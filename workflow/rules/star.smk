@@ -1,3 +1,37 @@
+rule validate_genome_and_annotation:
+    input:
+        genome_fasta_file=fasta_path,
+        genome_annotation_file=gtf_path,
+    output:
+        touch(references_folder.joinpath("genome-and-annotation-validated.done"))
+    conda:
+        "../env/bash.yml"
+    threads: 1
+    resources:
+        runtime=20,
+        mem_mb=1024
+    log:
+        log_folder.joinpath("star/genome_preparation.log"),
+    shell:
+        """
+        set -e
+
+        head -n1000 {input.genome_fasta_file} | grep -q '>chr'
+        FASTA_HAS_CHR=$?
+
+        head -n1000 {input.genome_annotation_file} | grep -v '#' | head -n1 | grep -q '^chr'
+        GTF_HAS_CHR=$?
+
+        if [ $FASTA_HAS_CHR -eq 0 ] & [ $GTF_HAS_CHR -eq 1 ]; then
+            sed -i -r 's/^([^#]+)$/chr\1/g' {input.genome_annotation_file}
+        fi
+
+        if [ $FASTA_HAS_CHR -eq 1 ] & [ $GTF_HAS_CHR -eq 0 ]; then
+            sed -i -r 's/^>(.+)$/>chr\1/g' {input.genome_fasta_file}
+        fi
+
+        """
+
 rule star_genome_preparation:
     input:
         genome_fasta_file=fasta_path,
