@@ -1,0 +1,4 @@
+channels:
+  - conda-forge
+dependencies:
+  - bash=5.1.16

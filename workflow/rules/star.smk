@@ -36,6 +36,7 @@ rule star_genome_preparation:
     input:
         genome_fasta_file=fasta_path,
         genome_annotation_file=gtf_path,
+        references_folder.joinpath("genome-and-annotation-validated.done")
     output:
         directory(references_folder.joinpath("STAR")),
     params:
