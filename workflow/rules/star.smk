@@ -16,7 +16,7 @@ rule validate_genome_and_annotation:
         """
         set -e
 
-        head -n1000 {input.genome_fasta_file} | grep -q '>chr'
+        head -n1000 {input.genome_fasta_file} | grep -q '^>chr'
         FASTA_HAS_CHR=$?
 
         head -n1000 {input.genome_annotation_file} | grep -v '#' | head -n1 | grep -q '^chr'
