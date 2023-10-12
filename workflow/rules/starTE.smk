@@ -6,7 +6,7 @@ rule starTE_random:
         starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
     threads: 8
     resources:
-        runtime=720,
+        runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
         libtype=lambda wildcards: "SINGLE"
@@ -92,7 +92,7 @@ rule starTE_multihit:
         star_index_folder=references_folder.joinpath("STAR"),
     threads: 8
     resources:
-        runtime=720,
+        runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     output:
         starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),

@@ -11,9 +11,9 @@ rule validate_genome_and_annotation:
         runtime=20,
         mem_mb=1024
     log:
-        log_folder.joinpath("star/genome_preparation.log"),
+        log_folder.joinpath("star/validata_genome_and_annotation.log"),
     script:
-        "scripts/validate_genome_and_annotation.sh"
+        "../scripts/validate_genome_and_annotation.sh"
 
 rule star_genome_preparation:
     input:
@@ -22,32 +22,26 @@ rule star_genome_preparation:
         genome_annotation_file=gtf_path,
     output:
         directory(references_folder.joinpath("STAR")),
-    params:
-        tmp_folder=tmp_folder.joinpath("STAR_genome_prep"),
     conda:
         "../env/alignment.yml"
-    threads: 16
+    threads: 8
     resources:
         runtime=120,
-        mem_mb=32000,
+        mem_mb=256000,
     log:
         log_folder.joinpath("star/genome_preparation.log"),
     shell:
         """
         set -e 
         
-        [[ -d {params.tmp_folder} ]] && rm -rf {params.tmp_folder}
-        
         STAR --runMode genomeGenerate \
-        --outTmpDir {params.tmp_folder} \
+        --outTmpDir $(mktemp -d -u) \
         --runThreadN {threads} \
         --genomeDir {output} \
         --genomeFastaFiles {input.genome_fasta_file} \
         --sjdbGTFfile {input.genome_annotation_file} \
         --sjdbOverhang 100 |& \
         tee {log}
-        
-        [[ -d {params.tmp_folder} ]] && rm -rf {params.tmp_folder} || exit 0
         """
 
 
@@ -63,7 +57,7 @@ rule star:
         star_folder.joinpath("{serie}/{sample}.Log.final.out"),
     threads: 8
     resources:
-        runtime=360,
+        runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
         libtype=lambda wildcards: "SINGLE"
