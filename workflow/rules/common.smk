@@ -94,7 +94,20 @@ def get_fastq(wildcards):
         raise ValueError(
             f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}"
         )
-    return ""
+    elif wildcards.serie in library_names_paired:
+        for ext in supported_extensions:
+            candidate1 = raw_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}.{ext}"
+            )
+            candidate2 = raw_reads_folder.joinpath(
+                wildcards.serie, f"{wildcards.sample}.{ext}"
+            )
+            if os.path.exists(candidate1) and os.path.exists(candidate2):
+                return [ candidate1, candidate2 ]
+        raise ValueError(
+            f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
+        ) 
+	return ""
 
 
 def get_fastq_paired(wildcards):
@@ -160,22 +173,27 @@ def get_markdup_fastqc(wildcards):
 
 
 def get_salmonTE_quant_input(wildcards):
+    candidates = []
     if wildcards.serie in library_names_single:
         s = samples["single"][wildcards.serie]
+        for extension in supported_extensions:
+            for sample in samples["single"][wildcards.serie]:
+                # we use absolute path because of Singularity/Docker
+                candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}").resolve())
+            if all([os.path.exists(f) for f in candidates]):
+                    break
     else:
-        s = [
-            f"{s}{mate}"
-            for s in samples["paired"][wildcards.serie]
-            for mate in ["_1", "_2"]
-        ]
-    for extension in supported_extensions:
-        candidates = [
-            raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}")
-            for sample in s
-        ]
-        if all([os.path.exists(f) for f in candidates]):
+        for extension in supported_extensions:
+            for m in supported_suffixes:
+                candidates = []
+                for sample in samples["paired"][wildcards.serie]:
+                    candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}{m[0]}.{extension}").resolve())
+                    candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}{m[1]}.{extension}").resolve())
+                if all([os.path.exists(f) for f in candidates]):
+                    break
+            else:
+                continue
             break
-
     return candidates
 
 

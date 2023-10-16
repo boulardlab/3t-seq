@@ -11,7 +11,10 @@ URL="${snakemake_params[url]}"
 OUTPUT="${snakemake_output}"
 
 if [[ "$URL" = *.gz && ! "$OUTPUT" = *.gz ]]; then
-    wget --quiet -O - "$URL" | gunzip -c > $OUTPUT
+    T=$(mktemp)
+    wget --quiet -O $T "$URL" 
+    gunzip -c $T > $OUTPUT
+    rm $T
 else
     wget --quiet -O "$OUTPUT" "$URL"
 fi

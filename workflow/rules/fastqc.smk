@@ -23,20 +23,6 @@ rule fastqc_raw:
         """
 
 
-use rule fastqc_raw as fastqc_raw_pe with:
-    input:
-        unpack(get_fastq_paired),
-    output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
-    log:
-        log_folder.joinpath("fastqc/{serie}/{sample}.log"),
-
-
 rule multiqc_raw:
     input:
         get_fastqc,

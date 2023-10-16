@@ -45,14 +45,37 @@ checkpoint salmonTE_quant:
         mem_mb=16000,
     shell:
         """
-        set -e  
-        I=""
+        set -e
+        
+        echo "Working directory: $(pwd)"
+        echo
+        echo
+        echo
+        echo "Current folder content"
+        ls -l
+        echo
+        echo
+        echo
+        echo "Current user"
+        whoami
+        id
+        echo 
+        echo 
+        echo 
+        env
+        echo 
+        echo 
+        echo 
         T=$(mktemp -d)
+
+        I=""
         for F in {input}; do
             BN=$(basename $F)
             if [[ $BN == *.gz ]]; then
-                gunzip -c $F > $T/${{BN%.gz}}
-                I="$I $T"
+                O=$T/${{BN%.gz}}
+                O=${{O/txt/fq}}
+                gunzip -c $F > $O
+                I="$I $O"
             else
                 I="$I $F"
             fi
