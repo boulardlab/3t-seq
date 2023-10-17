@@ -59,7 +59,7 @@ def main(
                 gtf_row = {
                     "genoName": repeat["genoName"],
                     "source": "RepeatMasker",
-                    "feature": repeat["repName"],
+                    "feature": "exon",
                     "genoStart": repeat["genoStart"],
                     "genoEnd": repeat["genoEnd"],
                     "swScore": repeat["swScore"],
