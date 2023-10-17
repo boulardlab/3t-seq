@@ -43,6 +43,6 @@ if grep -v '#' "${TMP%.gz}" | head -n 100 | grep -q 'chr'; then
     echo "Mv'ing to $OUTPUT"
     mv $TMP $OUTPUT
 else
-    echo "Adding \"chr\" to first column, then mv'ing to $OUTPUT"
-    awk -F "\t" -v OFS="\t" '{ if ("#"~$0) {print $0} else {print "chr"$0}}' ${TMP%.gz} > $OUTPUT 
+    echo "Adding \"chr\" to first column, then move to $OUTPUT"
+    awk -F "\t" -v OFS="\t" '!/^#/{print "chr"$0}/#/{print}' ${TMP%.gz} > $OUTPUT 
 fi
