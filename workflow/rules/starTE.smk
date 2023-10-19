@@ -82,7 +82,7 @@ rule featureCounts_random:
     shell:
         """
          set -e 
-         featureCounts -M -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} {input.bam}
+         featureCounts -M -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
          """
 
 
@@ -169,5 +169,5 @@ rule featureCounts_multihit:
     shell:
         """
          set -e 
-         featureCounts -M --fraction -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} {input.bam}
+         featureCounts -M --fraction -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
          """

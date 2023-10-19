@@ -56,12 +56,17 @@ def main(
 
         for chromosome in track_data.values():
             for repeat in chromosome:
+                
+                # UCSC works zero-based base position
+                # https://www.biostars.org/p/84686/
+
+                # GTF is 1-based, therefore, genoStart needs +1
                 gtf_row = {
                     "genoName": repeat["genoName"],
                     "source": "RepeatMasker",
                     "feature": "exon",
-                    "genoStart": repeat["genoStart"],
-                    "genoEnd": repeat["genoEnd"],
+                    "genoStart": int(repeat["genoStart"]) + 1,
+                    "genoEnd": int(repeat["genoEnd"]),
                     "swScore": repeat["swScore"],
                     "strand": repeat["strand"],
                     "frame": ".",
@@ -84,6 +89,7 @@ def main(
                     ),
                 }
 
+                # BED is zero-based, therefore, genoStart does not need +1
                 bed_row = {
                     "genoName": repeat["genoName"],
                     "genoStart": repeat["genoStart"],
