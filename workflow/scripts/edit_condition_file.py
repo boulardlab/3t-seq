@@ -4,6 +4,9 @@ from pathlib import Path
 serie_folder = Path(snakemake.input[0])
 sample_sheet_path = Path(snakemake.input[1])
 
+experimental_variable = snakemake.params.variable
+reference_level = snakemake.params.reference_level
+
 salmon_condition_sheet = pd.read_csv(serie_folder.joinpath("condition.csv"))
 salmon_condition_sheet = salmon_condition_sheet.set_index("SampleID")
 
@@ -18,19 +21,15 @@ else:
         )
         sample_sheet = sample_sheet.set_index("tmp")
     else:
-        sample_sheet = sample_sheet.set_index("name")
+        sample_sheet = sample_sheet.set_index("sample")
 
 sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 
 joined = sample_sheet.join(salmon_condition_sheet)
 
-levels = joined[snakemake.params.variable].tolist()
-levels = list(set(levels))
-control_level = levels[0]
-
 joined["condition"] = joined.apply(
     lambda row: "control"
-    if row[snakemake.params.variable] == control_level
+    if row[snakemake.params.variable] == reference_level
     else "treatment",
     axis=1,
 )

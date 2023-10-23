@@ -150,11 +150,21 @@ def get_trna_coverage(wildcards):
 
 def get_deseq2_test(wildcards):
     deseq2_params = get_params(wildcards, "deseq2")
+    if not "test" in deseq2_params:
+        deseq2_params["test"] = "Wald"
+    test = deseq2_params["test"]
+    if not test in ["Wald", "LRT"]:
+        raise ValueError(f"Invalid test: {test}. Test name must be either Wald or LRT. Check your config.")
     return deseq2_params["test"]
 
 
 def get_deseq2_variable(wildcards):
     deseq2_params = get_params(wildcards, "deseq2")
+    if not "variable" in deseq2_params:
+        deseq2_params["variable"] = "genotype"
+    var = deseq2_params["variable"]
+    if not var in sample_sheet.columns.values.tolist():
+        raise ValueError(f"{var} was not detected in sample sheet columns. Please check your config.")
     return deseq2_params["variable"]
 
 
@@ -277,7 +287,7 @@ def get_trimmed_fastqc(wildcards):
 
 
 def get_fastqc(wildcards):
-    s = get_samples(wildcards, samples)
+    s = get_samples(wildcards, samples)    
     if wildcards.serie in library_names_single:
         ret = expand(
             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),

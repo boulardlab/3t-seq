@@ -17,6 +17,8 @@ counts_folder <- sub(".done", "", star_flag)
 annotation_file_path <- snakemake@input[["annotation_file"]]
 sample_sheet <- snakemake@input[["sample_sheet"]]
 
+
+
 # OUTPUTS
 dds_rds_path <- snakemake@params[["dds"]]
 deg_table_path <- snakemake@params[["deg_table"]]
@@ -31,9 +33,9 @@ if (!dir.exists(dirname(deg_table_path))) {
 }
 
 annotation_type <- snakemake@params[["annotation_type"]]
-
 test_name <- snakemake@params[["test"]]
 design_variable <- snakemake@params[["variable"]]
+reference_level <- snakemake@params[["reference_level"]]
 
 if (length(design_variable) == 1) {
   design_formula <- as.formula(sprintf("~ %s", design_variable))
@@ -83,12 +85,7 @@ colData <- DataFrame(colData)
 for (i in seq_along(design_variable)) {
   column <- design_variable[i]
   colData[, column] <- as.factor(colData[, column])
-  # handle the genotype column so that KO is level 1 and WT is level 2 (DESeq will compute log2 fold change as KO/WT)
-  if (column == "genotype" &&
-    length(levels(colData[, column])) == 2 &&
-    all(levels(colData[, column]) %in% c("KO", "WT"))) {
-    colData[, column] <- relevel(colData[, column], ref = "WT")
-  }
+  colData[, column] <- relevel(colData[, column], ref = reference_level)  
 }
 
 if (libtype == "single") {

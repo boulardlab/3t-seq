@@ -10,6 +10,7 @@ rule edit_condition_file:
         touch(data_folder.joinpath("salmonTE/quant/{serie}/edit_condition.done")),
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level = config["deseq2"]["reference_level"]
     log:
         log_folder.joinpath("salmonTE/{serie}/edit_condition.log"),
     conda:
