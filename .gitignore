@@ -5,3 +5,5 @@
 **/.java
 **/.config
 **/.condarc
+**/tests*
+**/workdir
