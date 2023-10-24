@@ -3,17 +3,18 @@ rule validate_genome_and_annotation:
         genome_fasta_file=fasta_path,
         genome_annotation_file=gtf_path,
     output:
-        touch(references_folder.joinpath("genome-and-annotation-validated.done"))
+        touch(references_folder.joinpath("genome-and-annotation-validated.done")),
     conda:
         "../env/bash.yml"
     threads: 1
     resources:
         runtime=20,
-        mem_mb=1024
+        mem_mb=1024,
     log:
         log_folder.joinpath("star/validata_genome_and_annotation.log"),
     script:
         "../scripts/validate_genome_and_annotation.sh"
+
 
 rule star_genome_preparation:
     input:
@@ -111,8 +112,13 @@ rule fastqc_star:
         fastqc_star_folder.joinpath(
             "{serie}", "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
         ),
-        fastqc_star_folder.joinpath(
-            "{serie}", "{sample}.Aligned.sortedByCoord.out_fastqc.html"
+        report(
+            fastqc_star_folder.joinpath(
+                "{serie}", "{sample}.Aligned.sortedByCoord.out_fastqc.html"
+            ),
+            category="FastQC",
+            subcategory="Aligned reads",
+            labels={"serie": "{serie}", "sample": "{sample}"},
         ),
     params:
         fastqc_folder=fastqc_star_folder,
@@ -173,7 +179,12 @@ rule multiqc_star:
         get_star_stats,
         get_star_fastqc,
     output:
-        multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
+        report(
+            multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
+            category="MultiQC",
+            subcategory="Alignment",
+            labels={"serie": "{serie}"},
+        ),
     params:
         fastqc_folder=fastqc_star_folder,
         star_folder=star_folder,

@@ -85,6 +85,72 @@ rule featureCounts_random:
          featureCounts -M -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
          """
 
+rule deseq2_starTE_random:
+    input:
+        counts=starTE_folder.joinpath("{serie}/featureCount/random.txt"),
+        sample_sheet=get_sample_sheet
+    output:
+        dds=starTE_folder.joinpath("{serie}", "DESeq2", "dds_random.rds"),
+        deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level=config["deseq2"]["reference_level"],
+    conda:
+        "../env/R.yml"
+    threads: 4
+    resources:
+        runtime=40,
+        mem_mb=20000,
+    log:
+        log_folder.joinpath("R/{serie}/deseq2-starTE-random.log"),
+    script:
+        "../scripts/deseq2_starTE_random_v1.R"
+
+
+localrules:
+    yte_starTE_random,
+    datavzrd_starTE_random,
+
+
+rule yte_starTE_random:
+    input:
+        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
+        datasets=[ starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt") ],
+    output:
+        starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
+    params:
+        plot_name = "starTE-random DESeq2",
+        view_specs = [
+            workflow.source_path("../datavzrd/volcano-plot.json"),
+            workflow.source_path("../datavzrd/ma-plot.json")
+        ]
+    conda:
+        "../env/yte.yml"
+    log:
+        log_folder.joinpath("starTE/random/{serie}/yte.log"),
+    threads: 1
+    script:
+        "../scripts/yte.py"
+
+
+rule datavzrd_starTE_random:
+    input:
+        config=starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
+        dataset=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt"),
+    output:
+        report(
+            directory(starTE_folder.joinpath("{serie}", "random", "datavzrd")),
+            category="starTE",
+            subcategory="Random",
+            labels={"serie": "{serie}", "figure": "DESeq2 analysis"},
+            htmlindex="index.html",
+        ),
+    log:
+        log_folder.joinpath("starTE/random/{serie}/datavzrd.log"),
+    wrapper:
+        "v2.6.0/utils/datavzrd"
+
+
 
 rule starTE_multihit:
     input:

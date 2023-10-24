@@ -1,0 +1,4 @@
+channels:
+  - conda-forge
+dependencies:
+  - yte=1.5.1

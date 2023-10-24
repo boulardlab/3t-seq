@@ -31,7 +31,12 @@ rule fastqc_markdup:
         markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
     output:
         fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.zip"),
-        fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.html"),
+        report(
+            fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.html"),
+            category="FastQC",
+            subcategory="Deduplicated alignments",
+            labels={"serie": "{serie}", "sample": "{sample}"},
+        ),
     params:
         fastqc_folder=fastqc_markdup_folder,
     threads: 4
@@ -60,7 +65,12 @@ rule multiqc_markdup:
         get_markdup_bam,
         get_markdup_fastqc,
     output:
-        multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
+        report(
+            multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
+            category="MultiQC",
+            subcategory="Deduplicated alignments",
+            labels={"serie": "{serie}"},
+        ),
     params:
         fastqc_folder=fastqc_markdup_folder,
         markdup_folder=markdup_folder,

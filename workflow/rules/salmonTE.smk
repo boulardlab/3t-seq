@@ -10,7 +10,7 @@ rule edit_condition_file:
         touch(data_folder.joinpath("salmonTE/quant/{serie}/edit_condition.done")),
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level = config["deseq2"]["reference_level"]
+        reference_level=config["deseq2"]["reference_level"],
     log:
         log_folder.joinpath("salmonTE/{serie}/edit_condition.log"),
     conda:
@@ -95,7 +95,13 @@ rule salmonTE_test:
         infolder=salmonTE_folder.joinpath("quant/{serie}"),
         condition_file=salmonTE_folder.joinpath("quant/{serie}/edit_condition.done"),
     output:
-        directory(salmonTE_folder.joinpath("de_analysis/{serie}")),
+        report(
+            directory(salmonTE_folder.joinpath("de_analysis/{serie}")),
+            category="SalmonTE",
+            subcategory="{serie}",
+            patterns=["{name}.png"],
+            labels={"serie": "{serie}", "file": "{name}"},
+        ),
     log:
         log_folder.joinpath("salmonTE/{serie}/test_de.log"),
     container:

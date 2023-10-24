@@ -205,7 +205,11 @@ rule all:
         ),
         # DESeq2 flags
         expand(
-            analysis_folder.joinpath("deseq2-{serie}.done"),
+            rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
+            serie=library_names_single + library_names_paired,
+        ),
+        expand(
+            analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd"),
             serie=library_names_single + library_names_paired,
         ),
         # SalmonTE results folders
@@ -228,10 +232,17 @@ rule all:
             pe_serie=library_names_paired,
             method=["multihit", "random"],
         ),
+        expand(
+            starTE_folder.joinpath("{serie}", "random", "datavzrd"),
+            serie=library_names_single + library_names_paired,
+        ),
         # Bigwig files
         get_bw,
         # tRNA coverage files
         expand(
-            trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
+            trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
             serie=library_names_paired + library_names_single,
         ),
+        expand(trna_coverage_folder.joinpath("{serie}", "datavzrd"),
+            serie=library_names_paired + library_names_single
+        )

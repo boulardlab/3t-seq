@@ -1,0 +1,33 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.16.1.json",
+    "width": 600,
+    "height": 600,
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "mark": {
+        "type": "point",
+        "tooltip": {
+            "content": "data"
+        }
+    },
+    "encoding": {
+        "x": {
+            "field": "log2FoldChange",
+            "type": "quantitative",
+            "title": "log2 fold change"
+        },
+        "y": {
+            "field": "enrichment",
+            "type": "quantitative",
+            "title": "Enrichment (-log10 p-value)"
+        }
+    },
+    "config": {
+        "legend": {
+            "disable": true
+        }
+    }
+}

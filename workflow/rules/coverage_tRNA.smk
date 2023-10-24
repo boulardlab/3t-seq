@@ -59,3 +59,68 @@ rule build_trna_coverage_matrix:
         mem_mb=32000,
     script:
         "../scripts/build_tRNA_coverage_matrix_v1.R"
+
+
+rule deseq2_tRNA:
+    input:
+        counts=trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
+        sample_sheet=get_sample_sheet,
+    output:
+        dds=trna_coverage_folder.joinpath("{serie}", "tRNA_dds.rds"),
+        deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level=config["deseq2"]["reference_level"],
+    conda:
+        "../env/R.yml"
+    threads: 4
+    resources:
+        runtime=40,
+        mem_mb=20000,
+    log:
+        log_folder.joinpath("R/{serie}/deseq2-trna.log"),
+    script:
+        "../scripts/deseq2_trna_v1.R"
+
+
+localrules:
+    yte_trna,
+    datavzrd_trna,
+
+rule yte_trna:
+    input:
+        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
+        datasets=[ trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt") ],
+    output:
+        trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
+    params:
+        plot_name = "tRNA expression",
+        view_specs = [
+            workflow.source_path("../datavzrd/volcano-plot.json"),
+            workflow.source_path("../datavzrd/ma-plot.json")
+        ]
+    conda:
+        "../env/yte.yml"
+    log:
+        log_folder.joinpath("bedtools-trna/yte-{serie}.log"),
+    threads: 1
+    script:
+        "../scripts/yte.py"
+
+
+rule datavzrd_trna:
+    input:
+        config=trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
+        dataset=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+    output:
+        report(
+            directory(trna_coverage_folder.joinpath("{serie}", "datavzrd")),
+            category="tRNA expression",
+            subcategory="Differential expression",
+            labels={"serie": "{serie}", "figure": "DESeq2 analysis"},
+            htmlindex="index.html",
+        ),
+    log:
+        log_folder.joinpath("bedtools-trna/datavzrd-{serie}.log"),
+    wrapper:
+        "v2.6.0/utils/datavzrd"

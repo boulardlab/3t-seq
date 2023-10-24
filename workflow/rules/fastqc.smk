@@ -5,7 +5,12 @@ rule fastqc_raw:
         get_fastq,
     output:
         fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+        report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+            category="FastQC",
+            subcategory="Raw reads",
+            labels={"serie": "{serie}", "sample": "{sample}"},
+        ),
     params:
         fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     threads: 4
@@ -27,7 +32,12 @@ rule multiqc_raw:
     input:
         get_fastqc,
     output:
-        multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
+        report(
+            multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
+            category="MultiQC",
+            subcategory="Raw reads",
+            labels={"serie": "{serie}"},
+        ),
     params:
         fastqc_folder=fastqc_raw_folder,
         multiqc_folder=multiqc_raw_folder,

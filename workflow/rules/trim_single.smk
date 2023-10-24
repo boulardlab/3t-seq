@@ -77,7 +77,12 @@ rule fastqc_trim:
         get_trimmed_fastq,
     output:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+        report(
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+            category="FastQC",
+            subcategory="Trimmed reads",
+            labels={"serie": "{serie}", "sample": "{sample}"},
+        ),
     params:
         fastqc_folder=fastqc_trim_folder,
     threads: 4
@@ -105,9 +110,19 @@ rule fastqc_trim_pe:
         ],
     output:
         fastqc_trim_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+        report(
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+            category="FastQC",
+            subcategory="Trimmed reads",
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
+        ),
         fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
+        report(
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
+            category="FastQC",
+            subcategory="Trimmed reads",
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
+        ),
     params:
         fastqc_folder=fastqc_trim_folder,
     threads: 4
@@ -130,7 +145,12 @@ rule multiqc_trim:
         get_trimmomatic_stats,
         get_trimmed_fastqc,
     output:
-        multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
+        report(
+            multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
+            category="MultiQC",
+            subcategory="Trimmed reads",
+            labels={"serie": "{serie}"},
+        ),
     params:
         fastqc_folder=fastqc_trim_folder,
         reads_folder=trim_reads_folder,

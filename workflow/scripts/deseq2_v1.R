@@ -18,11 +18,10 @@ annotation_file_path <- snakemake@input[["annotation_file"]]
 sample_sheet <- snakemake@input[["sample_sheet"]]
 
 
-
 # OUTPUTS
-dds_rds_path <- snakemake@params[["dds"]]
-deg_table_path <- snakemake@params[["deg_table"]]
-deg_table_shrink_path <- snakemake@params[["deg_table_shrink"]]
+dds_rds_path <- snakemake@output[["dds"]]
+deg_table_path <- snakemake@output[["deg_table"]]
+deg_table_shrink_path <- snakemake@output[["deg_table_shrink"]]
 
 if (!dir.exists(dirname(dds_rds_path))) {
   dir.create(dirname(dds_rds_path), recursive = TRUE)
@@ -128,15 +127,8 @@ se <- SummarizedExperiment(
 )
 dds <- DESeqDataSet(se, design = design_formula)
 
-
-## Prefiltering. Remove lower quartile of overall gene expression distribution
-# rs <- rowSums(counts(dds))
-# qt <- quantile(rs, filter_percent)
-# keep <- rs > qt
-# dds <- dds[keep,]
-
 # apply light prefiltering (as shown in vignette, quantile filtering may be too harsh)
-dds <- dds[rowSums(counts(dds)) > 10, ]
+dds <- dds[rowSums(counts(dds)) > ncol(dds), ]
 
 ## Run DESeq2. Export modified dds for later.
 if (test_name == "LRT") {
@@ -149,9 +141,11 @@ saveRDS(dds, file = dds_rds_path)
 
 ## Extract results
 results <- results(dds, name = resultsNames(dds)[2])
-# saveRDS(results, file = results_rds_path)
+results$Name <- rownames(results)
+results$enrichment <- -log10(results$padj)
 write.csv(results, file = deg_table_path)
 
 results <- lfcShrink(dds, coef = resultsNames(dds)[2], type = "apeglm")
-# saveRDS(results, file = results_rds_path)
+results$Name <- rownames(results)
+results$enrichment <- -log10(results$padj)
 write.csv(results, file = deg_table_shrink_path)

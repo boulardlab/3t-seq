@@ -1,0 +1,17 @@
+__definitions__:
+  - import json
+
+name: ?plot_name
+
+datasets:
+  ?for dataset in datasets:
+    ?dataset['name']:
+      path: ?dataset['path']
+
+views:
+  ?for view in views:
+    ?view['name']:      
+      dataset: ?view['dataset']
+      render-plot:
+        spec: | 
+          ?json.dumps(view['spec'])
