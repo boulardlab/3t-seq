@@ -7,3 +7,4 @@
 **/.condarc
 **/tests*
 **/workdir
+profile/slurm
