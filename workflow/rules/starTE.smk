@@ -121,8 +121,7 @@ rule yte_starTE_random:
     params:
         plot_name = "starTE-random DESeq2",
         view_specs = [
-            workflow.source_path("../datavzrd/volcano-plot.json"),
-            workflow.source_path("../datavzrd/ma-plot.json")
+            workflow.source_path("../datavzrd/volcano-ma-plot.json")
         ]
     conda:
         "../env/yte.yml"

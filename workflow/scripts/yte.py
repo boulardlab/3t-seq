@@ -35,19 +35,10 @@ for (dataset_path, view_spec) in itertools.product(snakemake.input["datasets"], 
     }
     views.append(view)
 
-# dataset_names = get_names(snakemake.input["datasets"])
-# view_names = get_names(snakemake.params["view_specs"])
-
 variables = {
     "plot_name": snakemake.params["plot_name"],
     "datasets": datasets,
     "views": views
-    # "dataset_names": dataset_names,
-    # "dataset_paths": snakemake.input["datasets"],
-    # "view_names": view_names,
-    # "view_specs": [
-    #     json.load(open(spec, "r")) for spec in snakemake.params["view_specs"]
-    # ]
 }
 
 with open(str(snakemake.input["template"]), "r") as template, open(

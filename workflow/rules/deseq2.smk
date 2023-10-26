@@ -64,8 +64,7 @@ rule yte_single_copy_genes:
     params:
         plot_name = "Single copy genes DESeq2",
         view_specs = [
-            workflow.source_path("../datavzrd/volcano-plot.json"),
-            workflow.source_path("../datavzrd/ma-plot.json")
+            workflow.source_path("../datavzrd/volcano-ma-plot.json")
         ]
     conda:
         "../env/yte.yml"

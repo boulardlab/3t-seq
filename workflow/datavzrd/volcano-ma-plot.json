@@ -1,0 +1,167 @@
+{
+    "$schema": "https://vega.github.io/schema/vega-lite/v5.16.1.json",
+    "autosize": {
+        "type": "fit",
+        "contains": "padding",
+        "resize": true
+    },
+    "transform": [
+        {
+            "calculate": "datum.enrichment > 10 ? 10 : datum.enrichment",
+            "as": "enrichment_capped"
+        },
+        {
+            "calculate": "log(datum.baseMean + 1) / log(10)",
+            "as": "log10_baseMean"
+        }
+    ],
+    "params": [
+        {
+            "name": "opacity",
+            "value": 75,
+            "bind": {
+                "input": "range",
+                "min": 1,
+                "max": 100
+            }
+        },
+        {
+            "name": "pts",
+            "select": "point"
+        }
+    ],
+    "hconcat": [
+        {
+            "width": 500,
+            "height": 500,
+            "mark": {
+                "type": "circle",
+                "tooltip": {
+                    "content": "data"
+                },
+                "opacity": {
+                    "expr": "opacity / 100"
+                }
+            },
+            "encoding": {
+                "x": {
+                    "field": "log10_baseMean",
+                    "type": "quantitative",
+                    "title": "Mean Expression (log10)"
+                },
+                "y": {
+                    "field": "log2FoldChange",
+                    "type": "quantitative",
+                    "title": "Log2 Fold Change"
+                },
+                "tooltip": [
+                    {
+                        "field": "Name",
+                        "type": "nominal"
+                    },
+                    {
+                        "field": "padj",
+                        "type": "quantitative"
+                    },
+                    {
+                        "field": "log2FoldChange",
+                        "type": "quantitative"
+                    },
+                    {
+                        "field": "baseMean",
+                        "type": "quantitative"
+                    }
+                ],
+                "color": {
+                    "condition": {
+                        "param": "pts",
+                        "value": "#4c78a8"
+                    },
+                    "value": "grey"
+                },
+                "size": {
+                    "condition": {
+                        "param": "pts",
+                        "value": 500,
+                        "empty": false
+                    },
+                    "value": 50
+                }
+            },
+            "config": {
+                "legend": {
+                    "disable": true
+                }
+            }
+        },
+        {
+            "width": 500,
+            "height": 500,
+            "mark": {
+                "type": "circle",
+                "tooltip": {
+                    "content": "data"
+                },
+                "opacity": {
+                    "expr": "opacity / 100"
+                }
+            },
+            "encoding": {
+                "x": {
+                    "field": "log2FoldChange",
+                    "type": "quantitative",
+                    "title": "log2 fold change"
+                },
+                "y": {
+                    "field": "enrichment_capped",
+                    "type": "quantitative",
+                    "title": "Enrichment (-log10 p-value)",
+                    "scale": {
+                        "domain": [
+                            0,
+                            10
+                        ]
+                    }
+                },
+                "tooltip": [
+                    {
+                        "field": "Name",
+                        "type": "nominal"
+                    },
+                    {
+                        "field": "padj",
+                        "type": "quantitative"
+                    },
+                    {
+                        "field": "log2FoldChange",
+                        "type": "quantitative"
+                    },
+                    {
+                        "field": "baseMean",
+                        "type": "quantitative"
+                    }
+                ],
+                "color": {
+                    "condition": {
+                        "param": "pts",
+                        "value": "#4c78a8"
+                    },
+                    "value": "grey"
+                },
+                "size": {
+                    "condition": {
+                        "param": "pts",
+                        "value": 500,
+                        "empty": false
+                    },
+                    "value": 50
+                }
+            },
+            "config": {
+                "legend": {
+                    "disable": true
+                }
+            }
+        }
+    ]
+}

@@ -96,8 +96,7 @@ rule yte_trna:
     params:
         plot_name = "tRNA expression",
         view_specs = [
-            workflow.source_path("../datavzrd/volcano-plot.json"),
-            workflow.source_path("../datavzrd/ma-plot.json")
+            workflow.source_path("../datavzrd/volcano-ma-plot.json")
         ]
     conda:
         "../env/yte.yml"
