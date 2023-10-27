@@ -53,8 +53,8 @@ saveRDS(dds, file = dds_rds_path)
 
 ## Extract results
 results <- results(dds, name = resultsNames(dds)[2])
-results$enrichment <- -log10(results$padj)
-results$Name <- rownames(results)
+
+results$gene_name <- rownames(results)
 
 # saveRDS(results, file = results_rds_path)
 write.csv(results, file = deg_table_path)

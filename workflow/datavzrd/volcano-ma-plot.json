@@ -7,12 +7,12 @@
     },
     "transform": [
         {
-            "calculate": "datum.enrichment > 10 ? 10 : datum.enrichment",
-            "as": "enrichment_capped"
-        },
-        {
             "calculate": "log(datum.baseMean + 1) / log(10)",
             "as": "log10_baseMean"
+        },
+        {
+            "calculate": "-log(datum.padj) / log(10)",
+            "as": "enrichment"
         }
     ],
     "params": [
@@ -21,6 +21,7 @@
             "value": 75,
             "bind": {
                 "input": "range",
+                "name": "Set data points opacity ",
                 "min": 1,
                 "max": 100
             }
@@ -28,6 +29,44 @@
         {
             "name": "pts",
             "select": "point"
+        },
+        {
+            "name": "min_lfc",
+            "value": -5,
+            "bind": {
+                "input": "range",
+                "name": "Set log2 fold change minimum value ",
+                "min": -20,
+                "max": 10
+            }
+        },
+        {
+            "name": "max_lfc",
+            "value": 5,
+            "bind": {
+                "input": "range",
+                "name": "Set log2 folg change maximum value ",
+                "min": -10,
+                "max": 20
+            }
+        },
+        {
+            "name": "max_enrichment",
+            "value": 10,
+            "bind": {
+                "input": "range",
+                "name": "Set maximum enrichment value",
+                "min": 1,
+                "max": 100
+            }
+        },
+        {
+            "name": "use_custom_axis",
+            "value": true,
+            "bind": {
+                "input": "checkbox",
+                "name": "Use custom axis? "
+            }
         }
     ],
     "hconcat": [
@@ -36,6 +75,7 @@
             "height": 500,
             "mark": {
                 "type": "circle",
+                "clip": true,
                 "tooltip": {
                     "content": "data"
                 },
@@ -52,11 +92,16 @@
                 "y": {
                     "field": "log2FoldChange",
                     "type": "quantitative",
-                    "title": "Log2 Fold Change"
+                    "title": "Log2 Fold Change",
+                    "scale": {
+                        "domainRaw": {
+                            "expr": "use_custom_axis ? max_lfc > min_lfc ? [min_lfc, max_lfc] : [max_lfc, min_lfc] : null"
+                        }
+                    }
                 },
                 "tooltip": [
                     {
-                        "field": "Name",
+                        "field": "gene_name",
                         "type": "nominal"
                     },
                     {
@@ -99,9 +144,7 @@
             "height": 500,
             "mark": {
                 "type": "circle",
-                "tooltip": {
-                    "content": "data"
-                },
+                "clip": true,
                 "opacity": {
                     "expr": "opacity / 100"
                 }
@@ -110,22 +153,26 @@
                 "x": {
                     "field": "log2FoldChange",
                     "type": "quantitative",
-                    "title": "log2 fold change"
+                    "title": "log2 fold change",
+                    "scale": {
+                        "domainRaw": {
+                            "expr": "use_custom_axis ? [min_lfc, max_lfc] : null"
+                        }
+                    }
                 },
                 "y": {
-                    "field": "enrichment_capped",
+                    "field": "enrichment",
                     "type": "quantitative",
                     "title": "Enrichment (-log10 p-value)",
                     "scale": {
-                        "domain": [
-                            0,
-                            10
-                        ]
+                        "domainRaw": {
+                            "expr": "use_custom_axis ? [0, max_enrichment] : null"
+                        }
                     }
                 },
                 "tooltip": [
                     {
-                        "field": "Name",
+                        "field": "gene_name",
                         "type": "nominal"
                     },
                     {

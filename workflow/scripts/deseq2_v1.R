@@ -141,11 +141,33 @@ saveRDS(dds, file = dds_rds_path)
 
 ## Extract results
 results <- results(dds, name = resultsNames(dds)[2])
-results$Name <- rownames(results)
-results$enrichment <- -log10(results$padj)
-write.csv(results, file = deg_table_path)
+results_shrink <- lfcShrink(dds, coef = resultsNames(dds)[2], type = "apeglm")
 
-results <- lfcShrink(dds, coef = resultsNames(dds)[2], type = "apeglm")
-results$Name <- rownames(results)
-results$enrichment <- -log10(results$padj)
+gene_names_columns <- c("gene_name", "Name")
+k <- gene_names_columns %in% colnames(mcols(rowRanges(dds)))
+if (any(k)) {
+  cn <- gene_names_columns[k]
+
+  df <- subset(mcols(rowRanges(dds)), select = cn)
+  df$gene_id <- rownames(dds)
+
+  results$gene_id <- rownames(results)
+  results_shrink$gene_id <- rownames(results_shrink)
+
+  results <- merge(as.data.frame(results), as.data.frame(df), by = "gene_id")
+  results_shrink <- merge(as.data.frame(results_shrink), as.data.frame(df), by = "gene_id")
+
+  idx <- which(colnames(results) == cn)
+  colnames(results)[idx] <- "gene_name"
+
+  idx <- which(colnames(results_shrink) == cn)
+  colnames(results_shrink)[idx] <- "gene_name"
+
+} else {
+
+  results$gene_name <- rownames(results)
+  results_shrink$gene_name <- rownames(results_shrink)
+}
+
+write.csv(results, file = deg_table_path)
 write.csv(results, file = deg_table_shrink_path)
