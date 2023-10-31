@@ -27,6 +27,15 @@ sample_sheet <- read.csv(
     header=TRUE,
     row.names = "sample"    
 )
+
+if ("filename_1" %in% colnames(sample_sheet)) {
+    colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename_1 )
+}else{
+    colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename)
+}
+
+colnames(count_matrix)[colnames_order] <- rownames(sample_sheet)
+
 sample_sheet <- sample_sheet[match(colnames(count_matrix), rownames(sample_sheet)),]
 
 design_variable <- snakemake@params[["variable"]]
@@ -52,6 +61,10 @@ saveRDS(dds, file = dds_rds_path)
 results <- results(dds, name = resultsNames(dds)[2])
 
 results$gene_name <- rownames(results)
+
+columns <- colnames(results)
+columns <- c("gene_name", columns[-which(columns == "gene_name")])
+results <- results[,columns]
 
 # saveRDS(results, file = results_rds_path)
 write.csv(results, file = deg_table_path)

@@ -89,9 +89,15 @@ for (i in seq_along(design_variable)) {
 
 if (libtype == "single") {
   rownames(colData) <- colData[, "filename"]
+  colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename)
 } else {
   rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])
+  colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename_1 )
 }
+
+# Rename columns to match sample sheet sample column
+colnames(count_matrix)[colnames_order] <- rownames(sample_sheet)
+
 
 ## Import STAR counts and generate a count matrix
 ls <- list.files(counts_folder, pattern = "ReadsPerGene.out.tab", full.names = TRUE)
@@ -162,6 +168,15 @@ if (any(k)) {
 
   idx <- which(colnames(results_shrink) == cn)
   colnames(results_shrink)[idx] <- "gene_name"
+
+  columns <- colnames(results)
+  columns <- c("gene_name", columns[-which(columns == "gene_name")])
+  results <- results[,columns]
+
+  columns <- colnames(results_shrink)
+  columns <- c("gene_name", columns[-which(columns == "gene_name")])
+  results_shrink <- results_shrink[,columns]
+
 
 } else {
 
