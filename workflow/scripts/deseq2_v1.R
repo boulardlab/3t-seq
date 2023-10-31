@@ -104,13 +104,13 @@ mat <- sapply(ls, function(p) {
 })
 
 if (libtype == "single") {
-  colnames_order <- sapply(colnames(mat), grep, x = sample_sheet$filename)
+  colnames_order <- sapply(colnames(mat), grep, x = colData$filename)
 } else {
-  colnames_order <- sapply(colnames(mat), grep, x = sample_sheet$filename_1 )
+  colnames_order <- sapply(colnames(mat), grep, x = colData$filename_1 )
 }
 
 # Rename columns to match sample sheet sample column
-colnames(mat)[colnames_order] <- rownames(sample_sheet)
+colnames(mat)[colnames_order] <- rownames(colData)
 
 
 ## Extract annotations data for the quantified genes
