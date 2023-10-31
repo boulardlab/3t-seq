@@ -89,14 +89,10 @@ for (i in seq_along(design_variable)) {
 
 if (libtype == "single") {
   rownames(colData) <- colData[, "filename"]
-  colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename)
 } else {
-  rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])
-  colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename_1 )
+  rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])  
 }
 
-# Rename columns to match sample sheet sample column
-colnames(count_matrix)[colnames_order] <- rownames(sample_sheet)
 
 
 ## Import STAR counts and generate a count matrix
@@ -106,6 +102,16 @@ mat <- sapply(ls, function(p) {
   dt <- fread(p, skip = 4)
   setNames(dt$V2, dt$V1)
 })
+
+if (libtype == "single") {
+  colnames_order <- sapply(colnames(mat), grep, x = sample_sheet$filename)
+} else {
+  colnames_order <- sapply(colnames(mat), grep, x = sample_sheet$filename_1 )
+}
+
+# Rename columns to match sample sheet sample column
+colnames(mat)[colnames_order] <- rownames(sample_sheet)
+
 
 ## Extract annotations data for the quantified genes
 if (annotation_type == "gencode" || annotation_type == "ensembl") {
