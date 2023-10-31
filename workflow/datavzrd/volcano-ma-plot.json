@@ -23,7 +23,8 @@
                 "input": "range",
                 "name": "Set data points opacity ",
                 "min": 1,
-                "max": 100
+                "max": 100,
+                "step": 1
             }
         },
         {
@@ -37,7 +38,8 @@
                 "input": "range",
                 "name": "Set log2 fold change minimum value ",
                 "min": -20,
-                "max": 10
+                "max": 10,
+                "step": 1
             }
         },
         {
@@ -45,9 +47,10 @@
             "value": 5,
             "bind": {
                 "input": "range",
-                "name": "Set log2 folg change maximum value ",
+                "name": "Set log2 fold change maximum value ",
                 "min": -10,
-                "max": 20
+                "max": 20,
+                "step": 1
             }
         },
         {
@@ -55,9 +58,32 @@
             "value": 10,
             "bind": {
                 "input": "range",
-                "name": "Set maximum enrichment value",
+                "name": "Set maximum enrichment value ",
                 "min": 1,
-                "max": 100
+                "max": 100,
+                "step": 1
+            }
+        },
+        {
+            "name": "lfc_thr",
+            "value": 0.5,
+            "bind": {
+                "input": "number",
+                "name": "Differentially expressed genes log2 fold change threshold ",
+                "min": 0,
+                "max": 5,
+                "step": 0.5
+            }
+        },
+        {
+            "name": "padj_thr",
+            "value": 0.05,
+            "bind": {
+                "input": "number",
+                "name": "Differentially expressed genes p-value threshold ",
+                "min": 0,
+                "max": 1,
+                "step": 0.01
             }
         },
         {
@@ -69,7 +95,87 @@
             }
         }
     ],
+    "config": {
+        "legend": {
+            "disable": true
+        }
+    },
     "hconcat": [
+        {
+            "width": 500,
+            "height": 500,
+            "layer": [
+                {
+                    "mark": {
+                        "type": "circle",
+                        "clip": true,
+                        "opacity": {
+                            "expr": "opacity / 100"
+                        }
+                    },
+                    "encoding": {
+                        "x": {
+                            "field": "log2FoldChange",
+                            "type": "quantitative",
+                            "title": "log2 fold change",
+                            "scale": {
+                                "domainRaw": {
+                                    "expr": "use_custom_axis ? [min_lfc, max_lfc] : null"
+                                }
+                            }
+                        },
+                        "y": {
+                            "field": "enrichment",
+                            "type": "quantitative",
+                            "title": "Enrichment (-log10 p-value)",
+                            "scale": {
+                                "domainRaw": {
+                                    "expr": "use_custom_axis ? [0, max_enrichment] : null"
+                                }
+                            }
+                        },
+                        "tooltip": [
+                            {
+                                "field": "gene_name",
+                                "type": "nominal"
+                            },
+                            {
+                                "field": "padj",
+                                "type": "quantitative"
+                            },
+                            {
+                                "field": "log2FoldChange",
+                                "type": "quantitative"
+                            },
+                            {
+                                "field": "baseMean",
+                                "type": "quantitative"
+                            }
+                        ],
+                        "color": {
+                            "condition": [
+                                {
+                                    "test": "datum.log2FoldChange > lfc_thr & datum.enrichment > -(log(padj_thr) / log(10))",
+                                    "value": "blue"
+                                },
+                                {
+                                    "test": "datum.log2FoldChange < -lfc_thr & datum.enrichment > -(log(padj_thr) / log(10))",
+                                    "value": "red"
+                                }
+                            ]
+                        },
+                        "size": {
+                            "condition": {
+                                "param": "pts",
+                                "value": 500,
+                                "empty": false
+                            },
+                            "value": 50
+                        }
+                    }
+                }
+            ]
+        },
         {
             "width": 500,
             "height": 500,
@@ -118,11 +224,16 @@
                     }
                 ],
                 "color": {
-                    "condition": {
-                        "param": "pts",
-                        "value": "#4c78a8"
-                    },
-                    "value": "grey"
+                    "condition": [
+                        {
+                            "test": "datum.log2FoldChange > lfc_thr & datum.padj < padj_thr",
+                            "value": "blue"
+                        },
+                        {
+                            "test": "datum.log2FoldChange < -lfc_thr & datum.padj < padj_thr",
+                            "value": "red"
+                        }
+                    ]
                 },
                 "size": {
                     "condition": {
@@ -131,82 +242,6 @@
                         "empty": false
                     },
                     "value": 50
-                }
-            },
-            "config": {
-                "legend": {
-                    "disable": true
-                }
-            }
-        },
-        {
-            "width": 500,
-            "height": 500,
-            "mark": {
-                "type": "circle",
-                "clip": true,
-                "opacity": {
-                    "expr": "opacity / 100"
-                }
-            },
-            "encoding": {
-                "x": {
-                    "field": "log2FoldChange",
-                    "type": "quantitative",
-                    "title": "log2 fold change",
-                    "scale": {
-                        "domainRaw": {
-                            "expr": "use_custom_axis ? [min_lfc, max_lfc] : null"
-                        }
-                    }
-                },
-                "y": {
-                    "field": "enrichment",
-                    "type": "quantitative",
-                    "title": "Enrichment (-log10 p-value)",
-                    "scale": {
-                        "domainRaw": {
-                            "expr": "use_custom_axis ? [0, max_enrichment] : null"
-                        }
-                    }
-                },
-                "tooltip": [
-                    {
-                        "field": "gene_name",
-                        "type": "nominal"
-                    },
-                    {
-                        "field": "padj",
-                        "type": "quantitative"
-                    },
-                    {
-                        "field": "log2FoldChange",
-                        "type": "quantitative"
-                    },
-                    {
-                        "field": "baseMean",
-                        "type": "quantitative"
-                    }
-                ],
-                "color": {
-                    "condition": {
-                        "param": "pts",
-                        "value": "#4c78a8"
-                    },
-                    "value": "grey"
-                },
-                "size": {
-                    "condition": {
-                        "param": "pts",
-                        "value": 500,
-                        "empty": false
-                    },
-                    "value": 50
-                }
-            },
-            "config": {
-                "legend": {
-                    "disable": true
                 }
             }
         }

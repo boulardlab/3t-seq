@@ -7,11 +7,58 @@ datasets:
   ?for dataset in datasets:
     ?dataset['name']:
       path: ?dataset['path']
-
+      offer-excel: true
+webview-controls: false
+default-view: ?default_view
+max-in-memory-rows: ?max_in_memory_rows
 views:
   ?for view in views:
     ?view['name']:      
       dataset: ?view['dataset']
-      render-plot:
-        spec: | 
-          ?json.dumps(view['spec'])
+      ?if view['type'] == 'plot':
+        desc: | 
+          # Volcano and MA plots
+          Use the control below to customize the plot
+        render-plot:
+          spec-path: ?view['spec_path']            
+      ?elif view['type'] == 'table':        
+        desc: | 
+          # Results table from DESeq2 analysis
+        page-size: 25
+        render-table:
+          columns:
+            index(0):
+              display-mode: hidden
+            gene_id:
+              display-mode: detail
+              optional: true
+            log2FoldChange:
+              label: Log2 fold change
+              precision: 1
+            padj:
+              label: Adjusted p-value
+              precision: 4
+              plot:
+                bars:
+                  scale: linear
+                  domain:
+                    - 0
+                    - 1
+            pvalue:
+              label: P-value
+              precision: 4
+            baseMean:
+              label: Mean expression
+              precision: 1
+            gene_name:
+              label: Gene name
+            lfcSE:
+              label: Log2 fold change error
+              optional: true
+              display-mode: detail
+            stat:
+              display-mode: detail
+              label: Statistics value
+              optional: true
+
+
