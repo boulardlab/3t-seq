@@ -4,7 +4,7 @@
 
 This is a Snakemake workflow for the integrated analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
 
-<img src="https://raw.githubusercontent.com/boulardlab/3t-seq/main/docs/figures/3t-wf.png" width="200">
+<img src="https://raw.githubusercontent.com/boulardlab/3t-seq/main/docs/figures/3t-wf.png" width="500">
 
 ## Requirements
 
