@@ -61,15 +61,15 @@ checkpoint download_gtRNAdb:
         "../scripts/download-gtrnadb.sh"
 
 
-rule download_gaf_file:
-    output:
-        gaf_path,
-    params:
-        url=config["genome"]["gaf_url"],
-    conda:
-        "../env/wget.yml"
-    log:
-        log_folder.joinpath("download/genome/gaf.log"),
-    threads: 4
-    script:
-        "../scripts/download-gaf.sh"
+# rule download_gaf_file:
+#     output:
+#         gaf_path,
+#     params:
+#         url=config["genome"]["gaf_url"],
+#     conda:
+#         "../env/wget.yml"
+#     log:
+#         log_folder.joinpath("download/genome/gaf.log"),
+#     threads: 4
+#     script:
+#         "../scripts/download-gaf.sh"
