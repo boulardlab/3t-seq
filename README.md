@@ -1,4 +1,4 @@
-# RNA-seq Analysis Pipeline
+# 3t-seq: automatic gene expression analysis of single copy genes, transposable elements and tRNAs
 
 ## Overview
 
@@ -57,25 +57,25 @@ Here is an example config file:
 # A list of datasets 
 sequencing_libraries:
   - name: GSE13073
-	sample_sheet: sample-sheet.csv
-	trimmomatic: >-
-    	"ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
-    	SLIDINGWINDOW:20:22
-    	MAXINFO:20:0.6
-    	LEADING:22
-    	TRAILING:20
-    	MINLEN:75"
-	star: >-
-	"--seedSearchStartLmax 30
-	--outFilterMismatchNoverReadLmax 0.04
-	--winAnchorMultimapNmax 40"
-	bamCoverage: "--binSize 50 --normalizeUsing None"
+    sample_sheet: sample-sheet.csv
+    trimmomatic: >-
+      "ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
+       SLIDINGWINDOW:20:22
+       MAXINFO:20:0.6
+       LEADING:22
+       TRAILING:20
+       MINLEN:75"
+    star: >-
+      "--seedSearchStartLmax 30
+       --outFilterMismatchNoverReadLmax 0.04
+       --winAnchorMultimapNmax 40"
+    bamCoverage: "--binSize 50 --normalizeUsing None"
 
 #   - name: ...
-# 	  sample_sheet: ...
-# 	  trimmomatic: ...
-# 	  star: ...
-# 	  bamCoverage: ...
+#     sample_sheet: ...
+#     trimmomatic: ...
+#     star: ...
+#     bamCoverage: ...
 
 # 
 globals:
