@@ -4,11 +4,6 @@ jobs: 1
 restart-times: 0
 reason: True
 printshellcmds: True
-show-failed-logs: True
 use-conda: True
 use-singularity: True
-singularity-args: "--no-home --bind ~/Projects/snakemake-rnaseq"
-latency-wait: 20
-
-resources:
-  - mem_mb=10000
+singularity-args: "--no-home"
