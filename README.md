@@ -67,7 +67,7 @@ sequencing reads mates. For se libraries, `filename` is sufficient. **The pipeli
 The pipeline will generate an ouput folder tree like so
 
 <p align="center">
-  ![Folder tree generated from 3t-seq](docs/figures/folder-tree-tikz.png)
+  <img src="docs/figures/folder-tree-tikz.png">
 </p>
 
 ## References
