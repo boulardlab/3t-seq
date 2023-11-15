@@ -104,7 +104,7 @@ def main(
 
 
 if __name__ == "__main__":
-    genome = "mm10"
+    genome = snakemake.params["genome_id"]
     track_name = "rmsk"
     gtf_output = open(str(snakemake.output[0]), "w")
     bed_output = open(str(snakemake.output[1]), "w")

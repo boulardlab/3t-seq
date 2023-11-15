@@ -36,6 +36,8 @@ rule download_repeatmasker_annotation_file:
     output:
         protected(rmsk_path),
         protected(rmsk_bed)
+    params:
+        genome_id=config["genome"]["label"]
     conda:
         "../env/pandas.yml" # use a Python env, the script does not really use Pandas
     log:
