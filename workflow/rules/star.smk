@@ -52,9 +52,15 @@ rule star:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
+        #temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
+        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
         star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
         star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
+        star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
+        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
         star_folder.joinpath("{serie}/{sample}.Log.final.out"),
     threads: 8
     resources:
