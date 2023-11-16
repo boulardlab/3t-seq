@@ -53,6 +53,20 @@ dds <- DESeqDataSetFromMatrix(
 )
 
 dds <- dds[rowSums(counts(dds)) > ncol(dds), ]
+
+# make count matrix + 1 if cannot estimateSizeFactors
+dds <- tryCatch(estimateSizeFactors(count_matrix),
+   error = function(er) {
+     warning("Adding 1 to count matrix")
+     dds <- DESeqDataSetFromMatrix(
+       countData = count_matrix + 1,
+       colData = sample_sheet,
+       design = design_formula
+     )
+     dds <- estimateSizeFactors(dds)
+    return(dds)
+})
+
 dds <- DESeq(dds, test = "Wald")
 
 saveRDS(dds, file = dds_rds_path)
