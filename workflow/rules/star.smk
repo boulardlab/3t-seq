@@ -52,8 +52,7 @@ rule star:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        #temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
         star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
         star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
         star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
@@ -163,7 +162,7 @@ rule index_bam:
     input:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
+        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai")),
     threads: 1
     resources:
         runtime=30,
