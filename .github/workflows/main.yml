@@ -21,7 +21,7 @@ jobs:
         env:
           VALIDATE_ALL_CODEBASE: false
           DEFAULT_BRANCH: main
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.TOKEN }}
           VALIDATE_SNAKEMAKE_SNAKEFMT: true
   linting:
     runs-on: ubuntu-latest
