@@ -5,6 +5,6 @@
 **/.java
 **/.config
 **/.condarc
-**/tests*
 **/workdir
 profile/slurm
+tests4/
