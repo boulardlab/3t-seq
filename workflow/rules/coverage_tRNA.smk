@@ -70,7 +70,7 @@ rule deseq2_tRNA:
         deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=config["deseq2"]["reference_level"],
+        reference_level=lambda wildcards: config[wilcards.serie]["deseq2"]["reference_level"],
     conda:
         "../env/R.yml"
     threads: 4

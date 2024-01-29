@@ -35,7 +35,7 @@ rule deseq2:
         annotation_type=config["genome"]["annotation_type"],
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=config["deseq2"]["reference_level"]
+        reference_level=lambda wildcards: config[wildcards.serie]["deseq2"]["reference_level"]
     threads: 4
     resources:
         runtime=40,

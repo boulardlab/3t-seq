@@ -94,7 +94,7 @@ rule deseq2_starTE_random:
         deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=config["deseq2"]["reference_level"],
+        reference_level=lambda wildcards: config[wildcards.serie]["deseq2"]["reference_level"],
     conda:
         "../env/R.yml"
     threads: 4
