@@ -103,11 +103,11 @@ def get_fastq(wildcards):
                 wildcards.serie, f"{wildcards.sample}.{ext}"
             )
             if os.path.exists(candidate1) and os.path.exists(candidate2):
-                return [ candidate1, candidate2 ]
+                return [candidate1, candidate2]
         raise ValueError(
             f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
-        ) 
-	return ""
+        )
+        return ""
 
 
 def get_fastq_paired(wildcards):
@@ -154,7 +154,9 @@ def get_deseq2_test(wildcards):
         deseq2_params["test"] = "Wald"
     test = deseq2_params["test"]
     if not test in ["Wald", "LRT"]:
-        raise ValueError(f"Invalid test: {test}. Test name must be either Wald or LRT. Check your config.")
+        raise ValueError(
+            f"Invalid test: {test}. Test name must be either Wald or LRT. Check your config."
+        )
     return deseq2_params["test"]
 
 
@@ -164,8 +166,15 @@ def get_deseq2_variable(wildcards):
         deseq2_params["variable"] = "genotype"
     var = deseq2_params["variable"]
     if not var in sample_sheet.columns.values.tolist():
-        raise ValueError(f"{var} was not detected in sample sheet columns. Please check your config.")
+        raise ValueError(
+            f"{var} was not detected in sample sheet columns. Please check your config."
+        )
     return deseq2_params["variable"]
+
+
+def get_deseq2_reference_level(wildcards):
+    deseq2_params = get_params(wildcards, "deseq2")
+    return deseq2_params["reference_level"]
 
 
 def get_markdup_bam(wildcards):
@@ -189,16 +198,28 @@ def get_salmonTE_quant_input(wildcards):
         for extension in supported_extensions:
             for sample in samples["single"][wildcards.serie]:
                 # we use absolute path because of Singularity/Docker
-                candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}.{extension}").resolve())
+                candidates.append(
+                    raw_reads_folder.joinpath(
+                        wildcards.serie, f"{sample}.{extension}"
+                    ).resolve()
+                )
             if all([os.path.exists(f) for f in candidates]):
-                    break
+                break
     else:
         for extension in supported_extensions:
             for m in supported_suffixes:
                 candidates = []
                 for sample in samples["paired"][wildcards.serie]:
-                    candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}{m[0]}.{extension}").resolve())
-                    candidates.append(raw_reads_folder.joinpath(wildcards.serie, f"{sample}{m[1]}.{extension}").resolve())
+                    candidates.append(
+                        raw_reads_folder.joinpath(
+                            wildcards.serie, f"{sample}{m[0]}.{extension}"
+                        ).resolve()
+                    )
+                    candidates.append(
+                        raw_reads_folder.joinpath(
+                            wildcards.serie, f"{sample}{m[1]}.{extension}"
+                        ).resolve()
+                    )
                 if all([os.path.exists(f) for f in candidates]):
                     break
             else:
@@ -287,7 +308,7 @@ def get_trimmed_fastqc(wildcards):
 
 
 def get_fastqc(wildcards):
-    s = get_samples(wildcards, samples)    
+    s = get_samples(wildcards, samples)
     if wildcards.serie in library_names_single:
         ret = expand(
             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),

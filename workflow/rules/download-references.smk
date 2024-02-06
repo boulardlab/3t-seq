@@ -19,7 +19,7 @@ rule download_genome_annotation_file:
     output:
         protected(gtf_path),
     params:
-        url=config["genome"]["gtf_url"]
+        url=config["genome"]["gtf_url"],
     conda:
         "../env/wget.yml"
     log:
@@ -35,11 +35,11 @@ rule download_genome_annotation_file:
 rule download_repeatmasker_annotation_file:
     output:
         protected(rmsk_path),
-        protected(rmsk_bed)
+        protected(rmsk_bed),
     params:
-        genome_id=config["genome"]["label"]
+        genome_id=config["genome"]["label"],
     conda:
-        "../env/pandas.yml" # use a Python env, the script does not really use Pandas
+        "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
     log:
         log_folder.joinpath("download/genome/rmsk.log"),
     threads: 1

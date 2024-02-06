@@ -70,7 +70,7 @@ rule deseq2_tRNA:
         deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=lambda wildcards: config[wilcards.serie]["deseq2"]["reference_level"],
+        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     conda:
         "../env/R.yml"
     threads: 4
@@ -87,17 +87,16 @@ localrules:
     yte_trna,
     datavzrd_trna,
 
+
 rule yte_trna:
     input:
         template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
-        datasets=[ trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt") ],
+        datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt")],
     output:
         trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
     params:
-        plot_name = "tRNA expression",
-        view_specs = [
-            workflow.source_path("../datavzrd/volcano-ma-plot.json")
-        ]
+        plot_name="tRNA expression",
+        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:

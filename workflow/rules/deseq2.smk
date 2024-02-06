@@ -29,13 +29,13 @@ rule deseq2:
         # touch(analysis_folder.joinpath("deseq2-{serie}.done")),
         deg_table=tables_folder.joinpath("deseq2/{serie}/results.csv"),
         deg_table_shrink=tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
-        dds=rdata_folder.joinpath("deseq2/{serie}/dds.rds")
+        dds=rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
     params:
         # quantile_threshold=0.25,
         annotation_type=config["genome"]["annotation_type"],
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=lambda wildcards: config[wildcards.serie]["deseq2"]["reference_level"]
+        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     threads: 4
     resources:
         runtime=40,
@@ -47,6 +47,7 @@ rule deseq2:
     script:
         "../scripts/deseq2_v1.R"
 
+
 localrules:
     yte_single_copy_genes,
     datavzrd_single_copy_genes,
@@ -57,15 +58,13 @@ rule yte_single_copy_genes:
         template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[
             tables_folder.joinpath("deseq2/{serie}/results.csv"),
-            tables_folder.joinpath("deseq2/{serie}/results.shrink.csv")
+            tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
         ],
     output:
         analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd.yaml"),
     params:
-        plot_name = "Single copy genes DESeq2",
-        view_specs = [
-            workflow.source_path("../datavzrd/volcano-ma-plot.json")
-        ]
+        plot_name="Single copy genes DESeq2",
+        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:
