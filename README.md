@@ -35,7 +35,7 @@ conda activate snakemake-latest
 
 ### 3. Configure samples and parameters
 
-Edit the `config.yaml` file to specify your sample information and analysis parameters.
+Edit the `config.yaml` file to specify your sample information and analysis parameters. The [`config/` folder](config/) contains a detailed description of this file.
 
 ### 4. Execute the pipeline
 
@@ -46,6 +46,16 @@ snakemake --profile profile/default
 ### 5. View results
 
 After the pipeline completes, you can find the results in the `results/` directory.
+
+### 6. Generate 3t-seq HTML report
+
+After successful execution, an interactive HTML report collecting execution statistics, FastQC and MultiQC reports, DESeq2 results, MA plot and Volcano plots for single copy gene, retrotransposons and tRNAs can be generated as follow:
+
+```bash
+snakemake --profile profile/default --report report.zip
+```
+
+A `report.zip` archive will be generated in the current working directory. The archive will contain the HTML file. This file can be shared and does not need internet connection to be opened.
 
 ## Configuration
 
@@ -70,9 +80,39 @@ The pipeline will generate an ouput folder tree like so
   <img src="docs/figures/folder-tree-tikz.png">
 </p>
 
+## Run tests
+
+The `tests/` folder contains a small test dataset and example configuration file needed to run the 3t-seq pipeline on it. 
+
+Provided a working Snakemake installation is available, the example dataset can be run as follow:
+
+```bash
+cd 3t-seq
+snakemake \
+  --directory tests \
+  --configfile tests/config.yaml \
+  --profile tests/profile \
+  --snakefile workflow/Snakefile
+```
+
+Results will then be available in `tests/results`.
+
+An example 3t-seq HTML report could be generated with the following command:
+
+```bash
+snakemake \
+  --directory tests \
+  --configfile tests/config.yaml \
+  --profile tests/profile \
+  --snakefile workflow/Snakefile \
+  --report report.zip
+```
+
+The `report.zip` file will be generated in `tests/report.zip`.
+
 ## References
 
-Tabaro F, Boulard M, *3t-seq: automatic gene expression analysis of single copy genes, transposable elements and tRNAs from total RNA-seq data*, Submitted
+Tabaro F, Boulard M, *3t-seq: automatic gene expression analysis of single copy genes, transposable elements and tRNAs from total RNA-seq data*, Under review.
 
 ## License
 
