@@ -14,7 +14,7 @@ rule starTE_random:
         else "PAIRED",
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
-        mem_mb=giga_to_byte(32),
+        #mem_mb=lambda wildcards, resources: resources.mem_mb # giga_to_byte(32),
     conda:
         "../env/alignment.yml"
     log:
@@ -51,7 +51,7 @@ rule starTE_random:
             --genomeDir {input.star_index_folder} \
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
             --readFilesIn {input.bam} \
-            --limitBAMsortRAM {params.mem_mb} \
+            --limitBAMsortRAM {resources.mem_mb} \
             --outBAMcompression -1 |& \
          tee {log}
 
@@ -165,7 +165,7 @@ rule starTE_multihit:
         else "PAIRED",
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
-        mem_mb=giga_to_byte(32),
+        #mem_mb=giga_to_byte(32),
     conda:
         "../env/alignment.yml"
     log:
@@ -200,7 +200,7 @@ rule starTE_multihit:
             --readFilesCommand zcat \
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/multihit/{wildcards.sample}. \
             --readFilesIn {input.bam} \
-            --limitBAMsortRAM {params.mem_mb} \
+            --limitBAMsortRAM {resources.mem_mb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1 |& \
          tee {log}
