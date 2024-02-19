@@ -63,16 +63,16 @@ colData <- fread(sample_sheet)
 
 if ("filename" %in% colnames(colData)) {
   libtype <- "single"
-  if (!all(c("sample", "filename", design_variable) %in% colnames(colData))) {
+  if (!all(c("name", "filename", design_variable) %in% colnames(colData))) {
     stop(
-      sprintf("Wrong columns in sample sheet. Colnames must be: \"sample\", \"filename\" and \"%s\".\nRemove extensions from filename column. Detected column names: %s", design_variable, colnames(colData))
+      sprintf("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename\" and \"%s\".\nRemove extensions from filename column. Detected column names: %s", design_variable, colnames(colData))
     )
   }
 } else if ("filename_1" %in% colnames(colData)) {
   libtype <- "paired"
-  if (!all(c("sample", "filename_1", "filename_2", design_variable) %in% colnames(colData))) {
+  if (!all(c("name", "filename_1", "filename_2", design_variable) %in% colnames(colData))) {
     stop(
-      sprintf("Wrong columns in sample sheet. Colnames must be: \"sample\", \"filename_1\", \"filename_2\", and \"%s\".\nRemove extensions from filename column. Detected column names: %s", design_variable, colnames(colData)))
+      sprintf("Wrong columns in sample sheet. Colnames must be: \"name\", \"filename_1\", \"filename_2\", and \"%s\".\nRemove extensions from filename column. Detected column names: %s", design_variable, colnames(colData)))
   }
 } else {
   stop(sprintf("Could not determine sequencing library type. From the following column names: %s\nPlease, check your column names. They should be all lower case.", colnames(colData)))

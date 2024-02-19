@@ -25,7 +25,7 @@ sample_sheet <- read.csv(
     snakemake@input[["sample_sheet"]], 
     sep=",", 
     header=TRUE,
-    row.names = "sample"    
+    row.names = "name"    
 )
 
 print(sample_sheet)
