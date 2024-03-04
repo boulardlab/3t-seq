@@ -192,10 +192,10 @@ def get_markdup_fastqc(wildcards):
 
 
 def get_salmonTE_quant_input(wildcards):
-    candidates = []
     if wildcards.serie in library_names_single:
         s = samples["single"][wildcards.serie]
         for extension in supported_extensions:
+            candidates = []
             for sample in samples["single"][wildcards.serie]:
                 # we use absolute path because of Singularity/Docker
                 candidates.append(
