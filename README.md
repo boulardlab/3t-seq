@@ -39,6 +39,8 @@ Edit the `config.yaml` file to specify your sample information and analysis para
 
 ### 4. Execute the pipeline
 
+In the `3et-seq` folder:
+
 ```bash
 snakemake --profile profile/default
 ```
@@ -87,7 +89,6 @@ The `tests/` folder contains a small test dataset and example configuration file
 Provided a working Snakemake installation is available, the example dataset can be run as follow:
 
 ```bash
-cd 3t-seq
 snakemake \
   --directory tests \
   --configfile tests/config.yaml \
@@ -108,7 +109,7 @@ snakemake \
   --report report.zip
 ```
 
-The `report.zip` file will be generated in `tests/report.zip`.
+The `report.zip` file will be generated in `tests/report.zip`. 
 
 ## References
 
