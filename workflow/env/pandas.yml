@@ -1,4 +1,4 @@
 channels:
   - anaconda
 dependencies:
-  - pandas
+  - pandas=2.1.1
