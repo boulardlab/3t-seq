@@ -57,7 +57,7 @@ jobs:
           conda install -c conda-forge mamba
       - name: Setup snakemake
         run: |
-          mamba install -c conda-forge -c bioconda snakemake singularity
+          mamba install -c conda-forge -c bioconda snakemake=7.28.3 singularity
       - name: Run workflow
         run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
