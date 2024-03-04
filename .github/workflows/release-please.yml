@@ -17,4 +17,4 @@ jobs:
         with:
           release-type: simple
           package-name: 3t-seq
-          token: ${{ secrets.TOKEN }}
+          token: ${{ secrets.3tseq_token }}
