@@ -391,7 +391,7 @@ def build_rule_all_inputs(wildcards):
         )
     )
     # Bigwig files
-    ret.append(get_bw(widlcards))
+    ret.append(get_bw(wildcards))
 
     if not config["disable_TE_analysis"]:
         # SalmonTE results folders
