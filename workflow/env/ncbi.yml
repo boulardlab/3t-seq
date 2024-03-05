@@ -1,5 +1,5 @@
 channels:
   - bioconda
 dependencies:
-  - entrez-direct
-  - sra-tools
+  - entrez-direct=16.2
+  - sra-tools=3.0.10

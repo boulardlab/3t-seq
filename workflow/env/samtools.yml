@@ -3,5 +3,5 @@ channels:
   - bioconda
 dependencies:
   - samtools=1.16.1
-  - ucsc-gtftogenepred
-  - ucsc-genepredtobed
+  - ucsc-gtftogenepred=447
+  - ucsc-genepredtobed=447
