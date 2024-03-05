@@ -56,7 +56,6 @@ def main(
 
         for chromosome in track_data.values():
             for repeat in chromosome:
-                
                 # UCSC works zero-based base position
                 # https://www.biostars.org/p/84686/
 

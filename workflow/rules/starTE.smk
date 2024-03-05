@@ -14,7 +14,6 @@ rule starTE_random:
         else "PAIRED",
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
-        #mem_mb=lambda wildcards, resources: resources.mem_mb # giga_to_byte(32),
     conda:
         "../env/alignment.yml"
     log:
@@ -164,8 +163,7 @@ rule starTE_multihit:
         if wildcards.serie in library_names_single
         else "PAIRED",
         alignments_folder=starTE_folder,
-        tmp_folder=tmp_folder,
-        #mem_mb=giga_to_byte(32),
+        tmp_folder=tmp_folder
     conda:
         "../env/alignment.yml"
     log:
