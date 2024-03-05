@@ -7,7 +7,7 @@ RUN curl -LO "https://github.com/hyunhwan-jeong/SalmonTE/archive/refs/heads/main
     rm -r SalmonTE-main/example SalmonTE-main/test
 
 
-FROM continuumio/miniconda3:23.3.1-0
+FROM continuumio/miniconda3:23.3.1-0-alpine
 RUN conda update -y -n base -c defaults conda; \
     conda config --add channels conda-forge; \
     conda config --add channels bioconda; \
@@ -15,7 +15,7 @@ RUN conda update -y -n base -c defaults conda; \
 RUN conda install -n base -y conda-libmamba-solver ; \
     conda config --set solver libmamba
 RUN conda install -y  \
-    snakemake \
+    snakemake=7.28.3 \
     pandas \
     docopt \
     r-base=4.2.3 \
@@ -23,10 +23,6 @@ RUN conda install -y  \
     r-writexls \
     r-tidyverse \
     bioconductor-deseq2
-    # r-base \
-    # r-latticeextra \
-    # r-hmisc \
-    # r-rms \
     
 WORKDIR /opt
 COPY --from=0 /home/curl_user/SalmonTE-main ./SalmonTE
