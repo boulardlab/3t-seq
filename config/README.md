@@ -32,7 +32,12 @@ sequencing_libraries:
 #     star: ...
 #     bamCoverage: ...
 
-# 
+# Disable all functionalities related to TE analysis
+disable_TE_analysis: false
+
+# Disable tRNA analysis
+disable_tRNA_analysis: false
+
 globals:
   # path to reads folder 
   # NB: ./GSE13073 is expected to exist

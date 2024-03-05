@@ -16,7 +16,7 @@ sequencing_libraries:
       variable: genotype
       reference_level: WT
 
-disable_TE_analysis: false
+disable_TE_analysis: true
 disable_tRNA_analysis: false
 
 globals:

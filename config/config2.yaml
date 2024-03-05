@@ -78,6 +78,9 @@ sequencing_libraries:
       test: Wald
       variable: genotype
 
+disable_TE_analysis: false
+disable_tRNA_analysis: false
+
 globals:
   reads_folder: ../../../data/rna-seq/reads
   container_folder: ../../../env/container

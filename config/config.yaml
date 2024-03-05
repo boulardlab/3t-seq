@@ -15,6 +15,9 @@ sequencing_libraries:
       test: Wald
       variable: cell_type
 
+disable_TE_analysis: false
+disable_tRNA_analysis: false
+
 globals:
   reads_folder: tests
   results_folder: tests/results/
