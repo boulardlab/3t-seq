@@ -4,4 +4,3 @@ singularity-args: ""
 show-failed-logs: True
 cores: 2
 conda-cleanup-pkgs: cache
-conda-cleanup-envs: true
