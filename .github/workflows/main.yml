@@ -56,9 +56,11 @@ jobs:
       - name: Setup snakemake
         run: |
           mamba install -c conda-forge -c bioconda snakemake=7.28.3 singularity
-      - name: Run workflow
+      - name: List tests
         run: |
-          ls -R tests/
+          ls -R tests
+       - name: Run workflow
+        run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
   run-workflow-no-te:
     runs-on: ubuntu-latest
