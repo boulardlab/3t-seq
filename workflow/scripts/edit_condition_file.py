@@ -21,7 +21,7 @@ else:
         )
         sample_sheet = sample_sheet.set_index("tmp")
     else:
-        sample_sheet = sample_sheet.set_index("sample")
+        sample_sheet = sample_sheet.set_index("name")
 
 sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 
