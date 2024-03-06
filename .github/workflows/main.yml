@@ -59,7 +59,7 @@ jobs:
       - name: List tests
         run: |
           ls -R tests
-       - name: Run workflow
+      - name: Run workflow
         run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
   run-workflow-no-te:
