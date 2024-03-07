@@ -345,6 +345,12 @@ def get_fastqc(wildcards):
                             for sample in s
                         ],
                     ]
+                else:
+                    print(f"reads folder: {raw_reads_folder}")
+                    print(f"mates: {m}")
+                    print(f"extension: {ext}")
+                    print("NOT FOUND")
+                    print()
 
     return ret
 
