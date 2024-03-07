@@ -346,6 +346,7 @@ def get_fastqc(wildcards):
                         ],
                     ]
                 else:
+                    print(m1)
                     print(f"reads folder: {raw_reads_folder}")
                     print(f"mates: {m}")
                     print(f"extension: {ext}")
