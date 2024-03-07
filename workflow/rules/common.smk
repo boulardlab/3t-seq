@@ -316,10 +316,13 @@ def get_fastqc(wildcards):
         )
     else:
         for m in supported_suffixes:
+            m = [x.strip() for x in m]
             for ext in supported_extensions:
+                ext = ext.strip()
                 m1 = []
                 m2 = []
                 for sample in s:
+                    sample = sample.strip()
                     fn1 = f"{sample}{m[0]}.{ext}"
                     fn2 = f"{sample}{m[1]}.{ext}"
                     m1.append(raw_reads_folder.joinpath(wildcards.serie, fn1))
