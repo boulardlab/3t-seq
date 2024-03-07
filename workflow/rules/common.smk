@@ -319,13 +319,13 @@ def get_fastqc(wildcards):
             for ext in supported_extensions:
                 m1 = [
                     os.path.join(
-                        raw_reads_folder, wildcards.serie, f"{sample}{m[0]}.{ext}"
+                        raw_reads_folder, wildcards.serie, f"{sample.strip()}{m[0]}.{ext}"
                     )
                     for sample in s
                 ]
                 m2 = [
                     os.path.join(
-                        raw_reads_folder, wildcards.serie, f"{sample}{m[1]}.{ext}"
+                        raw_reads_folder, wildcards.serie, f"{sample.strip()}{m[1]}.{ext}"
                     )
                     for sample in s
                 ]
