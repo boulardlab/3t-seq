@@ -321,7 +321,7 @@ def get_fastqc(wildcards):
                     os.path.join(
                         raw_reads_folder,
                         wildcards.serie,
-                        f"{sample.strip()}{m[0]}.{ext}",
+                        sample.strip() + m[0] + "." + ext,
                     )
                     for sample in s
                 ]
@@ -329,7 +329,7 @@ def get_fastqc(wildcards):
                     os.path.join(
                         raw_reads_folder,
                         wildcards.serie,
-                        f"{sample.strip()}{m[1]}.{ext}",
+                        sample.strip() + m[1] + "." + ext,
                     )
                     for sample in s
                 ]
