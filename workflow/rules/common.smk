@@ -359,33 +359,33 @@ def build_rule_all_inputs(wildcards):
     ret = []
 
     # MultiQC reports at different steps
-    ret +=  expand(
-            multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
-            serie=library_names_single + library_names_paired,
-        )
-    
     ret += expand(
-            multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
-            serie=library_names_single + library_names_paired,
-        )
+        multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
+        serie=library_names_single + library_names_paired,
+    )
+
     ret += expand(
-            multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
-            serie=library_names_single + library_names_paired,
-        )
+        multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
+        serie=library_names_single + library_names_paired,
+    )
     ret += expand(
-            multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
-            serie=library_names_single + library_names_paired,
-        )
-    
+        multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
+        serie=library_names_single + library_names_paired,
+    )
+    ret += expand(
+        multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
+        serie=library_names_single + library_names_paired,
+    )
+
     # DESeq2 flags
     ret += expand(
-            rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
-            serie=library_names_single + library_names_paired,
-        )    
+        rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
+        serie=library_names_single + library_names_paired,
+    )
     ret += expand(
-            analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd"),
-            serie=library_names_single + library_names_paired,
-        )
+        analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd"),
+        serie=library_names_single + library_names_paired,
+    )
     # Bigwig files
     ret += get_bw(wildcards)
 
@@ -393,38 +393,38 @@ def build_rule_all_inputs(wildcards):
     if not config["disable_TE_analysis"]:
         # SalmonTE results folders
         ret += expand(
-                data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
-                se_serie=library_names_single,
-            )    
+            data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
+            se_serie=library_names_single,
+        )
         ret += expand(
-                data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
-                pe_serie=library_names_paired,
-            )
+            data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
+            pe_serie=library_names_paired,
+        )
         # FeatureCounts tables from STAR-TE
         ret += expand(
-                starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"),
-                se_serie=library_names_single,
-                method=["multihit", "random"],
-            )
+            starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"),
+            se_serie=library_names_single,
+            method=["multihit", "random"],
+        )
         ret += expand(
-                starTE_folder.joinpath("{pe_serie}/featureCount/{method}.txt"),
-                pe_serie=library_names_paired,
-                method=["multihit", "random"],
-            )
+            starTE_folder.joinpath("{pe_serie}/featureCount/{method}.txt"),
+            pe_serie=library_names_paired,
+            method=["multihit", "random"],
+        )
         ret += expand(
-                starTE_folder.joinpath("{serie}", "random", "datavzrd"),
-                serie=library_names_single + library_names_paired,
-            )
-    
+            starTE_folder.joinpath("{serie}", "random", "datavzrd"),
+            serie=library_names_single + library_names_paired,
+        )
+
     # tRNA coverage files
-    if not config["disable_tRNA_analysis"]:    
+    if not config["disable_tRNA_analysis"]:
         ret += expand(
-                trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
-                serie=library_names_paired + library_names_single,
-            )
+            trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+            serie=library_names_paired + library_names_single,
+        )
         ret += expand(
-                trna_coverage_folder.joinpath("{serie}", "datavzrd"),
-                serie=library_names_paired + library_names_single,
-            )
+            trna_coverage_folder.joinpath("{serie}", "datavzrd"),
+            serie=library_names_paired + library_names_single,
+        )
 
     return ret
