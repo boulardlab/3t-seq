@@ -339,14 +339,14 @@ def get_fastqc(wildcards):
                     print(f"fn1: '{fn1}'")
                     print(f"fn2: '{fn2}'")
 
-                    fp1 = str(raw_reads_folder.joinpath(wildcards.serie, fn1))
-                    fp2 = str(raw_reads_folder.joinpath(wildcards.serie, fn2))
+                    fp1 = raw_reads_folder.joinpath(wildcards.serie, fn1)
+                    fp2 = raw_reads_folder.joinpath(wildcards.serie, fn2)
 
                     print(f"fp1: '{fp1}'")
                     print(f"fp2: '{fp2}'")
 
-                    fp1 = fp1.replace(" ", "").strip()
-                    fp2 = fp2.replace(" ", "").strip()
+                    fp1 = str(fp1).replace(" ", "").strip()
+                    fp2 = str(fp2).replace(" ", "").strip()
 
                     print(f"fp1: '{fp1}'")
                     print(f"fp2: '{fp2}'")
