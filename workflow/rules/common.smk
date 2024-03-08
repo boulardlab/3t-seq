@@ -318,15 +318,18 @@ def get_fastqc(wildcards):
         print(supported_extensions)
         print(supported_suffixes)
         print(s)
-        for m in supported_suffixes:
+        for i in range(len(supported_suffixes)):
+            m = supported_suffixes[i]
             m = [x.strip() for x in m]
             print(f"mates: '{m}'")
-            for ext in supported_extensions:
+            for j in range(len(supported_extensions)):
+                ext = supported_extensions[j]
                 ext = ext.strip()
                 print(f"ext: '{ext}'")
                 m1 = []
                 m2 = []
-                for sample in s:
+                for z in range(len(s)):
+                    sample = s[z]
                     sample = sample.strip()
                     print(f"sample: '{sample}'")
                     fn1 = f"{sample}{m[0]}.{ext}"
