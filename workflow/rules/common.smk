@@ -334,8 +334,22 @@ def get_fastqc(wildcards):
                     print(f"sample: '{sample}'")
                     fn1 = f"{sample}{m[0]}.{ext}"
                     fn2 = f"{sample}{m[1]}.{ext}"
-                    m1.append(raw_reads_folder.joinpath(wildcards.serie, fn1))
-                    m2.append(raw_reads_folder.joinpath(wildcards.serie, fn2))
+                    
+                    print(f"wildcards.serie: {wildcards.serie}")
+                    print(f"fn1: '{fn1}'")
+                    print(f"fn2: '{fn2}'")
+
+                    fn1 = fn1.replace(" ", "")
+                    fn2 = fn2.replace(" ", "")
+
+                    print(f"fn1: '{fn1}'")
+                    print(f"fn2: '{fn2}'")
+                    
+                    fp1 = raw_reads_folder.joinpath(wildcards.serie, fn1)
+                    fp2 = raw_reads_folder.joinpath(wildcards.serie, fn2)
+
+                    m1.append(fp1)
+                    m2.append(fp2)
 
                 if all([p.exists() for p in m1 + m2]):
                     ret = [
@@ -352,14 +366,6 @@ def get_fastqc(wildcards):
                             for sample in s
                         ],
                     ]
-                else:
-                    print(m1)
-                    print(f"'{s[0]}'")
-                    print(f"reads folder: {raw_reads_folder}")
-                    print(f"mates: '{m[0]}'")
-                    print(f"extension: '{ext}'")
-                    print("NOT FOUND")
-                    print()
 
     return ret
 
