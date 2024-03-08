@@ -332,9 +332,9 @@ def get_fastqc(wildcards):
                     sample = s[z]
                     sample = sample.strip()
                     print(f"sample: '{sample}'")
-                    #fn1 = f"{sample}{m[0]}.{ext}"
+                    # fn1 = f"{sample}{m[0]}.{ext}"
                     fn1 = "{0}{1}.{2}".format(sample, m[0], ext)
-                    #fn2 = f"{sample}{m[1]}.{ext}"
+                    # fn2 = f"{sample}{m[1]}.{ext}"
                     fn2 = "{0}{1}.{2}".format(sample, m[1], ext)
 
                     print(f"wildcards.serie: {wildcards.serie}")
