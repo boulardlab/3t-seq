@@ -336,7 +336,7 @@ def get_fastqc(wildcards):
                     m2.append(fp2)
 
                 if all([p.exists() for p in m1 + m2]):
-                    
+
                     for sample in s:
                         for i in range(len(m)):
                             ret.append(
