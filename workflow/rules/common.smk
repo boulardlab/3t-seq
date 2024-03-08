@@ -315,63 +315,38 @@ def get_fastqc(wildcards):
             sample=s,
         )
     else:
-        print(supported_extensions)
-        print(supported_suffixes)
-        print(s)
+        ret = []
         for i in range(len(supported_suffixes)):
             m = supported_suffixes[i]
-            m = [x.strip() for x in m]
-            print(f"mates: '{m}'")
             for j in range(len(supported_extensions)):
                 ext = supported_extensions[j]
-                ext = ext.strip()
-                print(f"ext: '{ext}'")
                 m1 = []
                 m2 = []
                 for z in range(len(s)):
                     sample = s[z]
                     sample = sample.strip()
-                    print(f"sample: '{sample}'")
-                    # fn1 = f"{sample}{m[0]}.{ext}"
-                    fn1 = "{0}{1}.{2}".format(sample, m[0], ext)
-                    # fn2 = f"{sample}{m[1]}.{ext}"
-                    fn2 = "{0}{1}.{2}".format(sample, m[1], ext)
 
-                    print(f"wildcards.serie: {wildcards.serie}")
-                    print(f"fn1: '{fn1}'")
-                    print(f"fn2: '{fn2}'")
+                    fn1 = "{0}{1}.{2}".format(sample, m[0], ext)
+                    fn2 = "{0}{1}.{2}".format(sample, m[1], ext)
 
                     fp1 = raw_reads_folder.joinpath(wildcards.serie, fn1)
                     fp2 = raw_reads_folder.joinpath(wildcards.serie, fn2)
-
-                    print(f"fp1: '{fp1}'")
-                    print(f"fp2: '{fp2}'")
-
-                    fp1 = str(fp1).replace(" ", "").strip()
-                    fp2 = str(fp2).replace(" ", "").strip()
-
-                    print(f"fp1: '{fp1}'")
-                    print(f"fp2: '{fp2}'")
 
                     m1.append(fp1)
                     m2.append(fp2)
 
                 if all([p.exists() for p in m1 + m2]):
-                    ret = [
-                        *[
-                            fastqc_raw_folder.joinpath(
-                                wildcards.serie, f"{sample}{m[0]}_fastqc.html"
+                    
+                    for sample in s:
+                        for i in range(len(m)):
+                            ret.append(
+                                fastqc_raw_folder.joinpath(
+                                    wildcards.serie,
+                                    "{0}{1}_fastqc.html".format(sample, m[i]),
+                                )
                             )
-                            for sample in s
-                        ],
-                        *[
-                            fastqc_raw_folder.joinpath(
-                                wildcards.serie, f"{sample}{m[1]}_fastqc.html"
-                            )
-                            for sample in s
-                        ],
-                    ]
-
+        if not ret:
+            raise ValueError("Could not determine MultiQC input files.")
     return ret
 
 
