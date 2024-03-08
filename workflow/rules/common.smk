@@ -315,14 +315,20 @@ def get_fastqc(wildcards):
             sample=s,
         )
     else:
+        print(supported_extensions)
+        print(supported_suffixes)
+        print(s)
         for m in supported_suffixes:
             m = [x.strip() for x in m]
+            print(f"mates: '{m}'")
             for ext in supported_extensions:
                 ext = ext.strip()
+                print(f"ext: '{ext}'")
                 m1 = []
                 m2 = []
                 for sample in s:
                     sample = sample.strip()
+                    print(f"sample: '{sample}'")
                     fn1 = f"{sample}{m[0]}.{ext}"
                     fn2 = f"{sample}{m[1]}.{ext}"
                     m1.append(raw_reads_folder.joinpath(wildcards.serie, fn1))
