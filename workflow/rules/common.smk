@@ -334,7 +334,7 @@ def get_fastqc(wildcards):
                     print(f"sample: '{sample}'")
                     fn1 = f"{sample}{m[0]}.{ext}"
                     fn2 = f"{sample}{m[1]}.{ext}"
-                    
+
                     print(f"wildcards.serie: {wildcards.serie}")
                     print(f"fn1: '{fn1}'")
                     print(f"fn2: '{fn2}'")
@@ -344,7 +344,7 @@ def get_fastqc(wildcards):
 
                     print(f"fn1: '{fn1}'")
                     print(f"fn2: '{fn2}'")
-                    
+
                     fp1 = raw_reads_folder.joinpath(wildcards.serie, fn1)
                     fp2 = raw_reads_folder.joinpath(wildcards.serie, fn2)
 
