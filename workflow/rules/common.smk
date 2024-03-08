@@ -50,7 +50,7 @@ def get_star_input(wildcards):
     if wildcards.serie in library_names_single:
         for ext in supported_extensions:
             infile = trim_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}.{ext}"
+                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
             )
             if os.path.exists(infile):
                 break
@@ -58,10 +58,10 @@ def get_star_input(wildcards):
         for ext in supported_extensions:
             infile = [
                 trim_reads_folder.joinpath(
-                    wildcards.serie, f"{wildcards.sample}_1.{ext}"
+                    wildcards.serie, "{0}_1.{1}".format(wildcards.sample, ext)
                 ),
                 trim_reads_folder.joinpath(
-                    wildcards.serie, f"{wildcards.sample}_2.{ext}"
+                    wildcards.serie, "{0}_2.{1}".format(wildcards.sample, ext)
                 ),
             ]
             if all([os.path.exists(f) for f in infile]):
@@ -87,25 +87,29 @@ def get_fastq(wildcards):
     if wildcards.serie in library_names_single:
         for ext in supported_extensions:
             candidate = raw_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}.{ext}"
+                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
             )
             if os.path.exists(candidate):
                 return candidate
         raise ValueError(
-            f"Could not find FastQ file. Check your naming. Supported extensions: {supported_extensions}"
+            "Could not find FastQ file. Check your naming. Supported extensions: {0}".format(
+                supported_extensions
+            )
         )
     elif wildcards.serie in library_names_paired:
         for ext in supported_extensions:
             candidate1 = raw_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}.{ext}"
+                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
             )
             candidate2 = raw_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}.{ext}"
+                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
             )
             if os.path.exists(candidate1) and os.path.exists(candidate2):
                 return [candidate1, candidate2]
         raise ValueError(
-            f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
+            "Could not find FastQ files. Check your naming.\nPaired-end suffixed: {0}.\nSupported extensions: {1}".format(
+                supported_suffixes, supported_extensions
+            )
         )
         return ""
 
@@ -115,15 +119,19 @@ def get_fastq_paired(wildcards):
         for ext in supported_extensions:
             for suffix in supported_suffixes:
                 candidate1 = raw_reads_folder.joinpath(
-                    wildcards.serie, f"{wildcards.sample}{suffix[0]}.{ext}"
+                    wildcards.serie,
+                    "{0}{1}.{2}".format(wildcards.sample, suffix[0], ext),
                 )
                 candidate2 = raw_reads_folder.joinpath(
-                    wildcards.serie, f"{wildcards.sample}{suffix[1]}.{ext}"
+                    wildcards.serie,
+                    "{0}{1}.{2}".format(wildcards.sample, suffix[1], ext),
                 )
                 if os.path.exists(candidate1) and os.path.exists(candidate2):
                     return {"m1": candidate1, "m2": candidate2}
         raise ValueError(
-            f"Could not find FastQ files. Check your naming.\nPaired-end suffixed: {supported_suffixes}.\nSupported extensions: {supported_extensions}"
+            "Could not find FastQ files. Check your naming.\nPaired-end suffixed: {0}.\nSupported extensions: {1}".format(
+                supported_suffixes, supported_extensions
+            )
         )
     return ""
 
@@ -138,7 +146,7 @@ def mkdir(p: Path, verbose=False):
 def get_tRNA_annotation_file(wildcards):
     checkpoint_output = checkpoints.download_gtRNAdb.get(**wildcards).output[0]
     bed_filename = glob_wildcards(os.path.join(checkpoint_output, "{x}.bed")).x[0]
-    return tRNA_annotation_dir.joinpath(f"{bed_filename}.bed")
+    return tRNA_annotation_dir.joinpath("{0}.bed".format(bed_filename))
 
 
 def get_trna_coverage(wildcards):
@@ -155,7 +163,9 @@ def get_deseq2_test(wildcards):
     test = deseq2_params["test"]
     if not test in ["Wald", "LRT"]:
         raise ValueError(
-            f"Invalid test: {test}. Test name must be either Wald or LRT. Check your config."
+            "Invalid test: {0}. Test name must be either Wald or LRT. Check your config.".format(
+                test
+            )
         )
     return deseq2_params["test"]
 
@@ -167,7 +177,9 @@ def get_deseq2_variable(wildcards):
     var = deseq2_params["variable"]
     if not var in sample_sheet.columns.values.tolist():
         raise ValueError(
-            f"{var} was not detected in sample sheet columns. Please check your config."
+            "{0} was not detected in sample sheet columns. Please check your config.".format(
+                var
+            )
         )
     return deseq2_params["variable"]
 
@@ -200,7 +212,7 @@ def get_salmonTE_quant_input(wildcards):
                 # we use absolute path because of Singularity/Docker
                 candidates.append(
                     raw_reads_folder.joinpath(
-                        wildcards.serie, f"{sample}.{extension}"
+                        wildcards.serie, "{0}.{1}".format(sample, extension)
                     ).resolve()
                 )
             if all([os.path.exists(f) for f in candidates]):
@@ -212,12 +224,14 @@ def get_salmonTE_quant_input(wildcards):
                 for sample in samples["paired"][wildcards.serie]:
                     candidates.append(
                         raw_reads_folder.joinpath(
-                            wildcards.serie, f"{sample}{m[0]}.{extension}"
+                            wildcards.serie,
+                            "{0}{1}.{2}".format(sample, m[0], extension),
                         ).resolve()
                     )
                     candidates.append(
                         raw_reads_folder.joinpath(
-                            wildcards.serie, f"{sample}{m[1]}.{extension}"
+                            wildcards.serie,
+                            "{0}{1}.{2}".format(sample, m[1], extension),
                         ).resolve()
                     )
                 if all([os.path.exists(f) for f in candidates]):
@@ -263,19 +277,21 @@ def get_star_fastqc(wildcards):
 def get_trimmed_fastq(wildcards):
     if wildcards.serie in library_names_single:
         return trim_reads_folder.joinpath(
-            wildcards.serie, f"{wildcards.sample}.fastq.gz"
+            wildcards.serie, "{0}.fastq.gz".format(wildcards.sample)
         )
     elif wildcards.serie in library_names_paired:
         return [
             trim_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}_1.fastq.gz"
+                wildcards.serie, "{0}_1.fastq.gz".format(wildcards.sample)
             ),
             trim_reads_folder.joinpath(
-                wildcards.serie, f"{wildcards.sample}_2.fastq.gz"
+                wildcards.serie, "{1}_2.fastq.gz".format(wildcards.sample)
             ),
         ]
     else:
-        raise ValueError(f"Could not determine protocol type for {wildcards.serie}")
+        raise ValueError(
+            "Could not determine protocol type for {0}".format(wildcards.serie)
+        )
 
 
 def get_trimmomatic_stats(wildcards):
