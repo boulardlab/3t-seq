@@ -19,16 +19,20 @@ fi
 
 # Check fasta
 if head -n1000 "$fasta_file" | grep -q '^>chr'; then
+    echo "Fasta has chr" >> "$log_file"
     FASTA_HAS_CHR=0
 else
+    echo "Fasta does not have chr" >> "$log_file"
     FASTA_HAS_CHR=1
 fi
 echo "FASTA_HAS_CHR=$FASTA_HAS_CHR" > "$log_file"
 
 # Check gtf
 if head -n1000 "$gtf_file" | grep -v '#' | head -n1 | grep -q '^chr'; then
+    echo "GTF has chr" >> "$log_file"
     GTF_HAS_CHR=0
 else
+    echo "GTF does not have chr" >> "$log_file"
     GTF_HAS_CHR=1
 fi
 echo "GTF_HAS_CHR=$GTF_HAS_CHR" >> "$log_file"
