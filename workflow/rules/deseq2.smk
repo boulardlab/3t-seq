@@ -17,9 +17,7 @@ rule subset_gtf:
 
 rule deseq2:
     input:
-        star_flag=star_folder.joinpath("{serie}.done"),
-        #counts_folder=star_folder.joinpath("{serie}"),
-        # runinfo_file=data_folder.joinpath("{serie}_sra.csv"),
+        star_counts=get_star_counts,
         annotation_file=gtf_path,
         sample_sheet=get_sample_sheet,
     output:

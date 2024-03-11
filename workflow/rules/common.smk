@@ -438,3 +438,10 @@ def build_rule_all_inputs(wildcards):
         )
 
     return ret
+
+
+def get_star_counts(wildcards):
+    return expand(
+        star_folder.joinpath(wildcards.serie, "{sample}.ReadsPerGene.out.tab"),
+        sample=get_samples(wildcards, samples),
+    )
