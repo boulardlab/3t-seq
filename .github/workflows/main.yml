@@ -55,15 +55,10 @@ jobs:
           conda install -c conda-forge mamba
       - name: Setup snakemake
         run: |
-          mamba install -c conda-forge -c bioconda snakemake=7.32.4 singularity
+          mamba install -c conda-forge -c bioconda snakemake=7.32.4 apptainer=1.2.5
       - name: List tests
         run: |
           ls -R tests
-      - name: Debug - Before script
-        run: cat workflow/rules/common.smk
       - name: Run workflow
         run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
-      - name: Debug - After script
-        run: cat workflow/rules/common.smk
-
