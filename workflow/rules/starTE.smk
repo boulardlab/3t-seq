@@ -9,9 +9,9 @@ rule starTE_random:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
-        libtype=lambda wildcards: "SINGLE"
-        if wildcards.serie in library_names_single
-        else "PAIRED",
+        libtype=lambda wildcards: (
+            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+        ),
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
     conda:
@@ -22,7 +22,6 @@ rule starTE_random:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
-         echo 'tmp: $TMP_FOLDER'
          sleep 10
          
          STAR \
@@ -63,9 +62,11 @@ rule featureCounts_random:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/random/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=samples["single"][wildcards.serie]
-            if wildcards.serie in samples["single"]
-            else samples["paired"][wildcards.serie],
+            sample=(
+                samples["single"][wildcards.serie]
+                if wildcards.serie in samples["single"]
+                else samples["paired"][wildcards.serie]
+            ),
         ),
         annotation=rmsk_path,
     output:
@@ -159,11 +160,11 @@ rule starTE_multihit:
     output:
         starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
     params:
-        libtype=lambda wildcards: "SINGLE"
-        if wildcards.serie in library_names_single
-        else "PAIRED",
+        libtype=lambda wildcards: (
+            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+        ),
         alignments_folder=starTE_folder,
-        tmp_folder=tmp_folder
+        tmp_folder=tmp_folder,
     conda:
         "../env/alignment.yml"
     log:
@@ -172,7 +173,6 @@ rule starTE_multihit:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
-         echo 'tmp: $TMP_FOLDER'
          sleep 10
                   
          STAR \
@@ -212,9 +212,11 @@ rule featureCounts_multihit:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/multihit/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=samples["single"][wildcards.serie]
-            if wildcards.serie in samples["single"]
-            else samples["paired"][wildcards.serie],
+            sample=(
+                samples["single"][wildcards.serie]
+                if wildcards.serie in samples["single"]
+                else samples["paired"][wildcards.serie]
+            ),
         ),
         annotation=rmsk_path,
     output:

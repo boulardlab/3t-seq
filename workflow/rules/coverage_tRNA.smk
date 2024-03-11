@@ -29,7 +29,9 @@ rule coverage_trna:
             "{serie}", "{sample}.Aligned.sortedByCoord.out.bam.bai"
         ),
         genome=star_folder.joinpath("{serie}", "{sample}.genome"),
-        annotation=get_tRNA_annotation_file,
+        annotation=tRNA_annotation_dir.joinpath(
+            "{0}-tRNAs.bed".format(config["genome"]["label"])
+        ),
     output:
         trna_coverage_folder.joinpath("{serie}", "{sample}.bed"),
     conda:

@@ -1,4 +1,5 @@
 channels:
+  - conda-forge
   - anaconda
 dependencies:
-  - pandas=2.1.1
+  - pandas=2.2.1
