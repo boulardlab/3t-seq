@@ -143,12 +143,6 @@ def mkdir(p: Path, verbose=False):
             print("Created {}".format(p))
 
 
-def get_tRNA_annotation_file(wildcards):
-    checkpoint_output = checkpoints.download_gtRNAdb.get(**wildcards).output[0]
-    bed_filename = glob_wildcards(os.path.join(checkpoint_output, "{x}.bed")).x[0]
-    return tRNA_annotation_dir.joinpath("{0}.bed".format(bed_filename))
-
-
 def get_trna_coverage(wildcards):
     return expand(
         trna_coverage_folder.joinpath("{{serie}}", "{sample}.bed"),
