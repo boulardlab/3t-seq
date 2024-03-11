@@ -52,19 +52,15 @@ rule star:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
-        temp(star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam")),
-        temp(star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab")),
-        temp(star_folder.joinpath("{serie}/{sample}.SJ.out.tab")),
-        temp(star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig")),
-        temp(star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig")),
-        temp(
-            star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig")
-        ),
-        temp(
-            star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig")
-        ),
-        temp(star_folder.joinpath("{serie}/{sample}.Log.final.out")),
+        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
+        star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
+        star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
+        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
+        star_folder.joinpath("{serie}/{sample}.Log.final.out"),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
@@ -109,7 +105,6 @@ rule star:
          {params.others} |& \
          tee {log}
 
-         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 

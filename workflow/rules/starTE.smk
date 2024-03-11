@@ -3,7 +3,7 @@ rule starTE_random:
         bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        temp(starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam")),
+        starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
@@ -22,7 +22,6 @@ rule starTE_random:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
-         echo 'tmp: $TMP_FOLDER'
          sleep 10
          
          STAR \
@@ -54,7 +53,6 @@ rule starTE_random:
             --outBAMcompression -1 |& \
          tee {log}
 
-         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
@@ -160,7 +158,7 @@ rule starTE_multihit:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     output:
-        temp(starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam")),
+        starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
     params:
         libtype=lambda wildcards: (
             "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
@@ -175,7 +173,6 @@ rule starTE_multihit:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
-         echo 'tmp: $TMP_FOLDER'
          sleep 10
                   
          STAR \
@@ -206,7 +203,6 @@ rule starTE_multihit:
             --outBAMcompression -1 |& \
          tee {log}
 
-         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
