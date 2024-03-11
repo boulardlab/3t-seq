@@ -192,7 +192,7 @@ def get_markdup_bam(wildcards):
 
 def get_markdup_fastqc(wildcards):
     return expand(
-        fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.html"),
+        fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.zip"),
         sample=get_samples(wildcards, samples),
     )
 
@@ -262,7 +262,7 @@ def get_star_stats(wildcards):
 def get_star_fastqc(wildcards):
     return expand(
         fastqc_star_folder.joinpath(
-            "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.html"
+            "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
         ),
         sample=get_samples(wildcards, samples),
     )
@@ -301,17 +301,17 @@ def get_trimmed_fastqc(wildcards):
     if s in library_names_paired:
         ret = [
             *expand(
-                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.html"),
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
                 sample=get_samples(wildcards, samples),
             ),
             *expand(
-                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.html"),
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
                 sample=get_samples(wildcards, samples),
             ),
         ]
     else:
         ret = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
             sample=get_samples(wildcards, samples),
         )
     return ret
@@ -321,7 +321,7 @@ def get_fastqc(wildcards):
     s = get_samples(wildcards, samples)
     if wildcards.serie in library_names_single:
         ret = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.html"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
             sample=s,
         )
     else:
@@ -351,7 +351,7 @@ def get_fastqc(wildcards):
                             ret.append(
                                 fastqc_raw_folder.joinpath(
                                     wildcards.serie,
-                                    "{0}{1}_fastqc.html".format(sample, m[i]),
+                                    "{0}{1}_fastqc.zip".format(sample, m[i]),
                                 )
                             )
         if not ret:
