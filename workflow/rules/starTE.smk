@@ -54,6 +54,7 @@ rule starTE_random:
             --outBAMcompression -1 |& \
          tee {log}
 
+         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
@@ -205,6 +206,7 @@ rule starTE_multihit:
             --outBAMcompression -1 |& \
          tee {log}
 
+         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 

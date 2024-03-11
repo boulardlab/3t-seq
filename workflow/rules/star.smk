@@ -109,7 +109,7 @@ rule star:
          {params.others} |& \
          tee {log}
 
-
+         rm -r {params.alignments_folder}/{wildcards.serie}/*_STAR*
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
