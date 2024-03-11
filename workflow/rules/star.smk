@@ -53,22 +53,26 @@ rule star:
         genome_annotation_file=gtf_path,
     output:
         temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam")),
-        star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
-        star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
-        star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
-        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Log.final.out"),
+        temp(star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam")),
+        temp(star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab")),
+        temp(star_folder.joinpath("{serie}/{sample}.SJ.out.tab")),
+        temp(star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig")),
+        temp(star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig")),
+        temp(
+            star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig")
+        ),
+        temp(
+            star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig")
+        ),
+        temp(star_folder.joinpath("{serie}/{sample}.Log.final.out")),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
-        libtype=lambda wildcards: "SINGLE"
-        if wildcards.serie in library_names_single
-        else "PAIRED",
+        libtype=lambda wildcards: (
+            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+        ),
         alignments_folder=star_folder,
         tmp_folder=tmp_folder,
         others=lambda wildcards: get_params(wildcards, "star"),
@@ -150,9 +154,11 @@ rule verify_star:
         lambda wildcards: expand(
             star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
             serie=wildcards.serie,
-            sample=samples["single"][wildcards.serie]
-            if wildcards.serie in samples["single"]
-            else samples["paired"][wildcards.serie],
+            sample=(
+                samples["single"][wildcards.serie]
+                if wildcards.serie in samples["single"]
+                else samples["paired"][wildcards.serie]
+            ),
         ),
     output:
         touch(star_folder.joinpath("{serie}.done")),
@@ -162,7 +168,7 @@ rule index_bam:
     input:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
-        temp(star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai")),
+        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
     threads: 1
     resources:
         runtime=30,
