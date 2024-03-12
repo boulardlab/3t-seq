@@ -61,4 +61,21 @@ jobs:
           ls -R tests
       - name: Run workflow
         run: |
-          snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
+          ROOT=$(realpath .)
+          snakemake \
+          --directory tests \
+          --configfile tests/config.yaml \
+          --profile tests/profile \
+          --snakefile workflow/Snakefile \
+          --singularity-args="--bind $ROOT --bind $HOME"
+      - name: Test reporting
+        run: |
+          ROOT=$(realpath .)
+          snakemake \
+          --directory tests \
+          --configfile tests/config.yaml \
+          --profile tests/profile \
+          --snakefile workflow/Snakefile \
+          --report report.zip \
+          --singularity-args="--bind $ROOT --bind $HOME"
+
