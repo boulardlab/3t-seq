@@ -28,9 +28,9 @@ sample_sheet = sample_sheet.reindex(index=salmon_condition_sheet.index)
 joined = sample_sheet.join(salmon_condition_sheet)
 
 joined["condition"] = joined.apply(
-    lambda row: "control"
-    if row[snakemake.params.variable] == reference_level
-    else "treatment",
+    lambda row: (
+        "control" if row[snakemake.params.variable] == reference_level else "treatment"
+    ),
     axis=1,
 )
 joined = joined.reset_index()

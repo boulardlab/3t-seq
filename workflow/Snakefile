@@ -31,6 +31,14 @@ configfile: "config/config.yaml"
 include: "rules/common.smk"
 
 
+###########################
+## DEFINE PIPELINE CONTAINER
+###########################
+
+
+containerized: "docker://ftabaro/rna-seq:1.0"
+
+
 #######################
 ## DEFINE VARIABLES
 #######################
@@ -84,13 +92,7 @@ gtf_path = references_folder.joinpath(
     get_filename(config["genome"]["gtf_url"], decompress=True)
 )
 
-rmsk_path = references_folder.joinpath("rmsk.gtf")
-rmsk_bed = Path(str(rmsk_path).replace("gtf", "bed"))
-
-# gaf_path = references_folder.joinpath(
-#     get_filename(config["genome"]["gaf_url"], decompress=False)
-# )
-
+rmsk_folder = references_folder.joinpath("rmsk")
 tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
 
 ## Get samples
