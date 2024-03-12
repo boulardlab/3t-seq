@@ -1,5 +1,6 @@
 **/.snakemake
 **/results
+**/references
 **/.cache
 **/.conda
 **/.java
@@ -8,3 +9,8 @@
 **/workdir
 profile/slurm
 tests4/
+tests/.wget-hsts
+tests/*.log
+tests/*.out
+run-test.sh
+test.sh
