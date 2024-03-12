@@ -68,7 +68,9 @@ rule featureCounts_random:
                 else samples["paired"][wildcards.serie]
             ),
         ),
-        annotation=rmsk_path,
+        annotation=rmsk_folder.joinpath(
+            "{0}.{1}".format(config["genome"]["label"], "gtf")
+        ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
     conda:
@@ -218,7 +220,9 @@ rule featureCounts_multihit:
                 else samples["paired"][wildcards.serie]
             ),
         ),
-        annotation=rmsk_path,
+        annotation=rmsk_folder.joinpath(
+            "{0}.{1}".format(config["genome"]["label"], "gtf")
+        ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),
     conda:

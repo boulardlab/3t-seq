@@ -34,8 +34,12 @@ rule download_genome_annotation_file:
 
 rule download_repeatmasker_annotation_file:
     output:
-        protected(rmsk_path),
-        protected(rmsk_bed),
+        protected(
+            multiext(
+                str(rmsk_folder.joinpath(config["genome"]["label"])), ".gtf", ".bed"
+            )
+        ),
+    cache: True
     params:
         genome_id=config["genome"]["label"],
     conda:

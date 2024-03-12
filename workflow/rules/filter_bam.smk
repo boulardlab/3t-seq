@@ -1,7 +1,9 @@
 rule filter_bam:
     input:
         alignment=starTE_folder.joinpath("{serie}/{method}/{sample}.Aligned.out.bam"),
-        annotation=rmsk_bed,
+        annotation=rmsk_folder.joinpath(
+            "{0}.{1}".format(config["genome"]["label"], "bed")
+        ),
     output:
         starTE_folder.joinpath("{serie}/filter/{method}/{sample}.TEonly.bam"),
     log:
