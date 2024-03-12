@@ -31,6 +31,14 @@ configfile: "config/config.yaml"
 include: "rules/common.smk"
 
 
+###########################
+## DEFINE PIPELINE CONTAINER
+###########################
+
+
+containerized: "docker://ftabaro/rna-seq:1.0"
+
+
 #######################
 ## DEFINE VARIABLES
 #######################
