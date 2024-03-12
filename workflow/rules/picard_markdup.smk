@@ -28,7 +28,7 @@ rule picard_markdup:
 
 rule fastqc_markdup:
     input:
-        markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
+        get_markdup_bam,
     output:
         fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.zip"),
         report(
@@ -62,7 +62,6 @@ rule fastqc_markdup:
 
 rule multiqc_markdup:
     input:
-        get_markdup_bam,
         get_markdup_fastqc,
     output:
         report(

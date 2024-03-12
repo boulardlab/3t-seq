@@ -50,11 +50,25 @@ rule download_repeatmasker_annotation_file:
         "../scripts/get_rmsk.py"
 
 
-checkpoint download_gtRNAdb:
+rule download_gtRNAdb:
     output:
-        protected(directory(tRNA_annotation_dir)),
+        protected(
+            multiext(
+                str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
+                "-filtered-tRNAs.fa",
+                "-mature-tRNAs.fa",
+                "-tRNAs_name_map.txt",
+                "-tRNAs-confidence-set.out",
+                "-tRNAs-confidence-set.ss",
+                "-tRNAs-detailed.out",
+                "-tRNAs-detailed.ss",
+                "-tRNAs.bed",
+                "-tRNAs.fa",
+            )
+        ),
     params:
         url=config["genome"]["gtrnadb_url"],
+        output_dir=tRNA_annotation_dir,
     log:
         log_folder.joinpath("download/genome/gtrnadb.log"),
     conda:

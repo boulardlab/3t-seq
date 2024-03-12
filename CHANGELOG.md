@@ -1,5 +1,38 @@
 # Changelog
 
+## [1.0.1](https://github.com/boulardlab/3t-seq/compare/v1.0.0...v1.0.1) (2024-03-06)
+
+
+### Features
+
+* add example Slurm configuration ([96ce038](https://github.com/boulardlab/3t-seq/commit/96ce0383c48844a7691342dca721a9a1bb64440f))
+* decouple TE, tRNA and single copy genes pipelines. Allow users to decide which branches to run.[#3](https://github.com/boulardlab/3t-seq/issues/3) ([d3b12e4](https://github.com/boulardlab/3t-seq/commit/d3b12e4017c69df6a91c929088cd6641c8790bbb))
+* describe how to run tests ([46e023f](https://github.com/boulardlab/3t-seq/commit/46e023f37e9cfbd96b669695027587fa4888d1f4))
+* DESeq2 reference is now separate for each sequencing library ([b4cf102](https://github.com/boulardlab/3t-seq/commit/b4cf10264ffd7bc33ad01ef3e4ae1d12482e3718))
+
+
+### Bug Fixes
+
+* allow deseq2 ananlysi with different variables and different levels ([76c2562](https://github.com/boulardlab/3t-seq/commit/76c2562501c091b615640a0ec3973a814ec6cca3))
+* fix deseq2 scripts to look for correct column names ([ffc4537](https://github.com/boulardlab/3t-seq/commit/ffc4537558e28ba5ee278975d63fb7958d8f3384))
+* fix problem with SalmonTE quant input array on single-end libraries ([3fd51ff](https://github.com/boulardlab/3t-seq/commit/3fd51fff87474b1243f7844d4699eb34e445e352))
+* fix Snakemake version to be below 8 ([5fa9be3](https://github.com/boulardlab/3t-seq/commit/5fa9be31940270c93024a8cf6a5190215a58ea7d))
+* look for correct column name in edit_conditions_file.py ([e60456e](https://github.com/boulardlab/3t-seq/commit/e60456ed4c3e471b21417c2dc4126c46b6d91382))
+* make test dataset smaller to let it run in GH Actions ([17ac70d](https://github.com/boulardlab/3t-seq/commit/17ac70d120fd772f369c76d9514e260b2a31746d))
+* pin all conda packages versions ([feddd48](https://github.com/boulardlab/3t-seq/commit/feddd48cd06365923fbee22ffc5385a6ec7bebfb))
+* remove params.mem_mb from starTE rules ([b6f1848](https://github.com/boulardlab/3t-seq/commit/b6f18484851a60224d1520166b68ed0df9c2c5f0))
+* restore test profile ([c50b75e](https://github.com/boulardlab/3t-seq/commit/c50b75ebb4e27459c58e298b1546729b651efc83))
+* revert alpine base for SalmonTE Docker ([bfb4a48](https://github.com/boulardlab/3t-seq/commit/bfb4a48f156494a8605dd385c34da6b468c60d1c))
+* switch to miniconda3-alpine as base ([7ac38c7](https://github.com/boulardlab/3t-seq/commit/7ac38c79ed9f88fb2a0d93d0cae99302cc752563))
+* test config now has library-specific deseq2 reference level ([44d4b43](https://github.com/boulardlab/3t-seq/commit/44d4b43565939785370fa4b1233ec025c1c08614))
+* typo ([6e64c84](https://github.com/boulardlab/3t-seq/commit/6e64c848bd9b1765329bac1d8a0a075b98546878))
+* update docs ([c811991](https://github.com/boulardlab/3t-seq/commit/c811991b8186ae6aba348964fbbb1c01096292b8))
+
+
+### Miscellaneous Chores
+
+* release 1.0.1 ([25c11bc](https://github.com/boulardlab/3t-seq/commit/25c11bc0886cf580768fd61ac373ceaca97b997c))
+
 ## 1.0.0 (2023-11-17)
 
 

@@ -12,8 +12,7 @@ library(DESeq2)
 ## Get file paths from Snakemake
 ## INPUTS
 # counts_folder <- snakemake@input[["counts_folder"]]
-star_flag <- snakemake@input[["star_flag"]]
-counts_folder <- sub(".done", "", star_flag)
+star_counts <- snakemake@input[["star_counts"]]
 annotation_file_path <- snakemake@input[["annotation_file"]]
 sample_sheet <- snakemake@input[["sample_sheet"]]
 
@@ -96,7 +95,7 @@ if (libtype == "single") {
 
 
 ## Import STAR counts and generate a count matrix
-ls <- list.files(counts_folder, pattern = "ReadsPerGene.out.tab", full.names = TRUE)
+ls <- star_counts
 ls <- setNames(ls, sub("(^.+)\\.ReadsPerGene\\.out\\.tab", "\\1", basename(ls)))
 mat <- sapply(ls, function(p) {
   dt <- fread(p, skip = 4)

@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-set -x
 set -e
-
-pwd
 
 URL="${snakemake_params[url]}"
 
@@ -13,10 +10,10 @@ else
   TMP=$(mktemp -u)
 fi
 
-echo "Downloading to $TMP"
+echo "Downloading to $TMP" | tee -a ${snakemake_log}
 
 OUTPUT=${snakemake_output}
-mkdir -p $(dirname $OUTPUT)
+mkdir -pv $(dirname $OUTPUT)
 
 # wget -O $TMP "$URL"
 curl "$URL" \
@@ -30,6 +27,7 @@ curl "$URL" \
 -H 'Sec-GPC: 1' \
 -H 'Pragma: no-cache' \
 -H 'Cache-Control: no-cache' \
+--silent \
 --output $TMP
 
 sleep $(( $RANDOM % 10 + 2 ))
@@ -39,10 +37,10 @@ if [[ $URL == *.gz ]] && [[ ! $OUTPUT == *.gz ]]; then
     sleep $(( $RANDOM % 10 + 2 ))
 fi
 
-if grep -v '#' "${TMP%.gz}" | head -n 100 | grep -q 'chr'; then
-    echo "Mv'ing to $OUTPUT"
+if grep -v '#' "${TMP%.gz}" | head -n 1 | grep -q '^chr' | tee -a ${snakemake_log}; then
+    echo "Mv'ing to $OUTPUT" | tee -a ${snakemake_log}
     mv $TMP $OUTPUT
 else
-    echo "Adding \"chr\" to first column, then move to $OUTPUT"
+    echo "Adding \"chr\" to first column, then move to $OUTPUT" | tee -a ${snakemake_log}
     awk -F "\t" -v OFS="\t" '!/^#/{print "chr"$0}/#/{print}' ${TMP%.gz} > $OUTPUT 
 fi
