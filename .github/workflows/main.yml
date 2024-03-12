@@ -62,3 +62,7 @@ jobs:
       - name: Run workflow
         run: |
           snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile
+      - name: Test reporting
+        run: |
+          snakemake --directory tests --configfile tests/config.yaml --profile tests/profile --snakefile workflow/Snakefile --report report.zip
+
