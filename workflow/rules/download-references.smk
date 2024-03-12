@@ -3,6 +3,7 @@ rule download_genome_fasta_file:
         protected(fasta_path),
     params:
         url=config["genome"]["fasta_url"],
+    cache: True
     conda:
         "../env/wget.yml"
     log:
@@ -18,6 +19,7 @@ rule download_genome_fasta_file:
 rule download_genome_annotation_file:
     output:
         protected(gtf_path),
+    cache: True
     params:
         url=config["genome"]["gtf_url"],
     conda:
@@ -70,6 +72,7 @@ rule download_gtRNAdb:
                 "-tRNAs.fa",
             )
         ),
+    cache: True
     params:
         url=config["genome"]["gtrnadb_url"],
         output_dir=tRNA_annotation_dir,

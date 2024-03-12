@@ -23,6 +23,7 @@ rule star_genome_preparation:
         genome_annotation_file=gtf_path,
     output:
         directory(references_folder.joinpath("STAR")),
+    cache: True
     conda:
         "../env/alignment.yml"
     threads: 8
@@ -52,15 +53,18 @@ rule star:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
-        star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
-        star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
-        star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
-        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
-        star_folder.joinpath("{serie}/{sample}.Log.final.out"),
+        multiext(
+            str(star_folder.joinpath("{serie}", "{sample}")),
+            ".Aligned.sortedByCoord.out.bam",
+            ".Aligned.toTranscriptome.out.bam",
+            ".ReadsPerGene.out.tab",
+            ".SJ.out.tab",
+            ".Signal.Unique.str1.out.wig",
+            ".Signal.Unique.str2.out.wig",
+            ".Signal.UniqueMultiple.str1.out.wig",
+            ".Signal.UniqueMultiple.str2.out.wig",
+            ".Log.final.out",
+        ),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
