@@ -9,8 +9,9 @@
 **/workdir
 profile/slurm
 tests4/
-tests/.wget-hsts
-tests/*.log
-tests/*.out
+**/.wget-hsts
+**/*.log
+**/*.out
 run-test.sh
 test.sh
+**/__pycache__
