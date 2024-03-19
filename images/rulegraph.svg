@@ -1,0 +1,112 @@
+digraph snakemake_dag {
+    graph[bgcolor=white, margin=0];
+    node[shape=box, style=rounded, fontname=sans,                 fontsize=10, penwidth=2];
+    edge[penwidth=2, color=grey];
+	0[label = "all", color = "0.09 0.6 0.85", style="rounded"];
+	1[label = "multiqc_raw", color = "0.18 0.6 0.85", style="rounded"];
+	2[label = "fastqc_raw", color = "0.03 0.6 0.85", style="rounded"];
+	3[label = "multiqc_trim", color = "0.14 0.6 0.85", style="rounded"];
+	4[label = "trimmomatic_pe", color = "0.36 0.6 0.85", style="rounded"];
+	5[label = "fastqc_trim_pe", color = "0.59 0.6 0.85", style="rounded"];
+	6[label = "multiqc_star", color = "0.47 0.6 0.85", style="rounded"];
+	7[label = "star", color = "0.12 0.6 0.85", style="rounded"];
+	8[label = "star_genome_preparation", color = "0.32 0.6 0.85", style="rounded"];
+	9[label = "validate_genome_and_annotation", color = "0.56 0.6 0.85", style="rounded"];
+	10[label = "download_genome_fasta_file", color = "0.53 0.6 0.85", style="rounded"];
+	11[label = "download_genome_annotation_file", color = "0.44 0.6 0.85", style="rounded"];
+	12[label = "fastqc_star", color = "0.58 0.6 0.85", style="rounded"];
+	13[label = "multiqc_markdup", color = "0.00 0.6 0.85", style="rounded"];
+	14[label = "fastqc_markdup", color = "0.17 0.6 0.85", style="rounded"];
+	15[label = "picard_markdup", color = "0.24 0.6 0.85", style="rounded"];
+	16[label = "deseq2", color = "0.61 0.6 0.85", style="rounded"];
+	17[label = "datavzrd_single_copy_genes", color = "0.20 0.6 0.85", style="rounded"];
+	18[label = "yte_single_copy_genes", color = "0.11 0.6 0.85", style="rounded"];
+	19[label = "coverage", color = "0.29 0.6 0.85", style="rounded"];
+	20[label = "index_bam", color = "0.41 0.6 0.85", style="rounded"];
+	21[label = "salmonTE_quant", color = "0.45 0.6 0.85", style="rounded"];
+	22[label = "featureCounts_multihit", color = "0.30 0.6 0.85", style="rounded"];
+	23[label = "filter_bam", color = "0.38 0.6 0.85", style="rounded"];
+	24[label = "starTE_multihit", color = "0.26 0.6 0.85", style="rounded"];
+	25[label = "download_repeatmasker_annotation_file", color = "0.02 0.6 0.85", style="rounded"];
+	26[label = "featureCounts_random", color = "0.33 0.6 0.85", style="rounded"];
+	27[label = "starTE_random", color = "0.35 0.6 0.85", style="rounded"];
+	28[label = "datavzrd_starTE_random", color = "0.64 0.6 0.85", style="rounded"];
+	29[label = "yte_starTE_random", color = "0.06 0.6 0.85", style="rounded"];
+	30[label = "deseq2_starTE_random", color = "0.39 0.6 0.85", style="rounded"];
+	31[label = "deseq2_tRNA", color = "0.08 0.6 0.85", style="rounded"];
+	32[label = "build_trna_coverage_matrix", color = "0.23 0.6 0.85", style="rounded"];
+	33[label = "coverage_trna", color = "0.65 0.6 0.85", style="rounded"];
+	34[label = "mk_genome_tsv", color = "0.50 0.6 0.85", style="rounded"];
+	35[label = "download_gtRNAdb", color = "0.52 0.6 0.85", style="rounded"];
+	36[label = "datavzrd_trna", color = "0.62 0.6 0.85", style="rounded"];
+	37[label = "yte_trna", color = "0.55 0.6 0.85", style="rounded"];
+	38[label = "edit_condition_file", color = "0.21 0.6 0.85", style="rounded"];
+	39[label = "salmonTE_test", color = "0.27 0.6 0.85", style="rounded"];
+	1 -> 0
+	17 -> 0
+	13 -> 0
+	16 -> 0
+	31 -> 0
+	36 -> 0
+	6 -> 0
+	39 -> 0
+	19 -> 0
+	22 -> 0
+	3 -> 0
+	26 -> 0
+	28 -> 0
+	2 -> 1
+	5 -> 3
+	4 -> 3
+	4 -> 5
+	7 -> 6
+	12 -> 6
+	8 -> 7
+	11 -> 7
+	4 -> 7
+	10 -> 8
+	11 -> 8
+	9 -> 8
+	10 -> 9
+	11 -> 9
+	7 -> 12
+	14 -> 13
+	15 -> 14
+	7 -> 15
+	7 -> 16
+	11 -> 16
+	16 -> 17
+	18 -> 17
+	16 -> 18
+	20 -> 19
+	7 -> 19
+	7 -> 20
+	25 -> 22
+	23 -> 22
+	25 -> 23
+	27 -> 23
+	24 -> 23
+	8 -> 24
+	4 -> 24
+	25 -> 26
+	23 -> 26
+	8 -> 27
+	4 -> 27
+	29 -> 28
+	30 -> 28
+	30 -> 29
+	26 -> 30
+	32 -> 31
+	33 -> 32
+	35 -> 33
+	20 -> 33
+	7 -> 33
+	34 -> 33
+	7 -> 34
+	31 -> 36
+	37 -> 36
+	31 -> 37
+	21 -> 38
+	38 -> 39
+	21 -> 39
+}            
