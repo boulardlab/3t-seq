@@ -15,3 +15,5 @@ tests4/
 run-test.sh
 test.sh
 **/__pycache__
+.pytest_cache/
+.tests/unit-temp
