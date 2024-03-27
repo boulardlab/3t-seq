@@ -158,8 +158,6 @@ onstart:
 
     print_json(json.dumps(config))
 
-    print_json(json.dumps(samples))
-
 
 #############
 ## WORKFLOW
