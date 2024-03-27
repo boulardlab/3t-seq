@@ -41,6 +41,11 @@ sample_sheet <- sample_sheet[match(colnames(count_matrix), rownames(sample_sheet
 design_variable <- snakemake@params[["variable"]]
 reference_level <- snakemake@params[["reference_level"]]
 
+if (!design_variable %in% colnames(sample_sheet)) {
+  message <- sprintf("Could not find design variable in columns of sample_sheet.\nvariable: %s\nsample sheet: %s", design_variable, snakemake@input[["sample_sheet"]])
+  stop(message)
+}
+
 design_formula <- as.formula(sprintf("~ %s", design_variable))
 
 sample_sheet[,design_variable] <- as.factor(sample_sheet[,design_variable])

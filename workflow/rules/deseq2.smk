@@ -19,10 +19,6 @@ rule deseq2:
     input:
         unpack(get_deseq2_inputs),
     output:
-        # samples_clustering=pictures_folder.joinpath("deseq2/{serie}/samples_distance.pdf"),
-        # pca_plot=pictures_folder.joinpath("deseq2/{serie}/samples_pca.pdf"),
-        # deg_heatmap=pictures_folder.joinpath("deseq2/{serie}/deg_heatmap.pdf"),
-        # touch(analysis_folder.joinpath("deseq2-{serie}.done")),
         deg_table=tables_folder.joinpath("deseq2/{serie}/results.csv"),
         deg_table_shrink=tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
         dds=rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
