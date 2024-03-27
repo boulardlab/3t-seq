@@ -1,6 +1,6 @@
 rule download_genome_fasta_file:
     output:
-        protected(fasta_path),
+        protected(str(fasta_path)),
     params:
         url=config["genome"]["fasta_url"],
     cache: True
@@ -18,7 +18,7 @@ rule download_genome_fasta_file:
 
 rule download_genome_annotation_file:
     output:
-        protected(gtf_path),
+        protected(str(gtf_path)),
     cache: True
     params:
         url=config["genome"]["gtf_url"],
@@ -82,17 +82,3 @@ rule download_gtRNAdb:
         "../env/wget.yml"
     script:
         "../scripts/download-gtrnadb.sh"
-
-
-# rule download_gaf_file:
-#     output:
-#         gaf_path,
-#     params:
-#         url=config["genome"]["gaf_url"],
-#     conda:
-#         "../env/wget.yml"
-#     log:
-#         log_folder.joinpath("download/genome/gaf.log"),
-#     threads: 4
-#     script:
-#         "../scripts/download-gaf.sh"
