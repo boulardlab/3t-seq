@@ -28,7 +28,7 @@ rule picard_markdup:
 
 rule fastqc_markdup:
     input:
-        get_markdup_bam,
+        unpack(get_markdup_bam),
     output:
         fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.zip"),
         report(
@@ -55,7 +55,7 @@ rule fastqc_markdup:
 
         set -e 
 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.bam}
 
         """
 
