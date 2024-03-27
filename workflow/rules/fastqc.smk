@@ -30,7 +30,7 @@ rule fastqc_raw:
 
 rule multiqc_raw:
     input:
-        get_fastqc,
+        unpack(get_fastqc),
     output:
         report(
             multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),

@@ -48,7 +48,7 @@ rule coverage_trna:
 
 rule build_trna_coverage_matrix:
     input:
-        get_trna_coverage,
+        unpack(get_trna_coverage),
     output:
         trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
     conda:
@@ -92,13 +92,13 @@ localrules:
 
 rule yte_trna:
     input:
-        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt")],
     output:
         trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
     params:
+        template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="tRNA expression",
-        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
+        view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:

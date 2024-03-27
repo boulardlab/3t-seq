@@ -14,10 +14,12 @@ rule starTE_random:
         ),
         alignments_folder=starTE_folder,
         tmp_folder=tmp_folder,
+    shadow:
+        "minimal"
     conda:
         "../env/alignment.yml"
     log:
-        log_folder.joinpath("starTE/random/{serie}/{sample}.log"),
+        starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
     shell:
         """
          set -e 
@@ -50,8 +52,7 @@ rule starTE_random:
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
             --readFilesIn {input.bam} \
             --limitBAMsortRAM {resources.mem_mb} \
-            --outBAMcompression -1 |& \
-         tee {log}
+            --outBAMcompression -1         
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
@@ -62,11 +63,7 @@ rule featureCounts_random:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/random/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=(
-                samples["single"][wildcards.serie]
-                if wildcards.serie in samples["single"]
-                else samples["paired"][wildcards.serie]
-            ),
+            sample=get_samples(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
             "{0}.{1}".format(config["genome"]["label"], "gtf")
@@ -85,7 +82,7 @@ rule featureCounts_random:
         """
          set -e 
          featureCounts -M -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
-         """
+        """
 
 
 rule deseq2_starTE_random:
@@ -117,13 +114,13 @@ localrules:
 
 rule yte_starTE_random:
     input:
-        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")],
     output:
         starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
     params:
+        template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="starTE-random DESeq2",
-        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
+        view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:
@@ -169,8 +166,10 @@ rule starTE_multihit:
         tmp_folder=tmp_folder,
     conda:
         "../env/alignment.yml"
+    shadow:
+        "minimal"
     log:
-        log_folder.joinpath("starTE/{serie}/multihit/{sample}.log"),
+        starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
     shell:
         """
          set -e 
@@ -202,8 +201,7 @@ rule starTE_multihit:
             --readFilesIn {input.bam} \
             --limitBAMsortRAM {resources.mem_mb} \
             --genomeLoad NoSharedMemory \
-            --outBAMcompression -1 |& \
-         tee {log}
+            --outBAMcompression -1
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
@@ -214,11 +212,7 @@ rule featureCounts_multihit:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/multihit/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=(
-                samples["single"][wildcards.serie]
-                if wildcards.serie in samples["single"]
-                else samples["paired"][wildcards.serie]
-            ),
+            sample=get_samples(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
             "{0}.{1}".format(config["genome"]["label"], "gtf")

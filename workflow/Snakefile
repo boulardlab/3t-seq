@@ -36,7 +36,7 @@ include: "rules/common.smk"
 ###########################
 
 
-containerized: "docker://ftabaro/rna-seq:1.0"
+containerized: "docker://ftabaro/rna-seq:1.1"
 
 
 #######################
@@ -97,33 +97,17 @@ tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
 
 ## Get samples
 libraries = config["sequencing_libraries"]
-samples = {"single": {}, "paired": {}}
+
+library_names_single = []
+library_names_paired = []
+
 for library in libraries:
     libname = library["name"]
-    sample_sheet = pd.read_csv(library["sample_sheet"])
-    protocol = "pe" if "filename_2" in sample_sheet.columns else "se"
-
+    protocol = library["protocol"]
     if protocol == "pe":
-        filelist = sample_sheet.filename_1.tolist()
-        samples["paired"][libname] = [re.sub(r"_1(?:_sequence)?", "", x) for x in filelist]
+        library_names_paired.append(libname)
     else:
-        filelist = sample_sheet.filename.tolist()
-        samples["single"][libname] = filelist
-
-    if any([re.match(".*.f(?:ast)?q(?:.gz)?$", x) for x in filelist]):
-        raise NameError(
-            "Filenames should not contain extensions. Remove .fastq.gz or .fq.gz from the filename column(s)."
-        )
-
-library_names_single = list(samples["single"].keys())
-library_names_paired = list(samples["paired"].keys())
-
-supported_extensions = ["fq", "fq.gz", "fastq", "fastq.gz"]
-supported_suffixes = [
-    ("_1", "_2"),
-    ("_R1", "_R2"),
-    ("_1_sequence", "_2_sequence"),
-]
+        library_names_paired.append(libname)
 
 
 ####################
@@ -158,8 +142,6 @@ onstart:
 
     print_json(json.dumps(config))
 
-    print_json(json.dumps(samples))
-
 
 #############
 ## WORKFLOW
@@ -167,9 +149,11 @@ onstart:
 
 
 wildcard_constraints:
+    serie="|".join(library_names_single + library_names_paired),
     se_serie="|".join(library_names_single),
     pe_serie="|".join(library_names_paired),
     method="multihit|random",
+    mate=r"_[MR][12](?:_sequence)?",
 
 
 include: "rules/download-references.smk"
@@ -180,7 +164,6 @@ include: "rules/deseq2.smk"
 include: "rules/salmonTE.smk"
 include: "rules/starTE.smk"
 include: "rules/filter_bam.smk"
-# include: "rules/gtf2bed.smk"
 include: "rules/picard_markdup.smk"
 include: "rules/make_bw.smk"
 include: "rules/coverage_tRNA.smk"

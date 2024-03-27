@@ -17,14 +17,8 @@ rule subset_gtf:
 
 rule deseq2:
     input:
-        star_counts=get_star_counts,
-        annotation_file=gtf_path,
-        sample_sheet=get_sample_sheet,
+        unpack(get_deseq2_inputs),
     output:
-        # samples_clustering=pictures_folder.joinpath("deseq2/{serie}/samples_distance.pdf"),
-        # pca_plot=pictures_folder.joinpath("deseq2/{serie}/samples_pca.pdf"),
-        # deg_heatmap=pictures_folder.joinpath("deseq2/{serie}/deg_heatmap.pdf"),
-        # touch(analysis_folder.joinpath("deseq2-{serie}.done")),
         deg_table=tables_folder.joinpath("deseq2/{serie}/results.csv"),
         deg_table_shrink=tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
         dds=rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
@@ -53,7 +47,6 @@ localrules:
 
 rule yte_single_copy_genes:
     input:
-        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[
             tables_folder.joinpath("deseq2/{serie}/results.csv"),
             tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
@@ -61,8 +54,9 @@ rule yte_single_copy_genes:
     output:
         analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd.yaml"),
     params:
+        template= Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="Single copy genes DESeq2",
-        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
+        view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:

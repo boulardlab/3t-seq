@@ -4,6 +4,7 @@ rule validate_genome_and_annotation:
         genome_annotation_file=gtf_path,
     output:
         touch(references_folder.joinpath("genome-and-annotation-validated.done")),
+    cache: True
     conda:
         "../env/bash.yml"
     threads: 1
@@ -42,13 +43,19 @@ rule star_genome_preparation:
         --genomeDir {output} \
         --genomeFastaFiles {input.genome_fasta_file} \
         --sjdbGTFfile {input.genome_annotation_file} \
-        --sjdbOverhang 100 |& \
-        tee {log}
+        --sjdbOverhang 100         
+        
+        if [ -f {output}/Log.out ]; then
+          cp {output}/Log.out {log}
+        elif [ -f Log.out ]; then
+          cp Log.out {log}
+        fi
         """
 
 
 rule star:
     input:
+        references_folder.joinpath("genome-and-annotation-validated.done"),
         bam=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
@@ -63,7 +70,6 @@ rule star:
             ".Signal.Unique.str2.out.wig",
             ".Signal.UniqueMultiple.str1.out.wig",
             ".Signal.UniqueMultiple.str2.out.wig",
-            ".Log.final.out",
         ),
     threads: 8
     resources:
@@ -77,10 +83,12 @@ rule star:
         tmp_folder=tmp_folder,
         others=lambda wildcards: get_params(wildcards, "star"),
         mem_mb=giga_to_byte(32),
+    shadow:
+        "minimal"
     conda:
         "../env/alignment.yml"
     log:
-        log_folder.joinpath("star/{serie}/{sample}.log"),
+        star_folder.joinpath("{serie}", "{sample}.Log.final.out"),
     shell:
         """
          set -e 
@@ -106,8 +114,7 @@ rule star:
          --quantTranscriptomeBAMcompression -1 \
          --outBAMcompression -1 \
          --outWigType wiggle \
-         {params.others} |& \
-         tee {log}
+         {params.others}
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
@@ -168,7 +175,7 @@ rule index_bam:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
-    threads: 1
+    threads: 4
     resources:
         runtime=30,
         mem_mb=8000,
@@ -179,15 +186,14 @@ rule index_bam:
     shell:
         """
 
-        samtools index {input}
+        samtools index -@{threads} {input}
 
         """
 
 
 rule multiqc_star:
     input:
-        get_star_stats,
-        get_star_fastqc,
+        unpack(get_multiqc_star_inputs),
     output:
         report(
             multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),

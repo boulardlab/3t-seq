@@ -60,6 +60,11 @@ ann <- import(annotation_file_path)
 ### Sample sheet
 colData <- fread(sample_sheet)
 
+if (!design_variable %in% colnames(colData)) {
+  message <- sprintf("Could not find design variable in columns of sample_sheet.\nvariable: %s\nsample sheet: %s", design_variable, sample_sheet)
+  stop(message)
+}
+
 if ("filename" %in% colnames(colData)) {
   libtype <- "single"
   if (!all(c("name", "filename", design_variable) %in% colnames(colData))) {

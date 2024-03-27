@@ -9,7 +9,6 @@ from random import randint
 
 
 def setup_logger(log_file):
-
     # Create a logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
@@ -36,7 +35,7 @@ def setup_logger(log_file):
     return logger
 
 
-def build_request(base_url, params, logger=setup_logger("download-rmsk.py")):
+def build_request(base_url, params, logger):
     query_string = parse.urlencode(params).encode("ascii")
 
     url = request.Request(
@@ -44,13 +43,12 @@ def build_request(base_url, params, logger=setup_logger("download-rmsk.py")):
         data=query_string,
         method="GET",
     )
-    logger.debug("Created url: {0}".format(url.get_full_url()))
+    if logger:
+        logger.debug("Created url: {0}".format(url.get_full_url()))
     return url
 
 
-def fetch_chromosomes(
-    genome="mm10", track="rmsk", logger=setup_logger("download-rmsk.log")
-):
+def fetch_chromosomes(genome, track, logger):
     """
     A function to fetch the list of chromosomes of a given organism from UCSC.
     """
@@ -58,17 +56,19 @@ def fetch_chromosomes(
     base_url = "https://api.genome.ucsc.edu/list/chromosomes"
 
     params = {"genome": genome, "track": track}
-    url = build_request(base_url, params)
+    url = build_request(base_url, params, logger)
 
     try:
         with request.urlopen(url) as response:
             data = json.loads(response.read().decode("utf-8"))
             return data
     except HTTPError as e:
-        logger.critical(f"HTTPError: {e.code} - {e.reason}")
+        if logger:
+            logger.critical(f"HTTPError: {e.code} - {e.reason}")
         raise e
     except URLError as e:
-        logger.critical(f"URLError: {e.reason}")
+        if logger:
+            logger.critical(f"URLError: {e.reason}")
         raise e
 
 
@@ -96,7 +96,8 @@ def get_gtf_writer(gtf_output, logger):
         fieldnames=gtf_fieldnames,
         dialect="excel-tab",
     )
-    logger.debug("Created GTF writer. Fields = {0}".format(gtf_fieldnames))
+    if logger:
+        logger.debug("Created GTF writer. Fields = {0}".format(gtf_fieldnames))
 
     return gtf_writer
 
@@ -151,7 +152,8 @@ def get_bed_writer(bed_output, logger):
     bed_writer = csv.DictWriter(
         f=bed_output, fieldnames=bed_fieldnames, dialect="excel-tab"
     )
-    logger.debug("Created BED writer. Fields = {0}".format(bed_fieldnames))
+    if logger:
+        logger.debug("Created BED writer. Fields = {0}".format(bed_fieldnames))
     return bed_writer
 
 
@@ -183,7 +185,7 @@ def main(
     track_name="rmsk",
     gtf_output=sys.stdout,
     bed_output=sys.stdout,
-    logger=setup_logger("download-rmsk.log"),
+    logger=None,
 ):
     """
     A function that queries UCSC genome browser to download RepeatMasker
@@ -205,27 +207,29 @@ def main(
 
         # setup query string
         params = {"genome": genome, "track": track_name, "chrom": chrom}
-        logger.debug("Query string = {0}".format(params))
+        if logger:
+            logger.debug("Query string = {0}".format(params))
 
         # create request object
         url = build_request(base_url, params, logger)
 
-        logger.debug("Starting GTF/BED export for chromosome {0}".format(chrom))
+        if logger:
+            logger.debug("Starting GTF/BED export for chromosome {0}".format(chrom))
 
-        # perform the query and parse response
         chrom_lines = 0
         try:
+            # perform the query and parse response
             with request.urlopen(url) as response:
                 dat = json.loads(response.read())
 
-                logger.info(
-                    "Downloaded {0} - {1} repeats - track name {2} - url {3}".format(
-                        chrom, len(dat["rmsk"]), track_name, url.get_full_url()
+                if logger:
+                    logger.info(
+                        "Downloaded {0} - {1} repeats - track name {2} - url {3}".format(
+                            chrom, len(dat["rmsk"]), track_name, url.get_full_url()
+                        )
                     )
-                )
 
                 for repeat in dat["rmsk"]:
-
                     # UCSC works zero-based base position
                     # https://www.biostars.org/p/84686/
 
@@ -235,24 +239,28 @@ def main(
                     chrom_lines += 1
                     counter += 1
 
-            logger.debug(
-                "Completed {0} - written {1} lines.".format(chrom, chrom_lines)
-            )
+            if logger:
+                logger.debug(
+                    "Completed {0} - written {1} lines.".format(chrom, chrom_lines)
+                )
 
             sleep(randint(1, 3))
 
         except HTTPError as e:
-            logger.critical(f"HTTPError: {e.code} - {e.reason}")
+            if logger:
+                logger.critical(f"HTTPError: {e.code} - {e.reason}")
             raise e
         except URLError as e:
-            logger.critical(f"URLError: {e.reason}")
+            if logger:
+                logger.critical(f"URLError: {e.reason}")
             raise e
 
-    logger.info(
-        "Successfully written {0} lines over {1} chromosomes.".format(
-            counter, nchromosomes
+    if logger:
+        logger.info(
+            "Successfully written {0} lines over {1} chromosomes.".format(
+                counter, nchromosomes
+            )
         )
-    )
 
 
 if __name__ == "__main__":
