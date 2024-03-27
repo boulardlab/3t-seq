@@ -1,3 +1,9 @@
+from pathlib import PosixPath
+
+filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
+filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?:_sequence)?$"
+
+
 def giga_to_byte(g):
     g = g - 2  # leave some memory to other processes
     return g * (1024**3)
@@ -25,48 +31,89 @@ def get_filename(link, decompress=False, stem=False):
     return basename
 
 
-def get_samples(wildcards, samples):
-    if wildcards.serie in samples["single"]:
-        s = samples["single"][wildcards.serie]
+def get_sample_name(pattern, test_string):
+    m = re.match(pattern, str(test_string))
+    if m:
+        gd = m.groupdict()
+        return gd["sample"]
     else:
-        s = samples["paired"][wildcards.serie]
-    return s
+        raise ValueError(
+            "File path does not match expected pattern: {}".format(test_string)
+        )
+
+
+def get_sample_sheet_path(wildcards):
+    sample_sheet_path = next(
+        (
+            lib["sample_sheet"]
+            for lib in config["sequencing_libraries"]
+            if lib["name"] == wildcards.serie
+        ),
+        None,
+    )
+    sample_sheet_path = Path(sample_sheet_path)
+    return sample_sheet_path
+
+
+def get_samples(wildcards) -> list[str]:
+
+    sample_sheet_path = get_sample_sheet_path(wildcards)
+
+    samples = set()
+
+    sample_sheet = pd.read_csv(sample_sheet_path)
+
+    colname = "filename"
+    if wildcards.serie in library_names_paired:
+        colname += "_1"
+
+    for fn in sample_sheet[colname].tolist():
+        sample_name = get_sample_name(filename_pattern, str(fn))
+        samples.add(sample_name)
+
+    return list(samples)
 
 
 def get_bw(wildcards):
     """Builds bigwig paths for rule all"""
     o = []
-    for lib in library_names_single + library_names_paired:
-        if lib in samples["single"].keys():
-            s = samples["single"][lib]
-        else:
-            s = samples["paired"][lib]
-        o += expand(star_folder.joinpath("{serie}", "{sample}.bw"), serie=lib, sample=s)
+    for lib in config["sequencing_libraries"]:
+        sample_sheet = pd.read_csv(lib["sample_sheet"])
+
+        samples = set()
+
+        colname = "filename"
+        if lib["name"] in library_names_paired:
+            colname += "_1"
+
+        for fn in sample_sheet[colname].tolist():
+            sample_name = get_sample_name(filename_pattern, str(fn))
+            samples.add(sample_name)
+
+        o += expand(
+            star_folder.joinpath("{serie}", "{sample}.bw"),
+            serie=lib["name"],
+            sample=list(samples),
+        )
     return o
 
 
 def get_star_input(wildcards):
     """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
     if wildcards.serie in library_names_single:
-        for ext in supported_extensions:
-            infile = trim_reads_folder.joinpath(
-                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
-            )
-            if os.path.exists(infile):
-                break
+        ret = trim_reads_folder.joinpath(
+            wildcards.serie, "{0}.fastq.gz".format(wildcards.sample)
+        )
     else:
-        for ext in supported_extensions:
-            infile = [
-                trim_reads_folder.joinpath(
-                    wildcards.serie, "{0}_1.{1}".format(wildcards.sample, ext)
-                ),
-                trim_reads_folder.joinpath(
-                    wildcards.serie, "{0}_2.{1}".format(wildcards.sample, ext)
-                ),
-            ]
-            if all([os.path.exists(f) for f in infile]):
-                break
-    return infile
+        ret = [
+            trim_reads_folder.joinpath(
+                wildcards.serie, "{0}_1.fastq.gz".format(wildcards.sample)
+            ),
+            trim_reads_folder.joinpath(
+                wildcards.serie, "{0}_2.fastq.gz".format(wildcards.sample)
+            ),
+        ]
+    return ret
 
 
 def get_params(wildcards, key):
@@ -83,57 +130,49 @@ def get_sample_sheet(wildcards):
     return get_params(wildcards, "sample_sheet")
 
 
-def get_fastq(wildcards):
-    if wildcards.serie in library_names_single:
-        for ext in supported_extensions:
-            candidate = raw_reads_folder.joinpath(
-                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
-            )
-            if os.path.exists(candidate):
-                return candidate
-        raise ValueError(
-            "Could not find FastQ file. Check your naming. Supported extensions: {0}".format(
-                supported_extensions
-            )
-        )
-    elif wildcards.serie in library_names_paired:
-        for ext in supported_extensions:
-            candidate1 = raw_reads_folder.joinpath(
-                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
-            )
-            candidate2 = raw_reads_folder.joinpath(
-                wildcards.serie, "{0}.{1}".format(wildcards.sample, ext)
-            )
-            if os.path.exists(candidate1) and os.path.exists(candidate2):
-                return [candidate1, candidate2]
-        raise ValueError(
-            "Could not find FastQ files. Check your naming.\nPaired-end suffixed: {0}.\nSupported extensions: {1}".format(
-                supported_suffixes, supported_extensions
-            )
-        )
-        return ""
+def parse_filepath(filepath: PosixPath):
+    m = re.match(filepath_pattern, str(filepath))
+    if m:
+        gd = m.groupdict()
+        return gd
+    raise ValueError("Invalid path: {}".format(filepath))
 
 
 def get_fastq_paired(wildcards):
-    if wildcards.serie in library_names_paired:
-        for ext in supported_extensions:
-            for suffix in supported_suffixes:
-                candidate1 = raw_reads_folder.joinpath(
-                    wildcards.serie,
-                    "{0}{1}.{2}".format(wildcards.sample, suffix[0], ext),
+
+    ret = {"m1": "", "m2": ""}
+
+    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
+        gd = parse_filepath(p)
+        sample = gd["sample"]
+        mate = gd["mate"]
+
+        if re.search(sample, wildcards.sample):
+            if re.search(r"1", mate):
+                ret["m1"] = p
+            elif re.search(r"2", mate):
+                ret["m2"] = p
+            else:
+                raise ValueError(
+                    "Could not find paired input files for sample {}.\nMate: {}\nFull path: {}".format(
+                        wildcards.sample, mate, str(p)
+                    )
                 )
-                candidate2 = raw_reads_folder.joinpath(
-                    wildcards.serie,
-                    "{0}{1}.{2}".format(wildcards.sample, suffix[1], ext),
-                )
-                if os.path.exists(candidate1) and os.path.exists(candidate2):
-                    return {"m1": candidate1, "m2": candidate2}
+    return ret
+
+
+def get_fastq(wildcards):
+    if wildcards.serie in library_names_single:
+        for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
+            gd = parse_filepath(p)
+            if gd["sample"] == wildcards.sample:
+                return p
         raise ValueError(
-            "Could not find FastQ files. Check your naming.\nPaired-end suffixed: {0}.\nSupported extensions: {1}".format(
-                supported_suffixes, supported_extensions
-            )
+            "Could not determine input files for serie: {}".format(wildcards.serie)
         )
-    return ""
+    else:
+        ret = list(get_fastq_paired(wildcards).values())
+        return ret
 
 
 def mkdir(p: Path, verbose=False):
@@ -144,10 +183,14 @@ def mkdir(p: Path, verbose=False):
 
 
 def get_trna_coverage(wildcards):
-    return expand(
-        trna_coverage_folder.joinpath("{{serie}}", "{sample}.bed"),
-        sample=get_samples(wildcards, samples),
-    )
+    sample_sheet_path = get_sample_sheet_path(wildcards)
+    return {
+        "bed": expand(
+            trna_coverage_folder.joinpath(wildcards.serie, "{sample}.bed"),
+            sample=get_samples(wildcards),
+        ),
+        "sample_sheet": sample_sheet_path,
+    }
 
 
 def get_deseq2_test(wildcards):
@@ -168,13 +211,13 @@ def get_deseq2_variable(wildcards):
     deseq2_params = get_params(wildcards, "deseq2")
     if not "variable" in deseq2_params:
         deseq2_params["variable"] = "genotype"
-    var = deseq2_params["variable"]
-    if not var in sample_sheet.columns.values.tolist():
-        raise ValueError(
-            "{0} was not detected in sample sheet columns. Please check your config.".format(
-                var
-            )
-        )
+    # var = deseq2_params["variable"]
+    # if not var in sample_sheet.columns.values.tolist():
+    #     raise ValueError(
+    #         "{0} was not detected in sample sheet columns. Please check your config.".format(
+    #             var
+    #         )
+    #     )
     return deseq2_params["variable"]
 
 
@@ -184,56 +227,31 @@ def get_deseq2_reference_level(wildcards):
 
 
 def get_markdup_bam(wildcards):
-    return expand(
-        markdup_folder.joinpath("{{serie}}/{sample}.markdup.bam"),
-        sample=get_samples(wildcards, samples),
-    )
+    return {
+        "bam": expand(
+            markdup_folder.joinpath("{{serie}}/{sample}.markdup.bam"),
+            sample=get_samples(wildcards),
+        ),
+        "sample_sheet": get_sample_sheet_path(wildcards),
+    }
 
 
 def get_markdup_fastqc(wildcards):
-    return expand(
-        fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.zip"),
-        sample=get_samples(wildcards, samples),
-    )
+    return {
+        "fastqc": expand(
+            fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.zip"),
+            sample=get_samples(wildcards),
+        ),
+        "sample_sheet": get_sample_sheet_path(wildcards),
+    }
 
 
 def get_salmonTE_quant_input(wildcards):
-    if wildcards.serie in library_names_single:
-        s = samples["single"][wildcards.serie]
-        for extension in supported_extensions:
-            candidates = []
-            for sample in samples["single"][wildcards.serie]:
-                # we use absolute path because of Singularity/Docker
-                candidates.append(
-                    raw_reads_folder.joinpath(
-                        wildcards.serie, "{0}.{1}".format(sample, extension)
-                    ).resolve()
-                )
-            if all([os.path.exists(f) for f in candidates]):
-                break
-    else:
-        for extension in supported_extensions:
-            for m in supported_suffixes:
-                candidates = []
-                for sample in samples["paired"][wildcards.serie]:
-                    candidates.append(
-                        raw_reads_folder.joinpath(
-                            wildcards.serie,
-                            "{0}{1}.{2}".format(sample, m[0], extension),
-                        ).resolve()
-                    )
-                    candidates.append(
-                        raw_reads_folder.joinpath(
-                            wildcards.serie,
-                            "{0}{1}.{2}".format(sample, m[1], extension),
-                        ).resolve()
-                    )
-                if all([os.path.exists(f) for f in candidates]):
-                    break
-            else:
-                continue
-            break
-    return candidates
+    ret = []
+    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
+        if re.match(filepath_pattern, str(p)):
+            ret.append(p.resolve())
+    return ret
 
 
 def set_salmonTE_genome():
@@ -252,20 +270,20 @@ def set_salmonTE_genome():
     return salmon_label
 
 
-def get_star_stats(wildcards):
-    return expand(
-        star_folder.joinpath("{{serie}}/{sample}.Log.final.out"),
-        sample=get_samples(wildcards, samples),
-    )
-
-
-def get_star_fastqc(wildcards):
-    return expand(
-        fastqc_star_folder.joinpath(
-            "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
+def get_multiqc_star_inputs(wildcards):
+    return {
+        "star_stats": expand(
+            star_folder.joinpath("{{serie}}/{sample}.Log.final.out"),
+            sample=get_samples(wildcards),
         ),
-        sample=get_samples(wildcards, samples),
-    )
+        "fastqc": expand(
+            fastqc_star_folder.joinpath(
+                "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
+            ),
+            sample=get_samples(wildcards),
+        ),
+        "sample_sheet": get_sample_sheet_path(wildcards),
+    }
 
 
 def get_trimmed_fastq(wildcards):
@@ -288,75 +306,53 @@ def get_trimmed_fastq(wildcards):
         )
 
 
-def get_trimmomatic_stats(wildcards):
-    ret = expand(
-        trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
-        sample=get_samples(wildcards, samples),
-    )
-    return ret
-
-
-def get_trimmed_fastqc(wildcards):
+def get_multiqc_trim_inputs(wildcards):
     s = wildcards.serie
     if s in library_names_paired:
-        ret = [
+        fastqcs = [
             *expand(
                 fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
-                sample=get_samples(wildcards, samples),
+                sample=get_samples(wildcards),
             ),
             *expand(
                 fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
-                sample=get_samples(wildcards, samples),
+                sample=get_samples(wildcards),
             ),
         ]
     else:
-        ret = expand(
+        fastqcs = expand(
             fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
-            sample=get_samples(wildcards, samples),
+            sample=get_samples(wildcards),
         )
-    return ret
+
+    return {
+        "trimmomatic_stats": expand(
+            trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
+            sample=get_samples(wildcards),
+        ),
+        "fastqc": fastqcs,
+        "sample_sheet": get_sample_sheet_path(wildcards),
+    }
 
 
 def get_fastqc(wildcards):
-    s = get_samples(wildcards, samples)
+    s = get_samples(wildcards)
     if wildcards.serie in library_names_single:
-        ret = expand(
+        fastqcs = expand(
             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
             sample=s,
         )
     else:
-        ret = []
-        for i in range(len(supported_suffixes)):
-            m = supported_suffixes[i]
-            for j in range(len(supported_extensions)):
-                ext = supported_extensions[j]
-                m1 = []
-                m2 = []
-                for z in range(len(s)):
-                    sample = s[z]
-                    sample = sample.strip()
-
-                    fn1 = "{0}{1}.{2}".format(sample, m[0], ext)
-                    fn2 = "{0}{1}.{2}".format(sample, m[1], ext)
-
-                    fp1 = raw_reads_folder.joinpath(wildcards.serie, fn1)
-                    fp2 = raw_reads_folder.joinpath(wildcards.serie, fn2)
-
-                    m1.append(fp1)
-                    m2.append(fp2)
-
-                if all([p.exists() for p in m1 + m2]):
-                    for sample in s:
-                        for i in range(len(m)):
-                            ret.append(
-                                fastqc_raw_folder.joinpath(
-                                    wildcards.serie,
-                                    "{0}{1}_fastqc.zip".format(sample, m[i]),
-                                )
-                            )
-        if not ret:
-            raise ValueError("Could not determine MultiQC input files.")
-    return ret
+        mates = set()
+        for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
+            gd = parse_filepath(p)
+            mates.add(gd["mate"])
+        fastqcs = expand(
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}{mate}_fastqc.zip"),
+            sample=s,
+            mate=mates,
+        )
+    return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}
 
 
 def build_rule_all_inputs(wildcards):
@@ -434,8 +430,12 @@ def build_rule_all_inputs(wildcards):
     return ret
 
 
-def get_star_counts(wildcards):
-    return expand(
-        star_folder.joinpath(wildcards.serie, "{sample}.ReadsPerGene.out.tab"),
-        sample=get_samples(wildcards, samples),
-    )
+def get_deseq2_inputs(wildcards):
+    return {
+        "star_counts": expand(
+            star_folder.joinpath(wildcards.serie, "{sample}.ReadsPerGene.out.tab"),
+            sample=get_samples(wildcards),
+        ),
+        "annotation_file": gtf_path,
+        "sample_sheet": get_sample_sheet_path(wildcards),
+    }
