@@ -62,7 +62,7 @@ rule fastqc_markdup:
 
 rule multiqc_markdup:
     input:
-        get_markdup_fastqc,
+        unpack(get_markdup_fastqc),
     output:
         report(
             multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),

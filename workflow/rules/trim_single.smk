@@ -142,8 +142,7 @@ rule fastqc_trim_pe:
 
 rule multiqc_trim:
     input:
-        get_trimmomatic_stats,
-        get_trimmed_fastqc,
+        unpack(get_multiqc_trim_inputs),
     output:
         report(
             multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),

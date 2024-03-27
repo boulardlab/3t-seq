@@ -48,7 +48,7 @@ rule coverage_trna:
 
 rule build_trna_coverage_matrix:
     input:
-        get_trna_coverage,
+        unpack(get_trna_coverage),
     output:
         trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
     conda:

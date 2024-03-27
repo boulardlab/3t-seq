@@ -17,9 +17,7 @@ rule subset_gtf:
 
 rule deseq2:
     input:
-        star_counts=get_star_counts,
-        annotation_file=gtf_path,
-        sample_sheet=get_sample_sheet,
+        unpack(get_deseq2_inputs),
     output:
         # samples_clustering=pictures_folder.joinpath("deseq2/{serie}/samples_distance.pdf"),
         # pca_plot=pictures_folder.joinpath("deseq2/{serie}/samples_pca.pdf"),

@@ -186,8 +186,7 @@ rule index_bam:
 
 rule multiqc_star:
     input:
-        get_star_stats,
-        get_star_fastqc,
+        unpack(get_multiqc_star_inputs),
     output:
         report(
             multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),

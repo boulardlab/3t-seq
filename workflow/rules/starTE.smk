@@ -62,11 +62,7 @@ rule featureCounts_random:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/random/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=(
-                samples["single"][wildcards.serie]
-                if wildcards.serie in samples["single"]
-                else samples["paired"][wildcards.serie]
-            ),
+            sample=get_samples(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
             "{0}.{1}".format(config["genome"]["label"], "gtf")
