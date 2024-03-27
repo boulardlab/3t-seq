@@ -113,13 +113,13 @@ localrules:
 
 rule yte_starTE_random:
     input:
-        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")],
     output:
         starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
     params:
+        template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="starTE-random DESeq2",
-        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
+        view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:

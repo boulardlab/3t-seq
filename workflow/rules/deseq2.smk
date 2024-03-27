@@ -51,7 +51,6 @@ localrules:
 
 rule yte_single_copy_genes:
     input:
-        template=workflow.source_path("../datavzrd/deg-plots-template.yaml"),
         datasets=[
             tables_folder.joinpath("deseq2/{serie}/results.csv"),
             tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
@@ -59,8 +58,9 @@ rule yte_single_copy_genes:
     output:
         analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd.yaml"),
     params:
+        template= Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="Single copy genes DESeq2",
-        view_specs=[workflow.source_path("../datavzrd/volcano-ma-plot.json")],
+        view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:
         "../env/yte.yml"
     log:
