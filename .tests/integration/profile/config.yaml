@@ -1,5 +1,8 @@
-use-conda: True
-use-singularity: True
+# use-conda: True
+# use-apptainer: True
+software-deployment-method: 
+  - conda
+  - apptainer
 show-failed-logs: True
 cores: 2
 conda-cleanup-pkgs: cache
