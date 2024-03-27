@@ -8,7 +8,6 @@
 *.gff3 filter=lfs diff=lfs merge=lfs -text
 *.gff filter=lfs diff=lfs merge=lfs -text
 *.gtf filter=lfs diff=lfs merge=lfs -text
-**/STAR/ filter=lfs diff=lfs merge=lfs -text
 **/salmonTE_quant/* filter=lfs diff=lfs merge=lfs -text
 **/salmonTE_test/* filter=lfs diff=lfs merge=lfs -text
 **/STAR/* filter=lfs diff=lfs merge=lfs -text
