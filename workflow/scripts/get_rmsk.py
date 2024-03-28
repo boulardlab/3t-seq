@@ -6,6 +6,7 @@ import sys
 import logging
 from time import sleep
 from random import randint
+import re
 
 
 def setup_logger(log_file):
@@ -61,6 +62,12 @@ def fetch_chromosomes(genome, track, logger):
     try:
         with request.urlopen(url) as response:
             data = json.loads(response.read().decode("utf-8"))
+            data["chromosomes"] = list(
+                filter(
+                    lambda chrom: re.match(r"^chr(?:[1-1][0-9]|X|Y|M)$", chrom),
+                    data["chromosomes"],
+                )
+            )
             return data
     except HTTPError as e:
         if logger:
@@ -185,6 +192,7 @@ def main(
     track_name="rmsk",
     gtf_output=sys.stdout,
     bed_output=sys.stdout,
+    selected_chromosomes=None,
     logger=None,
 ):
     """
@@ -195,7 +203,10 @@ def main(
     gtf_writer = get_gtf_writer(gtf_output, logger)
     bed_writer = get_bed_writer(bed_output, logger)
 
-    chromosome_dict = fetch_chromosomes(genome, track_name, logger)
+    if not selected_chromosomes:
+        chromosome_dict = fetch_chromosomes(genome, track_name, logger)
+    else:
+        chromosome_dict = {"chromosomes": selected_chromosomes}
 
     base_url = "https://api.genome.ucsc.edu/getData/track"
 
@@ -278,10 +289,32 @@ if __name__ == "__main__":
     bed_output = open(str(snakemake.output[1]), "w")
     logger.info("Bed output = {0}".format(bed_output))
 
+    selected_chromosomes = None
+    if snakemake.params["selected_chromosome"] and isinstance(
+        snakemake.params["selected_chromosome"], list
+    ):
+        logger.debug('Detected snakemake.params["selected_chromosome"] is a list.')
+
+        selected_chromosomes = snakemake.params["selected_chromosome"]
+        logger.info("Selected {0} for downloading".format(selected_chromosomes))
+    elif snakemake.params["selected_chromosome"] and isinstance(
+        snakemake.params["selected_chromosome"], str
+    ):
+        logger.debug(
+            'Detected snakemake.params["selected_chromosome"] is a string. Converting to list.'
+        )
+
+        selected_chromosomes = [snakemake.params["selected_chromosome"]]
+        logger.info("Selected {0} for downloading".format(selected_chromosomes))
+    else:
+        selected_chromosomes = None
+        logger.info("Downloading all chromosomes")
+
     main(
         genome=genome,
         track_name=track_name,
         gtf_output=gtf_output,
         bed_output=bed_output,
+        selected_chromosomes=selected_chromosomes,
         logger=logger,
     )
