@@ -48,7 +48,7 @@ rule salmonTE_quant:
         """
         set -e
 
-        T=$(mktemp -d)
+        T=$(mktemp -d -p {resources.tmpdir})
 
         I=""
         for F in {input}; do

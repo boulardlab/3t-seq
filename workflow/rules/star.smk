@@ -56,7 +56,7 @@ rule star_genome_preparation:
 rule star:
     input:
         references_folder.joinpath("genome-and-annotation-validated.done"),
-        bam=get_star_input,
+        fastq=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
@@ -76,15 +76,12 @@ rule star:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
-        libtype=lambda wildcards: (
-            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
-        ),
         alignments_folder=star_folder,
         tmp_folder=tmp_folder,
         others=lambda wildcards: get_params(wildcards, "star"),
-        mem_mb=giga_to_byte(32),
-    shadow:
-        "minimal"
+        mem_bytes=giga_to_byte(32),
+    # shadow:
+    #     "full"
     conda:
         "../env/alignment.yml"
     log:
@@ -92,7 +89,7 @@ rule star:
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
+         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
 
          STAR --quantMode TranscriptomeSAM GeneCounts \
          --outTmpDir $TMP_FOLDER \
@@ -104,8 +101,8 @@ rule star:
          --genomeDir {input.star_index_folder} \
          --readFilesCommand zcat \
          --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/{wildcards.sample}. \
-         --readFilesIn {input.bam} \
-         --limitBAMsortRAM {params.mem_mb} \
+         --readFilesIn {input.fastq} \
+         --limitBAMsortRAM {params.mem_bytes} \
          --genomeLoad NoSharedMemory \
          --outSAMunmapped Within \
          --outReadsUnmapped FastX \

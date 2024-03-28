@@ -13,9 +13,8 @@ rule starTE_random:
             "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
         ),
         alignments_folder=starTE_folder,
-        tmp_folder=tmp_folder,
-    shadow:
-        "minimal"
+    # shadow:
+    #     "full"
     conda:
         "../env/alignment.yml"
     log:
@@ -23,7 +22,7 @@ rule starTE_random:
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
+         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
          sleep 10
          
          STAR \
@@ -52,9 +51,7 @@ rule starTE_random:
             --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
             --readFilesIn {input.bam} \
             --limitBAMsortRAM {resources.mem_mb} \
-            --outBAMcompression -1         
-
-         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
+            --outBAMcompression -1
          """
 
 
@@ -163,17 +160,16 @@ rule starTE_multihit:
             "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
         ),
         alignments_folder=starTE_folder,
-        tmp_folder=tmp_folder,
     conda:
         "../env/alignment.yml"
-    shadow:
-        "minimal"
+    # shadow:
+    #     "full"
     log:
         starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {params.tmp_folder})
+         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
          sleep 10
                   
          STAR \
@@ -202,8 +198,6 @@ rule starTE_multihit:
             --limitBAMsortRAM {resources.mem_mb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1
-
-         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
 
