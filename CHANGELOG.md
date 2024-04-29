@@ -1,5 +1,30 @@
 # Changelog
 
+## [1.1.0](https://github.com/boulardlab/3t-seq/compare/v1.0.1...v1.1.0) (2024-03-12)
+
+
+### Features
+
+* containerize pipeline's output ([a3b4086](https://github.com/boulardlab/3t-seq/commit/a3b4086e50eb7e03f81a0f25ef83a00734c60346))
+* enable caching for all references and STAR indexes ([bc99687](https://github.com/boulardlab/3t-seq/commit/bc996872682a72aa9228f01b13fd3971eb054a4e))
+* test Snakemake report generation ([c2c0f46](https://github.com/boulardlab/3t-seq/commit/c2c0f464bd06e1ca46d741aa127ac9baf5db5e9a))
+* update Dockerfile ([bb47f34](https://github.com/boulardlab/3t-seq/commit/bb47f3467ac9b9ef4008c2ffccdf17cc6a8f48d2))
+
+
+### Bug Fixes
+
+* add singularity-args and reformat lines in CI ([598de8d](https://github.com/boulardlab/3t-seq/commit/598de8d5011170d031c3a01976147f635f9728d6))
+* cleanup Snakemake test profile ([2c2cdf7](https://github.com/boulardlab/3t-seq/commit/2c2cdf7400b66d7450e3479beb2d6591bb5bc406))
+* formatting edit_condition_file.py ([e26f101](https://github.com/boulardlab/3t-seq/commit/e26f10193d4003ca94f448687ee180e603e5c45d))
+* properly download using UCSC API. Fix all paths and enable caching ([db8da50](https://github.com/boulardlab/3t-seq/commit/db8da5075de206edf14bd603d78d152a89ca40a0))
+* switch to wget and write some logging when downloading genome annotations ([c49e4ff](https://github.com/boulardlab/3t-seq/commit/c49e4ff1e13cccd039315bd6700af56ce641042c))
+
+
+### Miscellaneous Chores
+
+* release 1.1.0 ([0340bbc](https://github.com/boulardlab/3t-seq/commit/0340bbc99ecc270f434f7b545118c5b31e08abd7))
+* release 1.1.0 ([74e2339](https://github.com/boulardlab/3t-seq/commit/74e23395390c4df2de2f4c3f04395e613b63383b))
+
 ## [1.0.1](https://github.com/boulardlab/3t-seq/compare/v1.0.0...v1.0.1) (2024-03-06)
 
 

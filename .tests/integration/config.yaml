@@ -44,7 +44,10 @@ genome:
 
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
-  #gtrnadb_bed: ../../../data/references/tRNA/mm10-tRNAs.bed
+
+  # for testing purpose, focus on chr19 only
+  selected_chromosomes:
+    - chr19
 
 deseq2:
   working_directory: .

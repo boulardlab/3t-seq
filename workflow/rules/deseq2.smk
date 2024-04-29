@@ -54,7 +54,7 @@ rule yte_single_copy_genes:
     output:
         analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd.yaml"),
     params:
-        template= Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
+        template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="Single copy genes DESeq2",
         view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
     conda:

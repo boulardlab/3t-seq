@@ -109,6 +109,9 @@ for library in libraries:
     else:
         library_names_paired.append(libname)
 
+# Download all chromosomes if no specific chromosome was specified
+if not "selected_chromosomes" in config["genome"]:
+    config["genome"]["selected_chromosomes"] = None
 
 ####################
 ## ONSTART BLOCK

@@ -4,6 +4,7 @@ library(tidyverse)
 coverage_files <- as.character(snakemake@input[["bed"]])
 
 sample_sheet <- read_csv(as.character(snakemake@input[["sample_sheet"]]))
+print(sample_sheet)
 
 # Extract the name component from paths
 path_names <- gsub(".*?/?(.+).bed", "\\1", coverage_files)
@@ -12,7 +13,7 @@ path_names <- gsub(".*?/?(.+).bed", "\\1", coverage_files)
 coverage_files <- setNames(coverage_files, path_names)
 
 # Sort paths based on the name column of the data frame
-coverage_files <- coverage_files[order(match(sample_sheet$name, names(coverage_files)))]
+coverage_files <- coverage_files[match(sample_sheet$name, names(coverage_files))]
 print(coverage_files)
 
 

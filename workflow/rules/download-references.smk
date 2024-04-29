@@ -44,6 +44,7 @@ rule download_repeatmasker_annotation_file:
     cache: True
     params:
         genome_id=config["genome"]["label"],
+        selected_chromosome=config["genome"]["selected_chromosomes"],
     conda:
         "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
     log:
@@ -75,7 +76,7 @@ rule download_gtRNAdb:
     cache: True
     params:
         url=config["genome"]["gtrnadb_url"],
-        output_dir=tRNA_annotation_dir,
+        output_dir=str(tRNA_annotation_dir),
     log:
         log_folder.joinpath("download/genome/gtrnadb.log"),
     conda:

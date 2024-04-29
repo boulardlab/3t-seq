@@ -195,4 +195,4 @@ if (any(k)) {
 }
 
 write.csv(results, file = deg_table_path)
-write.csv(results, file = deg_table_shrink_path)
+write.csv(results_shrink, file = deg_table_shrink_path)
