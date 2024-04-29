@@ -6,7 +6,7 @@ coverage_files <- as.character(snakemake@input[["bed"]])
 sample_sheet <- read_csv(as.character(snakemake@input[["sample_sheet"]]))
 
 # Extract the name component from paths
-path_names <- gsub(".*/(\\w+_\\w+).bed", "\\1", coverage_files)
+path_names <- gsub(".*?/?(.+).bed", "\\1", coverage_files)
 
 # Create a mapping between paths and names
 coverage_files <- setNames(coverage_files, path_names)
