@@ -1,6 +1,0 @@
-use-conda: True
-use-singularity: True
-show-failed-logs: True
-cores: 2
-conda-cleanup-pkgs: cache
-all-temp: True

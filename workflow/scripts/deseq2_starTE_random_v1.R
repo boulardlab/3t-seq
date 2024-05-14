@@ -24,27 +24,21 @@ print(head(count_matrix))
 sample_sheet <- read.csv(
     snakemake@input[["sample_sheet"]], 
     sep=",", 
-    header=TRUE,
-    row.names = "name"    
+    header=TRUE
 )
 
-print(sample_sheet)
-
-if ("filename_1" %in% colnames(sample_sheet)) {
-    colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename_1 )
-}else{
-    colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$filename)
-}
-
+colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$name)
 colnames(count_matrix)[colnames_order] <- rownames(sample_sheet)
-
 
 sample_sheet <- sample_sheet[match(colnames(count_matrix), rownames(sample_sheet)),]
 
-print(sample_sheet)
-
 design_variable <- snakemake@params[["variable"]]
 reference_level <- snakemake@params[["reference_level"]]
+
+if (!design_variable %in% colnames(sample_sheet)) {
+  message <- sprintf("Could not find design variable in columns of sample_sheet.\nvariable: %s\nsample sheet: %s", design_variable, snakemake@input[["sample_sheet"]])
+  stop(message)
+}
 
 design_formula <- as.formula(sprintf("~ %s", design_variable))
 

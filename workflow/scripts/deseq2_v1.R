@@ -60,6 +60,11 @@ ann <- import(annotation_file_path)
 ### Sample sheet
 colData <- fread(sample_sheet)
 
+if (!design_variable %in% colnames(colData)) {
+  message <- sprintf("Could not find design variable in columns of sample_sheet.\nvariable: %s\nsample sheet: %s", design_variable, sample_sheet)
+  stop(message)
+}
+
 if ("filename" %in% colnames(colData)) {
   libtype <- "single"
   if (!all(c("name", "filename", design_variable) %in% colnames(colData))) {
@@ -86,12 +91,7 @@ for (i in seq_along(design_variable)) {
   colData[, column] <- relevel(colData[, column], ref = reference_level)  
 }
 
-if (libtype == "single") {
-  rownames(colData) <- colData[, "filename"]
-} else {
-  rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])  
-}
-
+rownames(colData) <- colData[, "name"]
 
 
 ## Import STAR counts and generate a count matrix
@@ -102,11 +102,7 @@ mat <- sapply(ls, function(p) {
   setNames(dt$V2, dt$V1)
 })
 
-if (libtype == "single") {
-  colnames_order <- sapply(colnames(mat), grep, x = colData$filename)
-} else {
-  colnames_order <- sapply(colnames(mat), grep, x = colData$filename_1 )
-}
+colnames_order <- sapply(colnames(mat), grep, x = colData$name)
 
 # Rename columns to match sample sheet sample column
 colnames(mat)[colnames_order] <- rownames(colData)
@@ -190,4 +186,4 @@ if (any(k)) {
 }
 
 write.csv(results, file = deg_table_path)
-write.csv(results, file = deg_table_shrink_path)
+write.csv(results_shrink, file = deg_table_shrink_path)

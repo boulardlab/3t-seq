@@ -1,6 +1,6 @@
 rule download_genome_fasta_file:
     output:
-        protected(fasta_path),
+        protected(str(fasta_path)),
     params:
         url=config["genome"]["fasta_url"],
     cache: True
@@ -18,7 +18,7 @@ rule download_genome_fasta_file:
 
 rule download_genome_annotation_file:
     output:
-        protected(gtf_path),
+        protected(str(gtf_path)),
     cache: True
     params:
         url=config["genome"]["gtf_url"],
@@ -44,6 +44,7 @@ rule download_repeatmasker_annotation_file:
     cache: True
     params:
         genome_id=config["genome"]["label"],
+        selected_chromosome=config["genome"]["selected_chromosomes"],
     conda:
         "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
     log:
@@ -75,24 +76,10 @@ rule download_gtRNAdb:
     cache: True
     params:
         url=config["genome"]["gtrnadb_url"],
-        output_dir=tRNA_annotation_dir,
+        output_dir=str(tRNA_annotation_dir),
     log:
         log_folder.joinpath("download/genome/gtrnadb.log"),
     conda:
         "../env/wget.yml"
     script:
         "../scripts/download-gtrnadb.sh"
-
-
-# rule download_gaf_file:
-#     output:
-#         gaf_path,
-#     params:
-#         url=config["genome"]["gaf_url"],
-#     conda:
-#         "../env/wget.yml"
-#     log:
-#         log_folder.joinpath("download/genome/gaf.log"),
-#     threads: 4
-#     script:
-#         "../scripts/download-gaf.sh"

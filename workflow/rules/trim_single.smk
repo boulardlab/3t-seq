@@ -14,7 +14,6 @@ rule trimmomatic_pe:
         unpaired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.unpaired.fastq.gz"),
         unpaired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.unpaired.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
-        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     threads: 4
@@ -22,7 +21,7 @@ rule trimmomatic_pe:
         runtime=lambda wildcards, attempt: 240 * attempt,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
-        log_folder.joinpath("trimmomatic_pe", "{serie}", "{sample}.log"),
+        trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
     shell:
@@ -33,7 +32,7 @@ rule trimmomatic_pe:
         {input.m1} {input.m2} \
         {output.paired1} {output.unpaired1} \
         {output.paired2} {output.unpaired2} \
-        {params} |& tee {output.stats}
+        {params} |& tee {log}
         """
 
 
@@ -46,8 +45,6 @@ rule trimmomatic_se:
         get_fastq,
     output:
         fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
-        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
-        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     retries: 2
@@ -56,7 +53,7 @@ rule trimmomatic_se:
         runtime=lambda wildcards, attempt: 180 * attempt,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
-        log_folder.joinpath("trimmomatic_se-{serie}-{sample}.log"),
+        trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
     shell:
@@ -66,7 +63,7 @@ rule trimmomatic_se:
         -summary {output.summary} \
         {input} \
         {output.fastq} \
-        {params} |& tee {output.stats}
+        {params} |& tee {log}
         """
 
 
@@ -142,8 +139,7 @@ rule fastqc_trim_pe:
 
 rule multiqc_trim:
     input:
-        get_trimmomatic_stats,
-        get_trimmed_fastqc,
+        unpack(get_multiqc_trim_inputs),
     output:
         report(
             multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),

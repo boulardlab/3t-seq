@@ -4,7 +4,7 @@ set -e
 set -x
 
 T=$(mktemp)
-SORTED=$(mktemp)
+SORTED=$(mktemp -p ${snakemake_resources[tmpdir]})
 
 CHROMOSOMES=$(awk '{print $1}' "${snakemake_input[genome]}")
 

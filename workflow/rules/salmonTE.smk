@@ -23,7 +23,7 @@ rule edit_condition_file:
         "../scripts/edit_condition_file.py"
 
 
-checkpoint salmonTE_quant:
+rule salmonTE_quant:
     input:
         get_salmonTE_quant_input,
     output:
@@ -47,27 +47,8 @@ checkpoint salmonTE_quant:
     shell:
         """
         set -e
-        
-        echo "Working directory: $(pwd)"
-        echo
-        echo
-        echo
-        echo "Current folder content"
-        ls -l
-        echo
-        echo
-        echo
-        echo "Current user"
-        whoami
-        id
-        echo 
-        echo 
-        echo 
-        env
-        echo 
-        echo 
-        echo 
-        T=$(mktemp -d)
+
+        T=$(mktemp -d -p {resources.tmpdir})
 
         I=""
         for F in {input}; do
@@ -93,7 +74,9 @@ checkpoint salmonTE_quant:
 rule salmonTE_test:
     input:
         infolder=salmonTE_folder.joinpath("quant/{serie}"),
-        condition_file=salmonTE_folder.joinpath("quant/{serie}/edit_condition.done"),
+        condition_file=data_folder.joinpath(
+            "salmonTE/quant/{serie}/edit_condition.done"
+        ),
     output:
         report(
             directory(salmonTE_folder.joinpath("de_analysis/{serie}")),

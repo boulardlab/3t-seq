@@ -48,7 +48,7 @@ variables = {
     "max_in_memory_rows": max_rows + 1,
 }
 
-with open(str(snakemake.input["template"]), "r") as template, open(
+with open(str(snakemake.params["template"]), "r") as template, open(
     str(snakemake.output), "w"
 ) as outfile:
     result = process_yaml(template, outfile=outfile, variables=variables)

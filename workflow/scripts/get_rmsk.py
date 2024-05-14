@@ -6,10 +6,10 @@ import sys
 import logging
 from time import sleep
 from random import randint
+import re
 
 
 def setup_logger(log_file):
-
     # Create a logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
@@ -36,7 +36,7 @@ def setup_logger(log_file):
     return logger
 
 
-def build_request(base_url, params, logger=setup_logger("download-rmsk.py")):
+def build_request(base_url, params, logger):
     query_string = parse.urlencode(params).encode("ascii")
 
     url = request.Request(
@@ -44,13 +44,12 @@ def build_request(base_url, params, logger=setup_logger("download-rmsk.py")):
         data=query_string,
         method="GET",
     )
-    logger.debug("Created url: {0}".format(url.get_full_url()))
+    if logger:
+        logger.debug("Created url: {0}".format(url.get_full_url()))
     return url
 
 
-def fetch_chromosomes(
-    genome="mm10", track="rmsk", logger=setup_logger("download-rmsk.log")
-):
+def fetch_chromosomes(genome, track, logger):
     """
     A function to fetch the list of chromosomes of a given organism from UCSC.
     """
@@ -58,17 +57,25 @@ def fetch_chromosomes(
     base_url = "https://api.genome.ucsc.edu/list/chromosomes"
 
     params = {"genome": genome, "track": track}
-    url = build_request(base_url, params)
+    url = build_request(base_url, params, logger)
 
     try:
         with request.urlopen(url) as response:
             data = json.loads(response.read().decode("utf-8"))
+            data["chromosomes"] = list(
+                filter(
+                    lambda chrom: re.match(r"^chr(?:[1-1][0-9]|X|Y|M)$", chrom),
+                    data["chromosomes"],
+                )
+            )
             return data
     except HTTPError as e:
-        logger.critical(f"HTTPError: {e.code} - {e.reason}")
+        if logger:
+            logger.critical(f"HTTPError: {e.code} - {e.reason}")
         raise e
     except URLError as e:
-        logger.critical(f"URLError: {e.reason}")
+        if logger:
+            logger.critical(f"URLError: {e.reason}")
         raise e
 
 
@@ -96,7 +103,8 @@ def get_gtf_writer(gtf_output, logger):
         fieldnames=gtf_fieldnames,
         dialect="excel-tab",
     )
-    logger.debug("Created GTF writer. Fields = {0}".format(gtf_fieldnames))
+    if logger:
+        logger.debug("Created GTF writer. Fields = {0}".format(gtf_fieldnames))
 
     return gtf_writer
 
@@ -151,7 +159,8 @@ def get_bed_writer(bed_output, logger):
     bed_writer = csv.DictWriter(
         f=bed_output, fieldnames=bed_fieldnames, dialect="excel-tab"
     )
-    logger.debug("Created BED writer. Fields = {0}".format(bed_fieldnames))
+    if logger:
+        logger.debug("Created BED writer. Fields = {0}".format(bed_fieldnames))
     return bed_writer
 
 
@@ -183,7 +192,8 @@ def main(
     track_name="rmsk",
     gtf_output=sys.stdout,
     bed_output=sys.stdout,
-    logger=setup_logger("download-rmsk.log"),
+    selected_chromosomes=None,
+    logger=None,
 ):
     """
     A function that queries UCSC genome browser to download RepeatMasker
@@ -193,7 +203,10 @@ def main(
     gtf_writer = get_gtf_writer(gtf_output, logger)
     bed_writer = get_bed_writer(bed_output, logger)
 
-    chromosome_dict = fetch_chromosomes(genome, track_name, logger)
+    if not selected_chromosomes:
+        chromosome_dict = fetch_chromosomes(genome, track_name, logger)
+    else:
+        chromosome_dict = {"chromosomes": selected_chromosomes}
 
     base_url = "https://api.genome.ucsc.edu/getData/track"
 
@@ -205,27 +218,29 @@ def main(
 
         # setup query string
         params = {"genome": genome, "track": track_name, "chrom": chrom}
-        logger.debug("Query string = {0}".format(params))
+        if logger:
+            logger.debug("Query string = {0}".format(params))
 
         # create request object
         url = build_request(base_url, params, logger)
 
-        logger.debug("Starting GTF/BED export for chromosome {0}".format(chrom))
+        if logger:
+            logger.debug("Starting GTF/BED export for chromosome {0}".format(chrom))
 
-        # perform the query and parse response
         chrom_lines = 0
         try:
+            # perform the query and parse response
             with request.urlopen(url) as response:
                 dat = json.loads(response.read())
 
-                logger.info(
-                    "Downloaded {0} - {1} repeats - track name {2} - url {3}".format(
-                        chrom, len(dat["rmsk"]), track_name, url.get_full_url()
+                if logger:
+                    logger.info(
+                        "Downloaded {0} - {1} repeats - track name {2} - url {3}".format(
+                            chrom, len(dat["rmsk"]), track_name, url.get_full_url()
+                        )
                     )
-                )
 
                 for repeat in dat["rmsk"]:
-
                     # UCSC works zero-based base position
                     # https://www.biostars.org/p/84686/
 
@@ -235,24 +250,28 @@ def main(
                     chrom_lines += 1
                     counter += 1
 
-            logger.debug(
-                "Completed {0} - written {1} lines.".format(chrom, chrom_lines)
-            )
+            if logger:
+                logger.debug(
+                    "Completed {0} - written {1} lines.".format(chrom, chrom_lines)
+                )
 
             sleep(randint(1, 3))
 
         except HTTPError as e:
-            logger.critical(f"HTTPError: {e.code} - {e.reason}")
+            if logger:
+                logger.critical(f"HTTPError: {e.code} - {e.reason}")
             raise e
         except URLError as e:
-            logger.critical(f"URLError: {e.reason}")
+            if logger:
+                logger.critical(f"URLError: {e.reason}")
             raise e
 
-    logger.info(
-        "Successfully written {0} lines over {1} chromosomes.".format(
-            counter, nchromosomes
+    if logger:
+        logger.info(
+            "Successfully written {0} lines over {1} chromosomes.".format(
+                counter, nchromosomes
+            )
         )
-    )
 
 
 if __name__ == "__main__":
@@ -270,10 +289,32 @@ if __name__ == "__main__":
     bed_output = open(str(snakemake.output[1]), "w")
     logger.info("Bed output = {0}".format(bed_output))
 
+    selected_chromosomes = None
+    if snakemake.params["selected_chromosome"] and isinstance(
+        snakemake.params["selected_chromosome"], list
+    ):
+        logger.debug('Detected snakemake.params["selected_chromosome"] is a list.')
+
+        selected_chromosomes = snakemake.params["selected_chromosome"]
+        logger.info("Selected {0} for downloading".format(selected_chromosomes))
+    elif snakemake.params["selected_chromosome"] and isinstance(
+        snakemake.params["selected_chromosome"], str
+    ):
+        logger.debug(
+            'Detected snakemake.params["selected_chromosome"] is a string. Converting to list.'
+        )
+
+        selected_chromosomes = [snakemake.params["selected_chromosome"]]
+        logger.info("Selected {0} for downloading".format(selected_chromosomes))
+    else:
+        selected_chromosomes = None
+        logger.info("Downloading all chromosomes")
+
     main(
         genome=genome,
         track_name=track_name,
         gtf_output=gtf_output,
         bed_output=bed_output,
+        selected_chromosomes=selected_chromosomes,
         logger=logger,
     )
