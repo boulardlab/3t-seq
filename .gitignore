@@ -17,6 +17,7 @@ test.sh
 **/__pycache__
 .pytest_cache/
 .tests/unit-temp
+.vscode/
 deseq2_emergency_dump.rda
 mydata/
 profile/slurm-francesco/
