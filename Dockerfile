@@ -184,5 +184,5 @@ RUN mamba env create --prefix /conda-envs/346c7adef34200145d01dda184ac25b8 --fil
     mamba env create --prefix /conda-envs/b93daf96b2454232db6380819bb61725 --file /conda-envs/b93daf96b2454232db6380819bb61725/environment.yaml && \
     mamba env create --prefix /conda-envs/2473cc7cad71f946585d67bc0fc276d6 --file /conda-envs/2473cc7cad71f946585d67bc0fc276d6/environment.yaml && \
     mamba env create --prefix /conda-envs/3674dd77e0957c12c05158a88113106a --file /conda-envs/3674dd77e0957c12c05158a88113106a/environment.yaml && \
-    mamba clean --all -y \
+    mamba clean --all -y && \
     update-ca-certificates
