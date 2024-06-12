@@ -36,7 +36,7 @@ include: "rules/common.smk"
 ###########################
 
 
-containerized: "docker://ftabaro/rna-seq:1.1"
+containerized: "docker://ftabaro/rna-seq:1.2"
 
 
 #######################
