@@ -97,26 +97,18 @@ def get_bw(wildcards):
 
 def get_star_input(wildcards):
     """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
-    
+
     samples_names = get_samples_names(wildcards)
-    print(samples_names)
     filenames_no_mate = get_samples(wildcards)
-    print(filenames_no_mate)
     idx = samples_names.index(wildcards.sample)
     s = filenames_no_mate[idx]
 
     if wildcards.serie in library_names_single:
-        ret = trim_reads_folder.joinpath(
-            wildcards.serie, "{0}.fastq.gz".format(s)
-        )
+        ret = trim_reads_folder.joinpath(wildcards.serie, "{0}.fastq.gz".format(s))
     else:
         ret = [
-            trim_reads_folder.joinpath(
-                wildcards.serie, "{0}_1.fastq.gz".format(s)
-            ),
-            trim_reads_folder.joinpath(
-                wildcards.serie, "{0}_2.fastq.gz".format(s)
-            ),
+            trim_reads_folder.joinpath(wildcards.serie, "{0}_1.fastq.gz".format(s)),
+            trim_reads_folder.joinpath(wildcards.serie, "{0}_2.fastq.gz".format(s)),
         ]
     return ret
 

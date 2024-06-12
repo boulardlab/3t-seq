@@ -151,6 +151,7 @@ rule fastqc_star:
 
         """
 
+
 rule index_bam:
     input:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
