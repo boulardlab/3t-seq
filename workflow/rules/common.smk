@@ -159,17 +159,18 @@ def get_fastq_paired(wildcards):
 
 
 def get_fastq(wildcards):
-    if wildcards.serie in library_names_single:
-        for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
-            gd = parse_filepath(p)
-            if gd["sample"] == wildcards.sample:
-                return p
-        raise ValueError(
-            "Could not determine input files for serie: {}".format(wildcards.serie)
+    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
+        gd = parse_filepath(p)
+        s = gd["sample"]
+        if gd["mate"] != "":
+            s += gd["mate"]
+        if s == wildcards.sample:
+            return p
+    raise ValueError(
+        "Could not determine input files for serie: {}\nsample: {}\n{}".format(
+            wildcards.serie, wildcards.sample, gd
         )
-    else:
-        ret = list(get_fastq_paired(wildcards).values())
-        return ret
+    )
 
 
 def mkdir(p: Path, verbose=False):
