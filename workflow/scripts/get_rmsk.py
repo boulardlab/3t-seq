@@ -64,7 +64,7 @@ def fetch_chromosomes(genome, track, logger):
             data = json.loads(response.read().decode("utf-8"))
             data["chromosomes"] = list(
                 filter(
-                    lambda chrom: re.match(r"^chr(?:[1-1][0-9]|X|Y|M)$", chrom),
+                    lambda chrom: re.match(r"^chr(?:[0-9]+|X|Y|M)$", chrom),
                     data["chromosomes"],
                 )
             )
