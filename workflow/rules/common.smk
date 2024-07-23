@@ -1,6 +1,6 @@
 from pathlib import PosixPath
 
-filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
+filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
 filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?:_sequence)?$"
 
 
@@ -164,6 +164,8 @@ def get_fastq(wildcards):
         s = gd["sample"]
         if gd["mate"] != "":
             s += gd["mate"]
+        if gd["genecore_suffix"]:
+            s += gd["genecore_suffix"]
         if s == wildcards.sample:
             return p
     raise ValueError(
@@ -342,13 +344,17 @@ def get_fastqc(wildcards):
         )
     else:
         mates = set()
+        has_genecore_suffix = False
         for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
             gd = parse_filepath(p)
             mates.add(gd["mate"])
+            if gd["genecore_suffix"]:
+                has_genecore_suffix = True
         fastqcs = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}{mate}_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}{mate}{genecore_suffix}_fastqc.zip"),
             sample=s,
             mate=mates,
+			genecore_suffix="_sequence" if has_genecore_suffix else ""
         )
     return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}
 
