@@ -27,8 +27,7 @@ sample_sheet <- read.csv(
     header=TRUE
 )
 
-
-colnames_order <- sapply(colnames(count_matrix), grep, x = sample_sheet$name )
+colnames_order <- match(sample_sheet$name,colnames(count_matrix))
 colnames(count_matrix)[colnames_order] <- rownames(sample_sheet)
 
 sample_sheet <- sample_sheet[match(colnames(count_matrix), rownames(sample_sheet)),]
