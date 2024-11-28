@@ -91,12 +91,7 @@ for (i in seq_along(design_variable)) {
   colData[, column] <- relevel(colData[, column], ref = reference_level)  
 }
 
-if (libtype == "single") {
-  rownames(colData) <- colData[, "filename"]
-} else {
-  rownames(colData) <- gsub("_1.*$", "", colData[, "filename_1"])  
-}
-
+rownames(colData) <- colData[, "name"]
 
 
 ## Import STAR counts and generate a count matrix
@@ -107,11 +102,7 @@ mat <- sapply(ls, function(p) {
   setNames(dt$V2, dt$V1)
 })
 
-if (libtype == "single") {
-  colnames_order <- sapply(colnames(mat), grep, x = colData$filename)
-} else {
-  colnames_order <- sapply(colnames(mat), grep, x = colData$filename_1 )
-}
+colnames_order <- sapply(colnames(mat), grep, x = colData$name)
 
 # Rename columns to match sample sheet sample column
 colnames(mat)[colnames_order] <- rownames(colData)
