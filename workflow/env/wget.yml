@@ -1,6 +1,7 @@
 channels:
-  - anaconda
   - conda-forge
+  - anaconda
 dependencies:
-  - wget=1.21.3
+  - wget=1.21.4
   - gzip
+  - openssl=3.3.0

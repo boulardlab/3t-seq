@@ -3,3 +3,4 @@ channels:
   - anaconda
 dependencies:
   - pandas=2.2.1
+  - openssl=3.3.0
