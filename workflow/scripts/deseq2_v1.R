@@ -102,7 +102,7 @@ mat <- sapply(ls, function(p) {
   setNames(dt$V2, dt$V1)
 })
 
-colnames_order <- sapply(colnames(mat), grep, x = colData$name)
+colnames_order <- match(colData$name,colnames(mat))
 
 # Rename columns to match sample sheet sample column
 colnames(mat)[colnames_order] <- rownames(colData)
