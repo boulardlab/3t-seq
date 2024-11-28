@@ -31,7 +31,7 @@ jobs:
         with:
           directory: tests
           snakefile: workflow/Snakefile
-          args: "--configfile tests/config.yaml --lint"
+          args: "--configfile .tests/config.yaml --lint"
   run-unit-tests:
     runs-on: ubuntu-latest
     needs:
