@@ -60,7 +60,7 @@ rule featureCounts_random:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/random/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=get_samples(wildcards),
+            sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
             "{0}.{1}".format(config["genome"]["label"], "gtf")
@@ -206,7 +206,7 @@ rule featureCounts_multihit:
         bam=lambda wildcards: expand(
             starTE_folder.joinpath("{serie}/filter/multihit/{sample}.TEonly.bam"),
             serie=wildcards.serie,
-            sample=get_samples(wildcards),
+            sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
             "{0}.{1}".format(config["genome"]["label"], "gtf")

@@ -1,0 +1,46 @@
+rerun-triggers:
+  - input
+  - mtime
+  - params
+  - software-env
+
+max-status-checks-per-second: 1
+seconds-between-status-checks: 30
+max-jobs-per-second: 1
+
+# let Snakemake submit up to 100 jobs at the time
+jobs: 100
+
+# Wait up to 2 minutes for files to appear on file system
+# This is to handle latency on some shared file systems
+latency-wait: 120
+
+# If a job fails, let Snakemake retry running it up to 2 times
+retries: 2
+
+default-resources:
+  - "slurm_account=boulard" # this is the default account for billing of used resources
+  - "slurm_partition=htc-el8" # this is the default partition jobs should be submitted to
+
+set-resources:
+  # this syntax manipulates specific resources for specific rules
+  - "starTE_random:runtime=2880" # runtime
+  - "star:mem_mb=128000" # memory
+  - "starTE_random:mem_mb=256334" # memory
+  - "starTE_multihit:mem_mb=256334" # memory
+  - "star:slurm_partition=bigmem" # Cluster partition
+  - "starTE_random:slurm_partition=bigmem" # Cluster partition
+  - "starTE_multihit:slurm_partition=bigmem" # Cluster partition
+  - "trimmomatic_pe:runtime=10080"
+  - "multiqc_star:runtime=60"
+  - "fastqc_markdup:runtime=30"
+
+# Manipulate the number of cores allocated to a specific rule
+set-threads:
+  - "fastqc_raw=16"
+  - "star=32"
+  - "starTE_random=32"
+  - "starTE_multihit=32"
+  - "star_genome_preparation=32"
+  - "trimmomatic_pe=16"
+  - "trimmomatic_se=16"

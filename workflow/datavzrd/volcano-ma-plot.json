@@ -98,6 +98,10 @@
     "config": {
         "legend": {
             "disable": true
+        },
+        "axis": {
+            "titleFontSize": 18,
+            "labelFontSize": 18
         }
     },
     "hconcat": [

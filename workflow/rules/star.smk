@@ -152,21 +152,6 @@ rule fastqc_star:
         """
 
 
-rule verify_star:
-    input:
-        lambda wildcards: expand(
-            star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
-            serie=wildcards.serie,
-            sample=(
-                samples["single"][wildcards.serie]
-                if wildcards.serie in samples["single"]
-                else samples["paired"][wildcards.serie]
-            ),
-        ),
-    output:
-        touch(star_folder.joinpath("{serie}.done")),
-
-
 rule index_bam:
     input:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
