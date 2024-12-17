@@ -1,7 +1,7 @@
 from pathlib import PosixPath
 
-filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
-filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MR]?[12])?(?:_sequence)?$"
+filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
+filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?$"
 
 
 def giga_to_byte(g):
@@ -144,10 +144,10 @@ def get_fastq_paired(wildcards):
         sample = gd["sample"]
         mate = gd["mate"]
 
-        if re.search(sample, wildcards.sample):
-            if re.search(r"1", mate):
+        if sample==wildcards.sample:
+            if "1" in mate:
                 ret["m1"] = p
-            elif re.search(r"2", mate):
+            elif "2" in mate:
                 ret["m2"] = p
             else:
                 raise ValueError(
