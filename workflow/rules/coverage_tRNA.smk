@@ -18,7 +18,7 @@ rule mk_genome_tsv:
         mem_mb=2048,
     shell:
         """
-        samtools view -H {input} | grep SQ | cut -f 2,3 | sed -r 's/(SN|LN)://g' | tr " " "\t" > {output}
+        samtools view -H {input} | grep '@SQ' | cut -f 2,3 | sed -r 's/(SN|LN)://g' | tr " " "\t" > {output}
         """
 
 
