@@ -1,5 +1,48 @@
 # Changelog
 
+## [1.2.0](https://github.com/boulardlab/3t-seq/compare/v1.1.0...v1.2.0) (2024-05-16)
+
+
+### Features
+
+* add rulegraph ([804bb1c](https://github.com/boulardlab/3t-seq/commit/804bb1cad06341c13b962b995688fca2bae0c854))
+* add workflow documentation.md ([3fb9713](https://github.com/boulardlab/3t-seq/commit/3fb9713f8f97f951bec56a80e2d76c33a9d0d125))
+* allow to download only RMSK annotation only for selected chromosomes ([92abc0a](https://github.com/boulardlab/3t-seq/commit/92abc0ae41810ab2ed094693fb1f94b3a8fd3db7))
+* bump Docker environment version ([f899fd3](https://github.com/boulardlab/3t-seq/commit/f899fd3c2a656a2b4f1dc8e610bd27c1c52b6cb1))
+* init implementation of unit tests - currently not all work ([d9eb2e3](https://github.com/boulardlab/3t-seq/commit/d9eb2e39649c6ac2cb264818425e506ae0c289d3))
+* port to Snakemake 8 ([9a0a8af](https://github.com/boulardlab/3t-seq/commit/9a0a8af9a8d7c89787c29377c80247cc007b2336))
+* refactor common functions. Now pipeline requires sample sheet to work ([d723b12](https://github.com/boulardlab/3t-seq/commit/d723b1231856fb59539b493e824b90485d1960fa))
+* rename and cleanup integration tests folder to comply with WorkflowHub folder tree ([2e908ca](https://github.com/boulardlab/3t-seq/commit/2e908cae29debd028b5d8d57fbb6890c9c2f1ddf))
+* updated Dockerfile ([85f4b02](https://github.com/boulardlab/3t-seq/commit/85f4b026cba90380d9f1f2addca5d9bd1077c8ce))
+
+
+### Bug Fixes
+
+* add resources/sample-sheet.csv and update integration tests config files accordingly ([d61b396](https://github.com/boulardlab/3t-seq/commit/d61b396d739ca46a20f457419e932e414b2e8d09))
+* build_trna_matrix, sort columns according to the sample sheet order ([e97ee2e](https://github.com/boulardlab/3t-seq/commit/e97ee2ee77dbc7cbe7f44097bdb73e9786311a39))
+* clean .gitattributes ([8637d9c](https://github.com/boulardlab/3t-seq/commit/8637d9c37abf5cc4d957b97a931c1f8d5c94d9d8))
+* clean deseq2 rules ([bc33426](https://github.com/boulardlab/3t-seq/commit/bc33426915bb0897734b7a13898f05f1dfcbeb4c))
+* cleanup Snakefile ([8c0f6df](https://github.com/boulardlab/3t-seq/commit/8c0f6df31cd2a65ed0da44bad6dc5cc3ed532303))
+* coverage_tRNA now makes tmp folder in the correct folder ([9b22e04](https://github.com/boulardlab/3t-seq/commit/9b22e0446aef978d5d51b8883c82aba16c1d77c1))
+* fix fastqc_markdup input function and command ([919d088](https://github.com/boulardlab/3t-seq/commit/919d088816faec4dbcff775b44d58145d1e5ec48))
+* fix logging in download RMSK script ([dcf7f29](https://github.com/boulardlab/3t-seq/commit/dcf7f29c3718fa1ffd07faa9d9f3a0ad320c098b))
+* make filename regex more general ([01eb56f](https://github.com/boulardlab/3t-seq/commit/01eb56fb3252257f832c9d2bbd06790ca55e6769))
+* port all rules to new functions ([8488e66](https://github.com/boulardlab/3t-seq/commit/8488e668b73d5b1363d1ca7c690b8792a685f89f))
+* protected file path as strings, remove comments ([157d98e](https://github.com/boulardlab/3t-seq/commit/157d98edd6d0654669df64b38ddf5c6f221e50fd))
+* remove commented line ([57761e1](https://github.com/boulardlab/3t-seq/commit/57761e1508a83e5a9411ad534bb11e9fdc49fc5f))
+* remove shadow directive. As of Snakemake 8.10.0 this is not working in conjunction with Apptainer and Slurm ([602b112](https://github.com/boulardlab/3t-seq/commit/602b112fa0ce439b2abc3566a2a89416f0ce0a94))
+* remove unneeded files ([2afaea4](https://github.com/boulardlab/3t-seq/commit/2afaea4be65799788035e72e8d9f7a982b259a4d))
+* SalmonTE, polish shell code ([13e16eb](https://github.com/boulardlab/3t-seq/commit/13e16eb54266940b1385a4ad72f7dbb337eff767))
+* sorting of tRNA count matrix columns ([ac1e1e4](https://github.com/boulardlab/3t-seq/commit/ac1e1e4bcaedb9a789e599103418403364f4f4b3))
+* SSL error on some platforms ([198cbd0](https://github.com/boulardlab/3t-seq/commit/198cbd013d63ab3873eac837fa1add6322f14351))
+* STAR, properly handle log files ([ba0c2c7](https://github.com/boulardlab/3t-seq/commit/ba0c2c748333fd033c466140fc1d9339d56ddcb6))
+* STARTE, properly hande log files ([fde3c36](https://github.com/boulardlab/3t-seq/commit/fde3c3636b3083f975235f9806f5c069b79e0632))
+* trim rules now have stats files as logs, removed unparsable log files from output ([de2bed0](https://github.com/boulardlab/3t-seq/commit/de2bed08518ce4f3a475372b1c52e0eee41c771b))
+* update GH Actions workflow to match new test folder tree, add unit tests ([0e2a836](https://github.com/boulardlab/3t-seq/commit/0e2a8365a0d4248420808d47d7dbdf927fa485e1))
+* update Snakefile to align with new config ([efa5b57](https://github.com/boulardlab/3t-seq/commit/efa5b57acccd1feffcbc9be3aec15e7aea9ed55b))
+* write lfc-shrinked table to the correct file ([e5e3c60](https://github.com/boulardlab/3t-seq/commit/e5e3c60913630f69c7583e268452d1fb254a5e7c))
+* YTE template now is a param instead of an input file ([2aab702](https://github.com/boulardlab/3t-seq/commit/2aab7023c353a10ca7fbf8abdc3f52f2a6712095))
+
 ## [1.1.0](https://github.com/boulardlab/3t-seq/compare/v1.0.1...v1.1.0) (2024-03-12)
 
 
