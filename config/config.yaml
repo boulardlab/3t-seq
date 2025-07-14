@@ -17,6 +17,7 @@ sequencing_libraries:
 
 disable_TE_analysis: false
 disable_tRNA_analysis: false
+disable_salmonTE_analysis: false
 
 globals:
   reads_folder: tests

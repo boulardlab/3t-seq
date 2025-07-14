@@ -395,15 +395,6 @@ def build_rule_all_inputs(wildcards):
 
     # TE
     if not config["disable_TE_analysis"]:
-        # SalmonTE results folders
-        ret += expand(
-            data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
-            se_serie=library_names_single,
-        )
-        ret += expand(
-            data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
-            pe_serie=library_names_paired,
-        )
         # FeatureCounts tables from STAR-TE
         ret += expand(
             starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"),
@@ -429,6 +420,18 @@ def build_rule_all_inputs(wildcards):
         ret += expand(
             trna_coverage_folder.joinpath("{serie}", "datavzrd"),
             serie=library_names_paired + library_names_single,
+        )
+    
+    # SalmonTE quantification
+    if not config["disable_salmonTE_analysis"]:
+        # SalmonTE quantification result
+        ret += expand(
+            data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
+            se_serie=library_names_single,
+        )
+        ret += expand(
+            data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
+            pe_serie=library_names_paired,
         )
 
     return ret
