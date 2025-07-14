@@ -64,6 +64,7 @@ tables_folder = analysis_folder.joinpath("tables")
 notebooks_folder = analysis_folder.joinpath("notebooks")
 
 fastqc_raw_folder = qc_folder.joinpath("fastqc-raw")
+
 fastqc_trim_folder = qc_folder.joinpath("fastqc-trimmed")
 fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
 fastqc_star_folder = qc_folder.joinpath("star")

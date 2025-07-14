@@ -2,7 +2,7 @@ cores: 2
 local-cores: 2
 jobs: 1
 restart-times: 0
-reason: True
+#reason: True
 printshellcmds: True
 use-conda: True
 use-singularity: True

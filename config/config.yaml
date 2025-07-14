@@ -1,45 +1,39 @@
 sequencing_libraries:
-  - name: GSE78551-subsample
-    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
-    # E.g.
-    #  Name,Filename,Genotype
-    #  s01,some_complicate_filename_s01,WT
-    #  s02,some_complicate_filename_s02,WT
-    #  s03,some_complicate_filename_s03,KO
-    #  s04,some_complicate_filename_s04,KO
-    sample_sheet: tests/sample-sheet.csv
-    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
+  - name: OLFR466_TRIM66_SmartSeq
+    protocol: pe
+    sample_sheet: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/input_data_3t_seq_pipeline/olfr446_mOSN_smartSeq_t3Pipeline_input_sampleSheet.tsv
+    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
+    star:
     bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: cell_type
+      reference_level: WT
 
 disable_TE_analysis: false
-disable_tRNA_analysis: false
 disable_salmonTE_analysis: false
+disable_tRNA_analysis: true
 
 globals:
-  reads_folder: tests
-  results_folder: tests/results/
-  qc_folder: tests/results/qc
-  log_folder: tests/results/log
-  references_folder: tests/results/references
-  tmp_folder: /tmp
-  analysis_folder: tests/results/analysis
+  reads_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/raw_sequencing_files
+  results_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results
+  qc_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/qc
+  log_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/log
+  references_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/references
+  tmp_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/tmp
+  analysis_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/analysis
 
 genome:
-  label: hg38
+  label: mm10
   annotation_type: other
 
   # URL for genome fasta file
-  fasta_url: https://s3.embl.de/boulard/GRCh38.p13.chr22.fa
+  fasta_url: /g/boulard/references/mm10/GRCm38.primary_assembly.genome.fa
 
   # URL for genome GTF file
-  gtf_url: https://s3.embl.de/boulard/gencode.v43.chr22.gtf
+  gtf_url: /g/boulard/references/mm10/MGI.2021.gff3
 
   # Get a RepeatMasker GTF file from UCSC genome browser
-  rmsk_path: /home/francesco/Projects/snakemake-rnaseq/tests/test-datasets-rnaseq/references/rmsk.gtf.gz
 
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Hsapi38/hg38-tRNAs.tar.gz
