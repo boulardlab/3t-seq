@@ -5,7 +5,7 @@ set -e
 T=$(mktemp -d -p ${snakemake_resources.tmpdir})
 
 I=""
-for F in {input}; do
+for F in ${snakemake_input}; do
     BN=$(basename $F)
     if [[ $BN == *.gz ]]; then
         O=$T/${{BN%.gz}}
