@@ -44,31 +44,7 @@ rule salmonTE_quant:
     resources:
         runtime=720,
         mem_mb=16000,
-    shell:
-        """
-        set -e
-
-        T=$(mktemp -d -p {resources.tmpdir})
-
-        I=""
-        for F in {input}; do
-            BN=$(basename $F)
-            if [[ $BN == *.gz ]]; then
-                O=$T/${{BN%.gz}}
-                O=${{O/txt/fq}}
-                gunzip -c $F > $O
-                I="$I $O"
-            else
-                I="$I $F"
-            fi
-        done
-
-        python /opt/SalmonTE/SalmonTE.py quant \
-        --reference={params.reference_genome} \
-        --outpath={output.outfolder} \
-        --num_threads={threads} $I |& \
-        tee {log}
-        """
+    script: "../scripts/salmonTE-quant.sh"
 
 
 rule salmonTE_test:
@@ -93,14 +69,4 @@ rule salmonTE_test:
     resources:
         runtime=360,
         mem_mb=16000,
-    shell:
-        """
-        python /opt/SalmonTE/SalmonTE.py test \
-        --inpath={input.infolder} \
-        --outpath={output} \
-        --tabletype=csv \
-        --figtype=png \
-        --analysis_type=DE \
-        --conditions=control,treatment |& \
-        tee {log}
-        """
+    shell: "../scripts/salmonTE-test.sh"
