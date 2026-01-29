@@ -162,7 +162,7 @@ def get_fastq(wildcards):
     for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
         gd = parse_filepath(p)
         s = gd["sample"]
-        if gd["mate"] != "":
+        if gd["mate"] and gd["mate"] != "":
             s += gd["mate"]
         if gd["genecore_suffix"]:
             s += gd["genecore_suffix"]

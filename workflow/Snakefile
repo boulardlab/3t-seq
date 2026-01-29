@@ -64,7 +64,6 @@ tables_folder = analysis_folder.joinpath("tables")
 notebooks_folder = analysis_folder.joinpath("notebooks")
 
 fastqc_raw_folder = qc_folder.joinpath("fastqc-raw")
-
 fastqc_trim_folder = qc_folder.joinpath("fastqc-trimmed")
 fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
 fastqc_star_folder = qc_folder.joinpath("star")
@@ -108,7 +107,7 @@ for library in libraries:
     if protocol == "pe":
         library_names_paired.append(libname)
     else:
-        library_names_paired.append(libname)
+        library_names_single.append(libname)
 
 # Download all chromosomes if no specific chromosome was specified
 if not "selected_chromosomes" in config["genome"]:
