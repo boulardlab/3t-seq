@@ -45,6 +45,7 @@ rule trimmomatic_se:
         get_fastq,
     output:
         fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
+        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
     params:
         lambda wildcards: get_params(wildcards, "trimmomatic"),
     retries: 2

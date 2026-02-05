@@ -109,9 +109,7 @@ rule star:
          --outBAMsortingThreadN {threads} \
          --bamRemoveDuplicatesType UniqueIdentical \
          --quantTranscriptomeBAMcompression -1 \
-         --outBAMcompression -1 \
-         --outWigType wiggle \
-         {params.others}
+		 --outBAMcompression -1 		 --outWigType wiggle
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
