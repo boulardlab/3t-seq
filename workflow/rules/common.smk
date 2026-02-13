@@ -1,7 +1,7 @@
 from pathlib import PosixPath
 
 filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
-filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?$"
+filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)?(?P<gzipped>\.gz)?$"
 
 
 def giga_to_byte(g):
@@ -433,7 +433,7 @@ def build_rule_all_inputs(wildcards):
             data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
             pe_serie=library_names_paired,
         )
-
+        
     return ret
 
 
