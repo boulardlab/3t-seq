@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.8.*
+  - mimseq=1.3.11
+  - gmap=2021.12.17

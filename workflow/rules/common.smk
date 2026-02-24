@@ -413,12 +413,15 @@ def build_rule_all_inputs(wildcards):
 
     # tRNA coverage files
     if not config["disable_tRNA_analysis"]:
+        method = config.get("tRNA_quantification", {}).get("method", "standard")
+        m_str = "mimseq" if method == "mim-tRNA-seq" else "standard"
+        
         ret += expand(
-            trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+            trna_coverage_folder.joinpath("{serie}", f"tRNA_lfc_{m_str}.txt"),
             serie=library_names_paired + library_names_single,
         )
         ret += expand(
-            trna_coverage_folder.joinpath("{serie}", "datavzrd"),
+            trna_coverage_folder.joinpath("{serie}", f"datavzrd_{m_str}"),
             serie=library_names_paired + library_names_single,
         )
     

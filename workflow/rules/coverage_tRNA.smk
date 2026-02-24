@@ -50,7 +50,7 @@ rule build_trna_coverage_matrix:
     input:
         unpack(get_trna_coverage),
     output:
-        trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
+        trna_coverage_folder.joinpath("{serie}", "tRNA_matrix_standard.txt"),
     conda:
         "../env/R.yml"
     log:
@@ -65,11 +65,11 @@ rule build_trna_coverage_matrix:
 
 rule deseq2_tRNA:
     input:
-        counts=trna_coverage_folder.joinpath("{serie}", "tRNA_matrix.txt"),
+        counts=trna_coverage_folder.joinpath("{serie}", "tRNA_matrix_{method}.txt"),
         sample_sheet=get_sample_sheet,
     output:
-        dds=trna_coverage_folder.joinpath("{serie}", "tRNA_dds.rds"),
-        deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+        dds=trna_coverage_folder.joinpath("{serie}", "tRNA_dds_{method}.rds"),
+        deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt"),
     params:
         variable=lambda wildcards: get_deseq2_variable(wildcards),
         reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
@@ -80,7 +80,7 @@ rule deseq2_tRNA:
         runtime=40,
         mem_mb=20000,
     log:
-        log_folder.joinpath("R/{serie}/deseq2-trna.log"),
+        log_folder.joinpath("R/{serie}/deseq2-trna-{method}.log"),
     script:
         "../scripts/deseq2_trna_v1.R"
 
@@ -92,9 +92,9 @@ localrules:
 
 rule yte_trna:
     input:
-        datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt")],
+        datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt")],
     output:
-        trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
+        trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}.yaml"),
     params:
         template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="tRNA expression",
@@ -102,7 +102,7 @@ rule yte_trna:
     conda:
         "../env/yte.yml"
     log:
-        log_folder.joinpath("bedtools-trna/yte-{serie}.log"),
+        log_folder.joinpath("bedtools-trna/yte-{serie}-{method}.log"),
     threads: 1
     script:
         "../scripts/yte.py"
@@ -110,17 +110,97 @@ rule yte_trna:
 
 rule datavzrd_trna:
     input:
-        config=trna_coverage_folder.joinpath("{serie}", "datavzrd.yaml"),
-        dataset=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc.txt"),
+        config=trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}.yaml"),
+        dataset=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt"),
     output:
         report(
-            directory(trna_coverage_folder.joinpath("{serie}", "datavzrd")),
+            directory(trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}")),
             category="tRNA expression",
             subcategory="Differential expression",
             labels={"serie": "{serie}", "figure": "DESeq2 analysis"},
             htmlindex="index.html",
         ),
     log:
-        log_folder.joinpath("bedtools-trna/datavzrd-{serie}.log"),
+        log_folder.joinpath("bedtools-trna/datavzrd-{serie}-{method}.log"),
     wrapper:
         "v2.6.0/utils/datavzrd"
+
+
+# --- mim-tRNA-seq Rules --- #
+
+rule build_mimseq_index:
+    input:
+        genome_fasta=fasta_path,
+        annotation=tRNA_annotation_dir.joinpath(
+            "{0}-tRNAs.bed".format(config["genome"]["label"])
+        ),
+    output:
+        idx_dir=directory(tRNA_annotation_dir.joinpath("mimseq_index")),
+    conda:
+        "../env/mim-trna-seq.yml"
+    params:
+        species="custom",
+        cluster_id=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("cluster_identity", 0.95),
+    threads: 4
+    resources:
+        runtime=120,
+        mem_mb=16000,
+    log:
+        log_folder.joinpath("mimseq/build_index.log"),
+    shell:
+        """
+        set -e
+        mimseq --make-index --species {params.species} --genome {input.genome_fasta} --annotation {input.annotation} --out-dir {output.idx_dir} --threads {threads} --cluster-id {params.cluster_id} &> {log}
+        """
+
+rule run_mimseq:
+    input:
+        fastq=get_trimmed_fastq, # Depends on whether single or paired
+        idx_dir=tRNA_annotation_dir.joinpath("mimseq_index"),
+    output:
+        count_file=trna_coverage_folder.joinpath("mimseq_{serie}", "{sample}", "{sample}_cluster_counts.txt"),
+    conda:
+        "../env/mim-trna-seq.yml"
+    params:
+        species="custom",
+        max_mismatches=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("max_mismatches", 0.1),
+        min_cov=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("min_cov", 10),
+        out_dir=lambda wildcards, output: Path(output.count_file).parent,
+    threads: 8
+    resources:
+        runtime=240,
+        mem_mb=32000,
+    log:
+        log_folder.joinpath("mimseq/{serie}/{sample}.log"),
+    shell:
+        """
+        set -e
+        # mimseq takes --cluster-id string to prefix outputs. 
+        # If paired-end, mimseq doesn't officially support paired natively without mapping as single-end or using specialized pipeline variants, 
+        # but latest mimseq 1.3+ allows feeding standard FASTQs. We pass all FASTQs via {input.fastq} 
+        mimseq --species {params.species} -i {input.idx_dir} -n {wildcards.sample} --max-mismatches {params.max_mismatches} --min-cov {params.min_cov} --threads {threads} --out-dir {params.out_dir} {input.fastq} &> {log}
+        """
+
+def get_mimseq_counts(wildcards):
+    samples = get_samples_names(wildcards)
+    return expand(
+        trna_coverage_folder.joinpath("mimseq_{{serie}}", "{sample}", "{sample}_cluster_counts.txt"),
+        sample=samples,
+    )
+
+rule format_mimseq_output:
+    input:
+        mimseq_counts=get_mimseq_counts,
+        sample_sheet=get_sample_sheet,
+    output:
+        trna_coverage_folder.joinpath("{serie}", "tRNA_matrix_mimseq.txt"),
+    conda:
+        "../env/R.yml"
+    threads: 1
+    resources:
+        runtime=20,
+        mem_mb=8000,
+    log:
+        log_folder.joinpath("R/{serie}/format_mimseq.log"),
+    script:
+        "../scripts/format_mimseq_matrix.R"
