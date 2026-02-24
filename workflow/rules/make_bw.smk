@@ -7,7 +7,11 @@ rule coverage:
     conda:
         "../env/deeptools.yml"
     params:
-        others=lambda wildcards: get_params(wildcards, "bamCoverage"),
+        others=lambda wildcards: get_params(
+            wildcards, 
+            "bamCoverage", 
+            default="--binSize 50 --normalizeUsing None"
+        ),
     threads: 2
     resources:
         runtime=120,

@@ -113,12 +113,12 @@ def get_star_input(wildcards):
     return ret
 
 
-def get_params(wildcards, key):
+def get_params(wildcards, key, default=""):
     """Returns the value of a specific key for the current serie"""
-    params = ""
+    params = default
     for lib in config["sequencing_libraries"]:
         if lib["name"] == wildcards.serie:
-            params = lib[key]
+            params = lib.get(key, default)
     return params
 
 

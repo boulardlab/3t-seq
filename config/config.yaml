@@ -2,9 +2,6 @@ sequencing_libraries:
   - name: OLFR466_TRIM66_SmartSeq
     protocol: pe
     sample_sheet: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/input_data_3t_seq_pipeline/olfr446_mOSN_smartSeq_t3Pipeline_input_sampleSheet.tsv
-    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/NexteraPE-PE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
-    star:
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: cell_type

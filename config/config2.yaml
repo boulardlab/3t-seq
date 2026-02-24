@@ -8,72 +8,48 @@ sequencing_libraries:
     #  s03,some_complicate_filename_s03,KO
     #  s04,some_complicate_filename_s04,KO
     sample_sheet: ../../../data/rna-seq/sample_sheet.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-SE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: TRIM66_Dec2020
     sample_sheet: ../../../data/rna-seq/sample_sheet_trim66-gfp.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: TRIM66_Apr2021
     sample_sheet: ../../../data/rna-seq/sample_sheet_trim66-gfp_totalRNA-seq.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:40"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: TRIM66_elongatedSpermatids_Ago2021
     sample_sheet: ../../../data/rna-seq/sample_sheet_trim66-elongatedSpermatids_Ago2021.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:40"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: TRIM66_elongatedSpermatids_Ago2021_noeGFP2
     sample_sheet: ../../../data/rna-seq/sample_sheet_trim66-elongatedSpermatids_Ago2021_noeGFP2.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:40"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: TRIM66_elongatedSpermatids_Ago2021_noeGFP2_noeGFP3_noeGFP6
     sample_sheet: ../../../data/rna-seq/sample_sheet_trim66-elongatedSpermatids_Ago2021_noeGFP2_noeGFP3_noeGFP6.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:40"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: GSE134521
     sample_sheet: ../../../data/rna-seq/reads/raw/GSE134521.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-SE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 MINLEN:50"
-    star: "--seedSearchStartLmax 25 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
 
   - name: GSE134825
     sample_sheet: ../../../data/rna-seq/reads/raw/GSE134825.csv
-    trimmomatic: "ILLUMINACLIP:/opt/Trimmomatic-0.39/adapters/TruSeq3-PE.fa:1:30:15:2:true SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:60"
-    star: "--seedSearchStartLmax 25 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype

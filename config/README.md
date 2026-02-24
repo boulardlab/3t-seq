@@ -8,11 +8,12 @@ See below for an example config file with explanation of each option and descrip
 # config/config.yaml
 
 # A list of datasets 
-# Every dataset is defined by a name, a path to a sample sheet, trimmomatic, star and bamCoverage options.
-# All these options are mandatory.
+# Every dataset is defined by a name and a path to a sample sheet.
+# The trimmomatic, star, and bamCoverage options are optional and will fall back to sensible defaults if omitted.
 sequencing_libraries:
   - name: GSE13073
     sample_sheet: sample-sheet.csv
+    # Optional: overrides default parameters for trimmomatic
     trimmomatic: >-
       "ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
        SLIDINGWINDOW:20:22
@@ -20,17 +21,16 @@ sequencing_libraries:
        LEADING:22
        TRAILING:20
        MINLEN:75"
+    # Optional: overrides default parameters for star
     star: >-
       "--seedSearchStartLmax 30
        --outFilterMismatchNoverReadLmax 0.04
        --winAnchorMultimapNmax 40"
+    # Optional: overrides default parameters for bamCoverage
     bamCoverage: "--binSize 50 --normalizeUsing None"
 
 #   - name: ...
 #     sample_sheet: ...
-#     trimmomatic: ...
-#     star: ...
-#     bamCoverage: ...
 
 # Disable all functionalities related to TE analysis
 disable_TE_analysis: false

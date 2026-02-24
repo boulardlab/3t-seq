@@ -78,7 +78,11 @@ rule star:
     params:
         alignments_folder=star_folder,
         tmp_folder=tmp_folder,
-        others=lambda wildcards: get_params(wildcards, "star"),
+        others=lambda wildcards: get_params(
+            wildcards, 
+            "star", 
+            default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
+        ),
         mem_bytes=giga_to_byte(32),
     # shadow:
     #     "full"

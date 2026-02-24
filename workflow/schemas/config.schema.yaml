@@ -16,5 +16,30 @@ properties:
       - results_folder
     additionalProperties: false
     errorMessage: "Invalid globals configuration. Paths like qc_folder, log_folder, references_folder, tmp_folder, and analysis_folder are now automatically derived from results_folder and should be removed from the config file."
+  sequencing_libraries:
+    type: array
+    description: "List of sequencing libraries to process."
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of the sequencing library."
+        sample_sheet:
+          type: string
+          description: "Path to the sample sheet CSV file."
+        trimmomatic:
+          type: string
+          description: "Optional custom Trimmomatic parameters."
+        star:
+          type: string
+          description: "Optional custom STAR aligner parameters."
+        bamCoverage:
+          type: string
+          description: "Optional custom bamCoverage parameters."
+      required:
+        - name
+        - sample_sheet
 required:
   - globals
+  - sequencing_libraries

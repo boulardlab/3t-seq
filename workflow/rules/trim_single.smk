@@ -15,7 +15,11 @@ rule trimmomatic_pe:
         unpaired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.unpaired.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
     params:
-        lambda wildcards: get_params(wildcards, "trimmomatic"),
+        lambda wildcards: get_params(
+            wildcards, 
+            "trimmomatic", 
+            default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
+        ),
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: 240 * attempt,
@@ -47,7 +51,11 @@ rule trimmomatic_se:
         fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
     params:
-        lambda wildcards: get_params(wildcards, "trimmomatic"),
+        lambda wildcards: get_params(
+            wildcards, 
+            "trimmomatic", 
+            default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-SE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
+        ),
     retries: 2
     threads: 4
     resources:
