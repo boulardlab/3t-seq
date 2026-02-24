@@ -1,0 +1,20 @@
+$schema: "http://json-schema.org/draft-04/schema#"
+description: "Configuration schema for the 3t-seq pipeline"
+type: object
+properties:
+  globals:
+    type: object
+    description: "Global settings affecting the pipeline paths."
+    properties:
+      results_folder:
+        type: string
+        description: "Path to the main results folder where all pipeline outputs will be saved."
+      reads_folder:
+        type: string
+        description: "Path to the folder containing raw reads structure"
+    required:
+      - results_folder
+    additionalProperties: false
+    errorMessage: "Invalid globals configuration. Paths like qc_folder, log_folder, references_folder, tmp_folder, and analysis_folder are now automatically derived from results_folder and should be removed from the config file."
+required:
+  - globals

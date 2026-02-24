@@ -14,14 +14,16 @@ disable_TE_analysis: false
 disable_salmonTE_analysis: false
 disable_tRNA_analysis: true
 
+tRNA_quantification:
+  method: "mim-tRNA-seq"
+  mimseq_params:
+    max_mismatches: 0.1
+    cluster_identity: 0.95
+    min_cov: 10
+
 globals:
   reads_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/raw_sequencing_files
   results_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results
-  qc_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/qc
-  log_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/log
-  references_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/references
-  tmp_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/tmp
-  analysis_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results/analysis
 
 genome:
   label: mm10

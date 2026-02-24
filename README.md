@@ -84,32 +84,32 @@ The pipeline will generate an ouput folder tree like so
 
 ## Run tests
 
-The `tests/` folder contains a small test dataset and example configuration file needed to run the 3t-seq pipeline on it. 
+The `.tests/integration/` folder contains a small test dataset and example configuration file needed to run the 3t-seq pipeline on it. 
 
 Provided a working Snakemake installation is available, the example dataset can be run as follow:
 
 ```bash
 snakemake \
-  --directory tests \
-  --configfile tests/config.yaml \
-  --profile tests/profile \
+  --directory .tests/integration \
+  --configfile .tests/integration/config.yaml \
+  --profile .tests/integration/profile \
   --snakefile workflow/Snakefile
 ```
 
-Results will then be available in `tests/results`.
+Results will then be available in `.tests/integration/results`.
 
 An example 3t-seq HTML report could be generated with the following command:
 
 ```bash
 snakemake \
-  --directory tests \
-  --configfile tests/config.yaml \
-  --profile tests/profile \
+  --directory .tests/integration \
+  --configfile .tests/integration/config.yaml \
+  --profile .tests/integration/profile \
   --snakefile workflow/Snakefile \
   --report report.zip
 ```
 
-The `report.zip` file will be generated in `tests/report.zip`. 
+The `report.zip` file will be generated in `.tests/integration/report.zip`. 
 
 ## References
 

@@ -85,11 +85,6 @@ globals:
   reads_folder: ../../../data/rna-seq/reads
   container_folder: ../../../env/container
   data_folder: ../../../data/rna-seq/
-  qc_folder: ../../../data/rna-seq/qc
-  log_folder: ../../../var/log/snakemake
-  references_folder: ../../../data/references
-  tmp_folder: /scratch/tabaro
-  analysis_folder: ../../../analysis
 
 genome:
   annotation_type: mgi

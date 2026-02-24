@@ -46,21 +46,6 @@ globals:
   # path to results folder
   results_folder: results/
 
-  # path to qc
-  qc_folder: results/qc
-
-  # path to log
-  log_folder: results/log
-
-  # path to references
-  references_folder: results/references
-
-  # temp folder
-  tmp_folder: /tmp
-
-  # path to analysis
-  analysis_folder: results/analysis
-
 # genome informations
 genome:
   # genome label
@@ -129,15 +114,15 @@ For paired-end reads, the two mates should have one of the following idenfiers *
 
 ## How to use local reference files
 
-The `references_folder` can be outside of `results_folder`. For instance:
+You can override the reference files by providing absolute paths in the genome URLs:
 ```yaml
-globals:
+genome:
   # [...]
-  # path to results folder
-  results_folder: results/
-
-  # path to references
-  references_folder: /path/to/references
+  # Provide an absolute path:
+  fasta_url: /path/to/references/custom-mm10.fa.gz
+  
+  # Provide an absolute path:
+  gtf_url: /path/to/references/custom-mm10.gtf.gz
 ```
 
 This allows users to host their own reference files locally and set `genome` informations accordingly

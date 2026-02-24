@@ -26,11 +26,6 @@ globals:
   reads_folder: ../reads/
   
   results_folder: results/
-  qc_folder: results/qc
-  log_folder: results/log
-  references_folder: references
-  tmp_folder: /tmp
-  analysis_folder: results/analysis
 
 genome:
   label: mm10

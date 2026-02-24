@@ -10,7 +10,7 @@ import pandas as pd
 ## PIN SNAKEMAKE VERSION
 ##########################
 
-from snakemake.utils import min_version
+from snakemake.utils import min_version, validate
 
 min_version("7.21.0")
 
@@ -21,6 +21,7 @@ min_version("7.21.0")
 
 
 configfile: "config/config.yaml"
+validate(config, schema="schemas/config.schema.yaml")
 
 
 #############################
@@ -46,16 +47,17 @@ containerized: "docker://ftabaro/rna-seq:1.3"
 
 date = datetime.now()
 timestamp = date.strftime("%Y-%m-%d")
-log_folder = Path(config["globals"]["log_folder"])
-log_folder = log_folder.joinpath(timestamp)
 
 data_folder = Path(config["globals"]["results_folder"])
-qc_folder = Path(config["globals"]["qc_folder"])
-reads_folder = Path(config["globals"]["reads_folder"])
-references_folder = Path(config["globals"]["references_folder"])
-tmp_folder = Path(config["globals"]["tmp_folder"])
-analysis_folder = Path(config["globals"]["analysis_folder"])
 
+log_folder = data_folder.joinpath("log", timestamp)
+qc_folder = data_folder.joinpath("qc")
+references_folder = data_folder.joinpath("references")
+tmp_folder = data_folder.joinpath("tmp")
+analysis_folder = data_folder.joinpath("analysis")
+
+# reads_folder is temporarily kept until we update the sample sheet parser to use absolute paths (Task 3)
+reads_folder = Path(config["globals"].get("reads_folder", "."))
 raw_reads_folder = reads_folder
 trim_reads_folder = data_folder.joinpath("trim")
 rdata_folder = analysis_folder.joinpath("rdata")
