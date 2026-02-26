@@ -52,26 +52,17 @@ def get_sample_sheet_path(wildcards):
         None,
     )
     sample_sheet_path = Path(sample_sheet_path)
+    if not sample_sheet_path.is_absolute():
+        sample_sheet_path = sample_sheet_path.resolve()
     return sample_sheet_path
 
 
 def get_samples(wildcards) -> list[str]:
-
+    # We used to extract this from the raw read file patterns via `filepath_pattern`.
+    # Now we rely directly on the 'name' column in the sample sheet to allow flexible filenames.
     sample_sheet_path = get_sample_sheet_path(wildcards)
-
-    samples = list()
-
     sample_sheet = pd.read_csv(sample_sheet_path)
-
-    colname = "filename"
-    if wildcards.serie in library_names_paired:
-        colname += "_1"
-
-    for fn in sample_sheet[colname].tolist():
-        sample_name = get_sample_name_from_filepath(filename_pattern, str(fn))
-        samples.append(sample_name)
-
-    return samples
+    return sample_sheet["name"].tolist()
 
 
 def get_samples_names(wildcards) -> list[str]:
@@ -135,44 +126,85 @@ def parse_filepath(filepath: PosixPath):
     raise ValueError("Invalid path: {}".format(filepath))
 
 
+def resolve_raw_read_path(serie: str, file_val: str) -> Path:
+    """
+    Resolves a raw read filename string from the sample sheet into an actual Path.
+    - If absolute, returns it if it exists.
+    - If relative, checks relative to CWD, then relative to raw_reads_folder / serie.
+    - Tries common extensions if they are missing.
+    """
+    if pd.isna(file_val) or not file_val:
+        return None
+        
+    p = Path(file_val)
+    
+    # Possible extensions if the user didn't provide one
+    extensions = ["", ".fastq.gz", ".fq.gz", ".fastq", ".fq"]
+    
+    # 1. Check if it's an absolute path
+    if p.is_absolute():
+        for ext in extensions:
+            test_p = p.with_name(p.name + ext)
+            if test_p.exists():
+                return test_p
+        # If absolute path doesn't exist, we still return it (validation will catch it later)
+        return p
+        
+    # 2. Check if it's relative to the current working directory
+    for ext in extensions:
+        test_p = p.with_name(p.name + ext)
+        if test_p.exists():
+            return test_p.resolve()
+            
+    # 3. Check if it's in the standard raw_reads_folder / serie structure (legacy support)
+    base_dir = raw_reads_folder.joinpath(serie)
+    if base_dir.exists():
+        for ext in extensions:
+            test_p = base_dir.joinpath(p.name + ext)
+            if test_p.exists():
+                return test_p.resolve()
+                
+    # If we can't find it, just return the path relative to CWD so that snakemake/validation fails informatively
+    return p.resolve()
+
+
 def get_fastq_paired(wildcards):
-
-    ret = {"m1": "", "m2": ""}
-
-    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
-        gd = parse_filepath(p)
-        sample = gd["sample"]
-        mate = gd["mate"]
-
-        if sample==wildcards.sample:
-            if "1" in mate:
-                ret["m1"] = p
-            elif "2" in mate:
-                ret["m2"] = p
-            else:
-                raise ValueError(
-                    "Could not find paired input files for sample {}.\nMate: {}\nFull path: {}".format(
-                        wildcards.sample, mate, str(p)
-                    )
-                )
-    return ret
+    sample_sheet_path = get_sample_sheet_path(wildcards)
+    sample_sheet = pd.read_csv(sample_sheet_path)
+    
+    # Find the row for this sample
+    row = sample_sheet[sample_sheet["name"] == wildcards.sample]
+    if row.empty:
+        raise ValueError(f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}")
+        
+    row = row.iloc[0]
+    
+    m1_path = resolve_raw_read_path(wildcards.serie, row.get("filename_1"))
+    m2_path = resolve_raw_read_path(wildcards.serie, row.get("filename_2"))
+    
+    if not m1_path or not m2_path:
+        raise ValueError(f"Missing 'filename_1' or 'filename_2' in sample sheet for paired-end sample {wildcards.sample}")
+        
+    return {"m1": str(m1_path), "m2": str(m2_path)}
 
 
 def get_fastq(wildcards):
-    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
-        gd = parse_filepath(p)
-        s = gd["sample"]
-        if gd["mate"] and gd["mate"] != "":
-            s += gd["mate"]
-        if gd["genecore_suffix"]:
-            s += gd["genecore_suffix"]
-        if s == wildcards.sample:
-            return p
-    raise ValueError(
-        "Could not determine input files for serie: {}\nsample: {}\n{}".format(
-            wildcards.serie, wildcards.sample, gd
-        )
-    )
+    sample_sheet_path = get_sample_sheet_path(wildcards)
+    sample_sheet = pd.read_csv(sample_sheet_path)
+    
+    # Find the row for this sample
+    row = sample_sheet[sample_sheet["name"] == wildcards.sample]
+    if row.empty:
+        raise ValueError(f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}")
+        
+    row = row.iloc[0]
+    
+    file_path = resolve_raw_read_path(wildcards.serie, row.get("filename"))
+    
+    if not file_path:
+        raise ValueError(f"Missing 'filename' in sample sheet for single-end sample {wildcards.sample}")
+        
+    return str(file_path)
 
 
 def mkdir(p: Path, verbose=False):
@@ -343,19 +375,15 @@ def get_fastqc(wildcards):
             sample=s,
         )
     else:
-        mates = set()
-        has_genecore_suffix = False
-        for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
-            gd = parse_filepath(p)
-            mates.add(gd["mate"])
-            if gd["genecore_suffix"]:
-                has_genecore_suffix = True
+        # For paired-end, fastqc is explicitly run on m1 and m2, emitting _1_fastqc.zip and _2_fastqc.zip (from fastqc_raw_pe)
         fastqcs = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}{mate}{genecore_suffix}_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
             sample=s,
-            mate=mates,
-			genecore_suffix="_sequence" if has_genecore_suffix else ""
+        ) + expand(
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            sample=s,
         )
+                
     return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}
 
 
@@ -446,3 +474,46 @@ def get_deseq2_inputs(wildcards):
         "annotation_file": gtf_path,
         "sample_sheet": get_sample_sheet_path(wildcards),
     }
+
+
+def validate_sample_sheets():
+    """Validates that all specified raw reads files in sample sheets exist."""
+    print("Validating sample sheets against filesystem...")
+    missing_files = []
+    
+    for lib in config.get("sequencing_libraries", []):
+        serie = lib["name"]
+        sheet_path = Path(lib["sample_sheet"])
+        # If relative, it's relative to CWD
+        if not sheet_path.is_absolute():
+            sheet_path = sheet_path.resolve()
+        
+        if not sheet_path.exists():
+            missing_files.append(f"Sample sheet missing: {sheet_path}")
+            continue
+            
+        df = pd.read_csv(sheet_path)
+        
+        is_paired = serie in library_names_paired
+        
+        for _, row in df.iterrows():
+            sample_name = row["name"]
+            if is_paired:
+                m1 = resolve_raw_read_path(serie, row.get("filename_1"))
+                m2 = resolve_raw_read_path(serie, row.get("filename_2"))
+                if m1 is None or not Path(m1).exists():
+                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_1 ('{row.get('filename_1')}')")
+                if m2 is None or not Path(m2).exists():
+                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_2 ('{row.get('filename_2')}')")
+            else:
+                f = resolve_raw_read_path(serie, row.get("filename"))
+                if f is None or not Path(f).exists():
+                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename ('{row.get('filename')}')")
+    
+    if missing_files:
+        error_msg = "\n" + "\n".join(missing_files)
+        raise WorkflowError(f"Validation failed: The following necessary input read files could not be found:{error_msg}")
+
+# We don't call it here anymore because library_names_paired isn't populated until Snakefile line 110.
+# It is called from the Snakefile.
+

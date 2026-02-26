@@ -81,36 +81,29 @@ deseq2:
 
 ## How 3t-seq resolves reads paths
 
-The pipeline resolves reads paths starting from two bits of information:
-1. `reads_folder` in the `globals` sections
-2. The name of a library in `sequencing_libraries` list of objects
+The pipeline relies primarily on the paths provided in your sample sheet to locate input read files.
+For each sample, you can provide paths in the `filename` (for single-end) or `filename_1` and `filename_2` (for paired-end) columns.
 
-In the example configuration above, `reads_folder: .` and `sequencing_libraries[0].name: GSE13073`. These resolve to `./GSE13073`. It is crucial that **this folder exists before starting the pipeline**. This is because in this folder, the pipeline will look for input files.
+These paths can be provided in several flexible formats:
+1. **Absolute Paths:** If an absolute path (e.g. `/data/my_experiment/reads/sample1_R1.fq.gz`) is provided, 3t-seq will use it directly.
+2. **Relative Paths:** If a relative path is provided, 3t-seq will first attempt to resolve it relative to the current working directory, and then fall back to looking inside `reads_folder / sequence_library_name` for legacy compatibility.
 
-Another example:
-```yaml
-sequencing_libraries:
-  - name: first-batch
-    sample_sheet: sample-sheet-first-batch.csv
-    # [...]
-  
-  - name: second-batch
-    sample_sheet: sample-sheet-second-batch.csv
-    # [...]
+*Note:* You do not need to provide the file extension (`.fastq.gz`, `.fq.gz`, etc.) if you don't want to. 3t-seq will automatically test standard fastq extensions if the exact path specified doesn't exist.
 
-globals:
-  reads_folder: reads
-  # [...]
+Because 3t-seq now relies on explicit paths in the sample sheet, **you do not need to rename your raw data files or move them into rigid directory structures**.
+
+### Sample Sheet Format
+
+The sample sheet is a CSV file. It must contain a `name` column representing the sample ID, and either:
+- A `filename` column for single-end libraries.
+- `filename_1` and `filename_2` columns for paired-end libraries.
+
+*Example (Absolute Paths):*
+```csv
+name,filename_1,filename_2,genotype
+sampleA,/data/raw/batch1/A_read1.fq.gz,/data/raw/batch1/A_read2.fq.gz,WT
+sampleB,/data/raw/batch1/B_read1.fq.gz,/data/raw/batch1/B_read2.fq.gz,KO
 ```
-
-In this scenario, 3t-seq will look for the `reads` folder and inside of it will look for two folders names `first-batch` and `second-batch`: `reads/first-batch` and `reads/second-batch`. If any of the two is not detected, the pipeline will fail.
-
-### Naming convetion
-
-Reads files need to have one of the following extensions: `fq`, `fq.gz`, `fastq`, `fastq.gz`. For a given sequencing library, the pipeline expects files to have the same extension.
-
-For paired-end reads, the two mates should have one of the following idenfiers **before** the extension: `(_1, _2)`, `(_R1, _R2)`, `(_1_sequence, _2_sequence)`.
-
 
 ## How to use local reference files
 

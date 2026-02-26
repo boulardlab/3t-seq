@@ -1,6 +1,10 @@
 
 
-rule fastqc_raw:
+rule fastqc_raw_se:
+    wildcard_constraints:
+        serie="|".join(
+            library_names_single if len(library_names_single) > 0 else ["none"]
+        ),
     input:
         get_fastq,
     output:
@@ -25,6 +29,44 @@ rule fastqc_raw:
         """
         set -e 
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
+        """
+
+rule fastqc_raw_pe:
+    wildcard_constraints:
+        serie="|".join(
+            library_names_paired if len(library_names_paired) > 0 else ["none"]
+        ),
+    input:
+        unpack(get_fastq_paired),
+    output:
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
+        report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+            category="FastQC",
+            subcategory="Raw reads",
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
+        ),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
+        report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
+            category="FastQC",
+            subcategory="Raw reads",
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
+        ),
+    params:
+        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
+    threads: 4
+    conda:
+        "../env/qc.yml"
+    log:
+        log_folder.joinpath("fastqc/{serie}/{sample}_pe.log"),
+    resources:
+        runtime=120,
+        mem_mb=4000,
+    shell:
+        """
+        set -e 
+        fastqc -t {threads} -noextract -o {params.fastqc_folder} {input.m1} {input.m2}
         """
 
 

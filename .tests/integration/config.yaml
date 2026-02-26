@@ -21,7 +21,7 @@ disable_tRNA_analysis: false
 
 globals:
   # <reads_folder>/<library-name> is the expected pattern
-  reads_folder: .
+  reads_folder: .tests/integration
   
   results_folder: results/
 

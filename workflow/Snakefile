@@ -115,6 +115,8 @@ for library in libraries:
 if not "selected_chromosomes" in config["genome"]:
     config["genome"]["selected_chromosomes"] = None
 
+validate_sample_sheets()
+
 ####################
 ## ONSTART BLOCK
 ####################
