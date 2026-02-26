@@ -28,12 +28,6 @@ genome:
   label: mm10
   annotation_type: mgi
 
-  # URL for genome fasta file
-  fasta_url: GRCm38.primary_assembly.genome.fa
-
-  # URL for genome GTF file
-  gtf_url: MGI_mod.gff3
-
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
 

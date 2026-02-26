@@ -28,12 +28,7 @@ globals:
 genome:
   label: mm10
   annotation_type: mgi
-
-  # URL for genome fasta file
-  fasta_url: https://s3.embl.de/boulard/GRCm38.primary_assembly.genome.chr19.fa
-
-  # URL for genome GTF file
-  gtf_url: https://s3.embl.de/boulard/MGI.chr19.gff3
+  # Refgenie will automatically fetch mm10 assets.
 
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz

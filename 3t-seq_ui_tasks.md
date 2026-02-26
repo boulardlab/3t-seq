@@ -21,11 +21,11 @@ Based on the user interface analysis, here is a precise, actionable list of tech
 
 ## 3. Enhance Sample Sheet Parsing
 **Objective:** Allow flexible file naming and absolute paths, removing the strict folder structure and suffix requirements.
-- [ ] **Task 3.1:** Locate the Python function responsible for parsing the `sample_sheet` and determining input reads (usually in `Snakefile` or a helper script).
-- [ ] **Task 3.2:** Modify the path resolution logic: If the paths in `filename`, `filename_1`, or `filename_2` are absolute (e.g., start with `/`), use them directly instead of prepending `reads_folder/library_name`.
-- [ ] **Task 3.3:** Remove the strict suffix validation logic (`_1`, `_R1`) from the pipeline's wildcards/inputs if explicit file paths are defined in the sample sheet. Ensure this does not break filename parsing in `common.smk` (e.g., skip wildcard-based regular expression inference or adjust the regex to support arbitrary base names) so that the pipeline trusts the precise paths from the DataFrame.
-- [ ] **Task 3.4:** Add a clear validation loop during DAG generation: Use `os.path.exists()` to verify all absolute/relative paths extracted from the sample sheet, raising an immediate, informative `RuntimeError` or `WorkflowError` if files cannot be found before any rules execute.
-- [ ] **Task 3.5:** Update documentation to explain the new, flexible sample sheet formats (supporting arbitrary filenames and absolute paths).
+- [x] **Task 3.1:** Locate the Python function responsible for parsing the `sample_sheet` and determining input reads (usually in `Snakefile` or a helper script).
+- [x] **Task 3.2:** Modify the path resolution logic: If the paths in `filename`, `filename_1`, or `filename_2` are absolute (e.g., start with `/`), use them directly instead of prepending `reads_folder/library_name`.
+- [x] **Task 3.3:** Remove the strict suffix validation logic (`_1`, `_R1`) from the pipeline's wildcards/inputs if explicit file paths are defined in the sample sheet. Ensure this does not break filename parsing in `common.smk` (e.g., skip wildcard-based regular expression inference or adjust the regex to support arbitrary base names) so that the pipeline trusts the precise paths from the DataFrame.
+- [x] **Task 3.4:** Add a clear validation loop during DAG generation: Use `os.path.exists()` to verify all absolute/relative paths extracted from the sample sheet, raising an immediate, informative `RuntimeError` or `WorkflowError` if files cannot be found before any rules execute.
+- [x] **Task 3.5:** Update documentation to explain the new, flexible sample sheet formats (supporting arbitrary filenames and absolute paths).
 
 ## 4. Integrate Built-in Genome Profiles via Galaxy Data Cache
 **Objective:** Leverage the Galaxy Reference Data project (`refgenie` or CVMFS) to automatically resolve reference genomes (e.g., `mm10`, `hg38`) without manual URL entry.

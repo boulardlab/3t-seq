@@ -1,37 +1,51 @@
-rule download_genome_fasta_file:
+rule refgenie_fetch_fasta:
     output:
-        protected(str(fasta_path)),
+        fasta=protected(str(references_folder.joinpath("{genome}", "fasta.fa"))),
     params:
-        url=config["genome"]["fasta_url"],
-    cache: True
+        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     conda:
-        "../env/wget.yml"
+        "../env/refgenie.yml"
     log:
-        log_folder.joinpath("download/genome/fasta.log"),
+        log_folder.joinpath("download/genome/{genome}_fasta.log"),
     threads: 1
     resources:
         runtime=60,
         mem_mb=4000,
-    script:
-        "../scripts/download-fasta.sh"
+    shell:
+        """
+        export REFGENIE={params.refgenie_cfg}
+        if [ ! -f "$REFGENIE" ]; then
+            refgenie init -c $REFGENIE
+        fi
+        refgenie pull {wildcards.genome}/fasta &> {log}
+        FASTA_REAL_PATH=$(refgenie seek {wildcards.genome}/fasta)
+        ln -s $FASTA_REAL_PATH {output.fasta}
+        """
 
-
-rule download_genome_annotation_file:
+rule refgenie_fetch_gtf:
     output:
-        protected(str(gtf_path)),
+        gtf=protected(str(references_folder.joinpath("{genome}", "annotation.gtf"))),
     cache: True
-    params:
-        url=config["genome"]["gtf_url"],
     conda:
-        "../env/wget.yml"
+        "../env/refgenie.yml"
+    params:
+        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     log:
-        log_folder.joinpath("download/genome/gtf.log"),
+        log_folder.joinpath("download/genome/{genome}_gtf.log"),
     threads: 1
     resources:
         runtime=60,
         mem_mb=4000,
-    script:
-        "../scripts/download-gtf.sh"
+    shell:
+        """
+        export REFGENIE={params.refgenie_cfg}
+        if [ ! -f "$REFGENIE" ]; then
+            refgenie init -c $REFGENIE
+        fi
+        refgenie pull {wildcards.genome}/ensembl_gtf &> {log} || refgenie pull {wildcards.genome}/gencode_gtf &>> {log}
+        GTF_REAL_PATH=$(refgenie seek {wildcards.genome}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {wildcards.genome}/gencode_gtf)
+        ln -s $GTF_REAL_PATH {output.gtf}
+        """
 
 
 rule download_repeatmasker_annotation_file:

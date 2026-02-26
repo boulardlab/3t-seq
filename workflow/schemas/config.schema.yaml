@@ -40,6 +40,39 @@ properties:
       required:
         - name
         - sample_sheet
+  genome:
+    type: object
+    description: "Genome references."
+    properties:
+      label:
+        type: string
+        description: "Standard genome label (e.g. mm10, hg38) to automatically fetch references."
+      fasta_path:
+        type: string
+        description: "Local path to explicit genome fasta."
+      gtf_path:
+        type: string
+        description: "Local path to explicit genome GTF annotation."
+      gtrnadb_url:
+        type: string
+        description: "URL or path to GtRNAdb annotations."
+      annotation_type:
+        type: string
+      selected_chromosomes:
+        type: array
+        items:
+          type: string
+    oneOf:
+      - required: [label]
+        not:
+          anyOf:
+            - required: [fasta_path]
+            - required: [gtf_path]
+      - required: [fasta_path, gtf_path]
+        not:
+          required: [label]
+    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' (for custom genomes), but not a mix."
 required:
   - globals
   - sequencing_libraries
+  - genome

@@ -1,0 +1,7 @@
+name: refgenie
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - refgenie=0.12.1
+  - setuptools<81

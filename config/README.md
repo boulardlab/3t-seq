@@ -48,18 +48,21 @@ globals:
 
 # genome informations
 genome:
-  # genome label
+  # To use built-in reference genomes automatically downloaded via Refgenie,
+  # specify a supported label (e.g., mm10, hg38). 
+  # This is MUTUALLY EXCLUSIVE with providing fasta_path and gtf_path below.
   label: mm10
 
   # annotation type
   # can be ensembl, mgi, gencode
   annotation_type: ensembl
 
-  # URL or path to genome sequence
-  fasta_url: <Genome fasta URL>
+  # OR, to use your own local reference files, provide absolute paths.
+  # If specifying these, do NOT provide a 'label' above.
+  # fasta_path: /path/to/my/local/genome.fa
   
   # URL or path to genome annotation file
-  gtf_url: <Genome annotation URL>
+  # gtf_path: /path/to/my/local/annotation.gtf
 
   # URL to gtRNAdb zip file
   gtrnadb_url: <GtRNADb bundle URL>
@@ -105,27 +108,28 @@ sampleA,/data/raw/batch1/A_read1.fq.gz,/data/raw/batch1/A_read2.fq.gz,WT
 sampleB,/data/raw/batch1/B_read1.fq.gz,/data/raw/batch1/B_read2.fq.gz,KO
 ```
 
-## How to use local reference files
+## Built-in Reference Genomes via Refgenie
 
-You can override the reference files by providing absolute paths in the genome URLs:
-```yaml
-genome:
-  # [...]
-  # Provide an absolute path:
-  fasta_url: /path/to/references/custom-mm10.fa.gz
-  
-  # Provide an absolute path:
-  gtf_url: /path/to/references/custom-mm10.gtf.gz
-```
+3t-seq now natively integrates with **Refgenie** to automatically retrieve and manage standard reference genomes (like `mm10` or `hg38`). 
 
-This allows users to host their own reference files locally and set `genome` informations accordingly
+To use this feature, simply provide the `label` in your configuration's `genome` section and omit `fasta_path` and `gtf_path`. The pipeline will automatically fetch the FASTA and GTF files for that genome and symlink them into your results directory. 
+
+*Note: You do not need to configure or set the `$REFGENIE` environment variable on your system; the pipeline handles initialization underneath the hood at runtime.*
+
+## How to use custom local reference files
+
+If you are working with a non-standard genome or prefer to use your own reference files, you can override the built-in profiles by removing the `label` property and providing absolute paths to your local `fasta_path` and `gtf_path`:
 
 ```yaml
 genome:
-  # [...]
-  # This will evaluate to /path/to/references/custom-mm10.fa.gz
-  fasta_url: custom-mm10.fa.gz
+  # Remove 'label' to prevent Refgenie lookups
+  # label: mm10
   
-  # This will evaluate to /path/to/references/custom-mm10.gtf.gz
-  gtf_url: custom-mm10.gtf.gz
+  # Provide an absolute path to your fasta:
+  fasta_path: /path/to/references/custom-mm10.fa
+  
+  # Provide an absolute path to your gtf:
+  gtf_path: /path/to/references/custom-mm10.gtf
 ```
+
+These two approaches are mutually exclusive; the configuration validator will alert you if you mix a `label` with explicit `fasta_path` or `gtf_path` parameters.
