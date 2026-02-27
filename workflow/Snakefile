@@ -37,7 +37,7 @@ include: "rules/common.smk"
 ###########################
 
 
-containerized: "ghcr.io/boulardlab/3t-seq:feature-ui-simplifications"
+containerized: "docker://ghcr.io/boulardlab/3t-seq:feature-ui-simplifications"
 
 
 #######################
