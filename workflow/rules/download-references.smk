@@ -1,6 +1,6 @@
 rule refgenie_init:
     output:
-        refgenie_cfg=protected(str(references_folder.joinpath("refgenie", "genome_config.yaml"))),
+        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     log:
         log_folder.joinpath("download/genome/refgenie_init.log"),
     conda:
