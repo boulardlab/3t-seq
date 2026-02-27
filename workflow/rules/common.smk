@@ -279,10 +279,25 @@ def get_markdup_fastqc(wildcards):
 
 
 def get_salmonTE_quant_input(wildcards):
+    sample_sheet_path = get_sample_sheet_path(wildcards)
+    sample_sheet = pd.read_csv(sample_sheet_path)
+    
     ret = []
-    for p in raw_reads_folder.joinpath(wildcards.serie).iterdir():
-        if re.match(filepath_pattern, str(p)):
-            ret.append(p.resolve())
+    is_paired = wildcards.serie in library_names_paired
+    
+    for _, row in sample_sheet.iterrows():
+        if is_paired:
+            m1_path = resolve_raw_read_path(wildcards.serie, row.get("filename_1"))
+            m2_path = resolve_raw_read_path(wildcards.serie, row.get("filename_2"))
+            if m1_path:
+                ret.append(m1_path)
+            if m2_path:
+                ret.append(m2_path)
+        else:
+            file_path = resolve_raw_read_path(wildcards.serie, row.get("filename"))
+            if file_path:
+                ret.append(file_path)
+                
     return ret
 
 

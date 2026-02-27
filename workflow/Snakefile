@@ -85,14 +85,21 @@ trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
 deseq2_working_directory = Path(config["deseq2"]["working_directory"])
 # deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
 
-## Generate paths for sequence data from links
-fasta_path = references_folder.joinpath(
-    get_filename(config["genome"]["fasta_url"], decompress=True)
-)
 
-gtf_path = references_folder.joinpath(
-    get_filename(config["genome"]["gtf_url"], decompress=True)
-)
+if "fasta_path" in config["genome"]:
+    ## Generate paths for sequence data from links
+    fasta_path = references_folder.joinpath(
+        get_filename(config["genome"]["fasta_path"], decompress=True)
+    )
+else:
+    fasta_path = references_folder.joinpath(config["genome"]["label"], "fasta.fa")
+
+if "gtf_path" in config["genome"]:
+    gtf_path = references_folder.joinpath(
+        get_filename(config["genome"]["gtf_path"], decompress=True)
+    )
+else:
+    gtf_path = references_folder.joinpath(config["genome"]["label"], "annotation.gtf")
 
 rmsk_folder = references_folder.joinpath("rmsk")
 tRNA_annotation_dir = references_folder.joinpath("gtrnadb")

@@ -1,12 +1,12 @@
 rule refgenie_fetch_fasta:
     output:
-        fasta=protected(str(references_folder.joinpath("{genome}", "fasta.fa"))),
+        fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
     params:
         refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     conda:
         "../env/refgenie.yml"
     log:
-        log_folder.joinpath("download/genome/{genome}_fasta.log"),
+        log_folder.joinpath("download/genome/{}_fasta.log".format(config["genome"]["label"])),
     threads: 1
     resources:
         runtime=60,
@@ -17,21 +17,21 @@ rule refgenie_fetch_fasta:
         if [ ! -f "$REFGENIE" ]; then
             refgenie init -c $REFGENIE
         fi
-        refgenie pull {wildcards.genome}/fasta &> {log}
-        FASTA_REAL_PATH=$(refgenie seek {wildcards.genome}/fasta)
+        refgenie pull {config["genome"]["label"]}/fasta &> {log}
+        FASTA_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/fasta)
         ln -s $FASTA_REAL_PATH {output.fasta}
         """
 
 rule refgenie_fetch_gtf:
     output:
-        gtf=protected(str(references_folder.joinpath("{genome}", "annotation.gtf"))),
+        gtf=protected(str(references_folder.joinpath(config["genome"]["label"], "annotation.gtf"))),
     cache: True
     conda:
         "../env/refgenie.yml"
     params:
         refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     log:
-        log_folder.joinpath("download/genome/{genome}_gtf.log"),
+        log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
     threads: 1
     resources:
         runtime=60,
@@ -42,8 +42,8 @@ rule refgenie_fetch_gtf:
         if [ ! -f "$REFGENIE" ]; then
             refgenie init -c $REFGENIE
         fi
-        refgenie pull {wildcards.genome}/ensembl_gtf &> {log} || refgenie pull {wildcards.genome}/gencode_gtf &>> {log}
-        GTF_REAL_PATH=$(refgenie seek {wildcards.genome}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {wildcards.genome}/gencode_gtf)
+        refgenie pull {config["genome"]["label"]}/ensembl_gtf &> {log} || refgenie pull {config["genome"]["label"]}/gencode_gtf &>> {log}
+        GTF_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/gencode_gtf)
         ln -s $GTF_REAL_PATH {output.gtf}
         """
 
