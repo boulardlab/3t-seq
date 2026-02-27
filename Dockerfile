@@ -1,4 +1,3 @@
-Validating sample sheets against filesystem...
 FROM condaforge/mambaforge:latest
 LABEL io.github.snakemake.containerized="true"
 LABEL io.github.snakemake.conda_env_hash="8c22701521588be61707136a9080c2d8db83bebf1fd0d96d66b2d1e24aebab5a"
