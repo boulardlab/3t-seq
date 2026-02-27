@@ -1,8 +1,28 @@
+rule refgenie_init:
+    output:
+        refgenie_cfg=protected(str(references_folder.joinpath("refgenie", "genome_config.yaml"))),
+    log:
+        log_folder.joinpath("download/genome/refgenie_init.log"),
+    conda:
+        "../env/refgenie.yml"
+    threads: 1
+    resources:
+        runtime=10,
+        mem_mb=1000,
+    shell:
+        """
+        export REFGENIE={output.refgenie_cfg}
+        if [ ! -f "$REFGENIE" ]; then
+            refgenie init -c $REFGENIE &> {log}
+        fi
+        """
+
 rule refgenie_fetch_fasta:
+    input:
+        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     output:
         fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
     params:
-        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
         genome_id=config["genome"]["label"],
     conda:
         "../env/refgenie.yml"
@@ -14,10 +34,7 @@ rule refgenie_fetch_fasta:
         mem_mb=4000,
     shell:
         """
-        export REFGENIE={params.refgenie_cfg}
-        if [ ! -f "$REFGENIE" ]; then
-            refgenie init -c $REFGENIE
-        fi
+        export REFGENIE={input.refgenie_cfg}
         refgenie pull {params.genome_id}/fasta &> {log}
         FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
         if [[ "$FASTA_REAL_PATH" == *.gz ]]; then
@@ -28,13 +45,14 @@ rule refgenie_fetch_fasta:
         """
 
 rule refgenie_fetch_gtf:
+    input:
+        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
     output:
         gtf=protected(str(references_folder.joinpath(config["genome"]["label"], "annotation.gtf"))),
     cache: True
     conda:
         "../env/refgenie.yml"
     params:
-        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
         genome_id=config["genome"]["label"],
     log:
         log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
@@ -44,10 +62,7 @@ rule refgenie_fetch_gtf:
         mem_mb=4000,
     shell:
         """
-        export REFGENIE={params.refgenie_cfg}
-        if [ ! -f "$REFGENIE" ]; then
-            refgenie init -c $REFGENIE
-        fi
+        export REFGENIE={input.refgenie_cfg}
         refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
         GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
         if [[ "$GTF_REAL_PATH" == *.gz ]]; then
