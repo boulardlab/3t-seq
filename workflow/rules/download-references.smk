@@ -3,6 +3,7 @@ rule refgenie_fetch_fasta:
         fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
     params:
         refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+        genome_id=config["genome"]["label"],
     conda:
         "../env/refgenie.yml"
     log:
@@ -17,8 +18,8 @@ rule refgenie_fetch_fasta:
         if [ ! -f "$REFGENIE" ]; then
             refgenie init -c $REFGENIE
         fi
-        refgenie pull {config["genome"]["label"]}/fasta &> {log}
-        FASTA_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/fasta)
+        refgenie pull {params.genome_id}/fasta &> {log}
+        FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
         ln -s $FASTA_REAL_PATH {output.fasta}
         """
 
@@ -30,6 +31,7 @@ rule refgenie_fetch_gtf:
         "../env/refgenie.yml"
     params:
         refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+        genome_id=config["genome"]["label"],
     log:
         log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
     threads: 1
@@ -42,8 +44,8 @@ rule refgenie_fetch_gtf:
         if [ ! -f "$REFGENIE" ]; then
             refgenie init -c $REFGENIE
         fi
-        refgenie pull {config["genome"]["label"]}/ensembl_gtf &> {log} || refgenie pull {config["genome"]["label"]}/gencode_gtf &>> {log}
-        GTF_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {config["genome"]["label"]}/gencode_gtf)
+        refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
+        GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
         ln -s $GTF_REAL_PATH {output.gtf}
         """
 
