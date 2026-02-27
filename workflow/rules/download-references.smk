@@ -20,7 +20,11 @@ rule refgenie_fetch_fasta:
         fi
         refgenie pull {params.genome_id}/fasta &> {log}
         FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
-        ln -s $FASTA_REAL_PATH {output.fasta}
+        if [[ "$FASTA_REAL_PATH" == *.gz ]]; then
+            gunzip -c "$FASTA_REAL_PATH" > {output.fasta}
+        else
+            ln -s "$FASTA_REAL_PATH" {output.fasta}
+        fi
         """
 
 rule refgenie_fetch_gtf:
@@ -46,7 +50,11 @@ rule refgenie_fetch_gtf:
         fi
         refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
         GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
-        ln -s $GTF_REAL_PATH {output.gtf}
+        if [[ "$GTF_REAL_PATH" == *.gz ]]; then
+            gunzip -c "$GTF_REAL_PATH" > {output.gtf}
+        else
+            ln -s "$GTF_REAL_PATH" {output.gtf}
+        fi
         """
 
 

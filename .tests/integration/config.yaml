@@ -29,8 +29,8 @@ genome:
   # Refgenie will automatically fetch mm10 assets.
 
   # URL to GtRNAdb files
-  gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
-
+  gtrnadb_url: https://gtrnadb.org/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
+  
   # for testing purpose, focus on chr19 only
   selected_chromosomes:
     - chr19
