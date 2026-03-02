@@ -24,6 +24,7 @@ rule refgenie_fetch_fasta:
         fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
     params:
         genome_id=config["genome"]["label"],
+        selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
     conda:
         "../env/refgenie.yml"
     log:
@@ -37,10 +38,20 @@ rule refgenie_fetch_fasta:
         export REFGENIE={input.refgenie_cfg}
         refgenie pull {params.genome_id}/fasta &> {log}
         FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
+        
+        # Decompress if needed
         if [[ "$FASTA_REAL_PATH" == *.gz ]]; then
-            gunzip -c "$FASTA_REAL_PATH" > {output.fasta}
+            gunzip -c "$FASTA_REAL_PATH" > {output.fasta}.tmp
         else
-            ln -s "$FASTA_REAL_PATH" {output.fasta}
+            cp "$FASTA_REAL_PATH" {output.fasta}.tmp
+        fi
+
+        # Subset chromosomes if requested
+        if [ -n "{params.selected_chrs}" ]; then
+            samtools faidx {output.fasta}.tmp {params.selected_chrs} > {output.fasta}
+            rm {output.fasta}.tmp
+        else
+            mv {output.fasta}.tmp {output.fasta}
         fi
         """
 
@@ -54,6 +65,7 @@ rule refgenie_fetch_gtf:
         "../env/refgenie.yml"
     params:
         genome_id=config["genome"]["label"],
+        selected_chrs=",".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
     log:
         log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
     threads: 1
@@ -65,10 +77,20 @@ rule refgenie_fetch_gtf:
         export REFGENIE={input.refgenie_cfg}
         refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
         GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
+        
+        # Decompress if needed
         if [[ "$GTF_REAL_PATH" == *.gz ]]; then
-            gunzip -c "$GTF_REAL_PATH" > {output.gtf}
+            gunzip -c "$GTF_REAL_PATH" > {output.gtf}.tmp
         else
-            ln -s "$GTF_REAL_PATH" {output.gtf}
+            cp "$GTF_REAL_PATH" {output.gtf}.tmp
+        fi
+
+        # Subset chromosomes if requested
+        if [ -n "{params.selected_chrs}" ]; then
+            awk -v chrs="{params.selected_chrs}" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}
+            rm {output.gtf}.tmp
+        else
+            mv {output.gtf}.tmp {output.gtf}
         fi
         """
 
@@ -96,29 +118,76 @@ rule download_repeatmasker_annotation_file:
         "../scripts/get_rmsk.py"
 
 
-rule download_gtRNAdb:
-    output:
-        protected(
+GTRNADB_EXTS = [
+    "-filtered-tRNAs.fa",
+    "-mature-tRNAs.fa",
+    "-tRNAs_name_map.txt",
+    "-tRNAs-confidence-set.out",
+    "-tRNAs-confidence-set.ss",
+    "-tRNAs-detailed.out",
+    "-tRNAs-detailed.ss",
+    "-tRNAs.bed",
+    "-tRNAs.fa",
+]
+
+if config["genome"]["selected_chromosomes"]:
+    gtrnadb_raw_dir = tRNA_annotation_dir.joinpath("raw")
+
+    rule download_gtRNAdb:
+        output:
+            temp(
+                multiext(
+                    str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
+                    *GTRNADB_EXTS
+                )
+            ),
+        cache: True
+        params:
+            url=config["genome"]["gtrnadb_url"],
+            output_dir=str(gtrnadb_raw_dir),
+        log:
+            log_folder.joinpath("download/genome/gtrnadb.log"),
+        conda:
+            "../env/wget.yml"
+        script:
+            "../scripts/download-gtrnadb.sh"
+
+    rule filter_gtRNAdb:
+        input:
             multiext(
-                str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
-                "-filtered-tRNAs.fa",
-                "-mature-tRNAs.fa",
-                "-tRNAs_name_map.txt",
-                "-tRNAs-confidence-set.out",
-                "-tRNAs-confidence-set.ss",
-                "-tRNAs-detailed.out",
-                "-tRNAs-detailed.ss",
-                "-tRNAs.bed",
-                "-tRNAs.fa",
+                str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
+                *GTRNADB_EXTS
             )
-        ),
-    cache: True
-    params:
-        url=config["genome"]["gtrnadb_url"],
-        output_dir=str(tRNA_annotation_dir),
-    log:
-        log_folder.joinpath("download/genome/gtrnadb.log"),
-    conda:
-        "../env/wget.yml"
-    script:
-        "../scripts/download-gtrnadb.sh"
+        output:
+            protected(
+                multiext(
+                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
+                    *GTRNADB_EXTS
+                )
+            )
+        params:
+            selected_chromosomes=config["genome"]["selected_chromosomes"]
+        log:
+            log_folder.joinpath("download/genome/filter_gtrnadb.log"),
+        script:
+            "../scripts/filter_gtrnadb.py"
+
+else:
+    rule download_gtRNAdb:
+        output:
+            protected(
+                multiext(
+                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
+                    *GTRNADB_EXTS
+                )
+            ),
+        cache: True
+        params:
+            url=config["genome"]["gtrnadb_url"],
+            output_dir=str(tRNA_annotation_dir),
+        log:
+            log_folder.joinpath("download/genome/gtrnadb.log"),
+        conda:
+            "../env/wget.yml"
+        script:
+            "../scripts/download-gtrnadb.sh"

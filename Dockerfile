@@ -1,6 +1,7 @@
+Validating sample sheets against filesystem...
 FROM condaforge/mambaforge:latest
 LABEL io.github.snakemake.containerized="true"
-LABEL io.github.snakemake.conda_env_hash="aff616b8bd71e0320b6bcc1e8a3a0529b5118fee6806a8636aa52bdac630ca07"
+LABEL io.github.snakemake.conda_env_hash="1e04ef532d56c5188567369e0d529bcbcdf0d200fa8b14e99ff125667c92ed1b"
 
 # Step 1: Retrieve conda environments
 
@@ -68,14 +69,16 @@ COPY ../../workflow/env/bedtools.yml /conda-envs/7548059a7c044c6fa179ed2c582570c
 
 # Conda environment:
 #   source: ../../workflow/env/deeptools.yml
-#   prefix: /conda-envs/2f716f46231f821a5e905c39c6060cff
+#   prefix: /conda-envs/b38caa9f62475994293262b96f06dcc8
 #   channels:
 #     - conda-forge
 #     - bioconda
 #   dependencies:
 #     - deeptools=3.5.1
-RUN mkdir -p /conda-envs/2f716f46231f821a5e905c39c6060cff
-COPY ../../workflow/env/deeptools.yml /conda-envs/2f716f46231f821a5e905c39c6060cff/environment.yaml
+#     - setuptools<81.0.0
+#     - matplotlib<3.9
+RUN mkdir -p /conda-envs/b38caa9f62475994293262b96f06dcc8
+COPY ../../workflow/env/deeptools.yml /conda-envs/b38caa9f62475994293262b96f06dcc8/environment.yaml
 
 # Conda environment:
 #   source: ../../workflow/env/pandas.yml
@@ -116,7 +119,7 @@ COPY ../../workflow/env/qc.yml /conda-envs/d0b615e1a38d223cd5e2527a5f9259c6/envi
 
 # Conda environment:
 #   source: ../../workflow/env/refgenie.yml
-#   prefix: /conda-envs/3c16857ca22d0020bd610884bc4f97ae
+#   prefix: /conda-envs/d8b0a908802597799d00afd556e97962
 #   name: refgenie
 #   channels:
 #     - bioconda
@@ -124,8 +127,9 @@ COPY ../../workflow/env/qc.yml /conda-envs/d0b615e1a38d223cd5e2527a5f9259c6/envi
 #   dependencies:
 #     - refgenie=0.12.1
 #     - setuptools<81
-RUN mkdir -p /conda-envs/3c16857ca22d0020bd610884bc4f97ae
-COPY ../../workflow/env/refgenie.yml /conda-envs/3c16857ca22d0020bd610884bc4f97ae/environment.yaml
+#     - samtools=1.16.1
+RUN mkdir -p /conda-envs/d8b0a908802597799d00afd556e97962
+COPY ../../workflow/env/refgenie.yml /conda-envs/d8b0a908802597799d00afd556e97962/environment.yaml
 
 # Conda environment:
 #   source: ../../workflow/env/samtools.yml
@@ -152,7 +156,7 @@ COPY ../../workflow/env/trimmomatic.yml /conda-envs/b93daf96b2454232db6380819bb6
 
 # Conda environment:
 #   source: ../../workflow/env/wget.yml
-#   prefix: /conda-envs/2473cc7cad71f946585d67bc0fc276d6
+#   prefix: /conda-envs/baa3f16db2fc690d897fc519f3095b9d
 #   channels:
 #     - conda-forge
 #     - anaconda
@@ -160,8 +164,9 @@ COPY ../../workflow/env/trimmomatic.yml /conda-envs/b93daf96b2454232db6380819bb6
 #     - wget=1.21.4
 #     - gzip
 #     - openssl=3.3.0
-RUN mkdir -p /conda-envs/2473cc7cad71f946585d67bc0fc276d6
-COPY ../../workflow/env/wget.yml /conda-envs/2473cc7cad71f946585d67bc0fc276d6/environment.yaml
+#     - samtools=1.16.1
+RUN mkdir -p /conda-envs/baa3f16db2fc690d897fc519f3095b9d
+COPY ../../workflow/env/wget.yml /conda-envs/baa3f16db2fc690d897fc519f3095b9d/environment.yaml
 
 # Conda environment:
 #   source: ../../workflow/env/yte.yml
@@ -191,14 +196,14 @@ RUN mamba env create --prefix /conda-envs/40cdd57d2470dfd817a34e1ec7edeaa4 --fil
     mamba env create --prefix /conda-envs/8e96037ab9b9dd95318e6dde69e1b470 --file /conda-envs/8e96037ab9b9dd95318e6dde69e1b470/environment.yaml && \
     mamba env create --prefix /conda-envs/16e1dc5e3e5976d71e955eaf12ac9181 --file /conda-envs/16e1dc5e3e5976d71e955eaf12ac9181/environment.yaml && \
     mamba env create --prefix /conda-envs/7548059a7c044c6fa179ed2c582570cb --file /conda-envs/7548059a7c044c6fa179ed2c582570cb/environment.yaml && \
-    mamba env create --prefix /conda-envs/2f716f46231f821a5e905c39c6060cff --file /conda-envs/2f716f46231f821a5e905c39c6060cff/environment.yaml && \
+    mamba env create --prefix /conda-envs/b38caa9f62475994293262b96f06dcc8 --file /conda-envs/b38caa9f62475994293262b96f06dcc8/environment.yaml && \
     mamba env create --prefix /conda-envs/22b95354972e48bc1415a03941f4a9da --file /conda-envs/22b95354972e48bc1415a03941f4a9da/environment.yaml && \
     mamba env create --prefix /conda-envs/5802f2d84ae022c00e054e6c16564f06 --file /conda-envs/5802f2d84ae022c00e054e6c16564f06/environment.yaml && \
     mamba env create --prefix /conda-envs/d0b615e1a38d223cd5e2527a5f9259c6 --file /conda-envs/d0b615e1a38d223cd5e2527a5f9259c6/environment.yaml && \
-    mamba env create --prefix /conda-envs/3c16857ca22d0020bd610884bc4f97ae --file /conda-envs/3c16857ca22d0020bd610884bc4f97ae/environment.yaml && \
+    mamba env create --prefix /conda-envs/d8b0a908802597799d00afd556e97962 --file /conda-envs/d8b0a908802597799d00afd556e97962/environment.yaml && \
     mamba env create --prefix /conda-envs/9a7384898f8f9aa25cd1d29f531a7f7d --file /conda-envs/9a7384898f8f9aa25cd1d29f531a7f7d/environment.yaml && \
     mamba env create --prefix /conda-envs/b93daf96b2454232db6380819bb61725 --file /conda-envs/b93daf96b2454232db6380819bb61725/environment.yaml && \
-    mamba env create --prefix /conda-envs/2473cc7cad71f946585d67bc0fc276d6 --file /conda-envs/2473cc7cad71f946585d67bc0fc276d6/environment.yaml && \
+    mamba env create --prefix /conda-envs/baa3f16db2fc690d897fc519f3095b9d --file /conda-envs/baa3f16db2fc690d897fc519f3095b9d/environment.yaml && \
     mamba env create --prefix /conda-envs/d6fd740cd80b0b1a2fa95ea615907de9 --file /conda-envs/d6fd740cd80b0b1a2fa95ea615907de9/environment.yaml && \
     mamba env create --prefix /conda-envs/346c7adef34200145d01dda184ac25b8 --file /conda-envs/346c7adef34200145d01dda184ac25b8/environment.yaml && \
     mamba clean --all -y
