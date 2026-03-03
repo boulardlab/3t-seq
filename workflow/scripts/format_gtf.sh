@@ -1,10 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
+# Redirect all output and stderr to the snakemake log file
+exec &> "${snakemake_log[0]}"
+
 # Inputs
-INPUT_GTF=$1
-OUTPUT_GTF=$2
-SELECTED_CHRS=$3
+INPUT_GTF="${snakemake_input[gtf]}"
+OUTPUT_GTF="${snakemake_output[gtf]}"
+SELECTED_CHRS="${snakemake_params[selected_chrs]:-}"
 
 # Decompress if needed
 if [[ "$INPUT_GTF" == *.gz ]]; then
