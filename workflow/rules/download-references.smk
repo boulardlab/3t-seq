@@ -39,34 +39,7 @@ rule refgenie_fetch_fasta:
         refgenie pull {params.genome_id}/fasta &> {log}
         FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
         
-        # Decompress if needed
-        if [[ "$FASTA_REAL_PATH" == *.gz ]]; then
-            gunzip -c "$FASTA_REAL_PATH" > {output.fasta}.tmp
-        else
-            cp "$FASTA_REAL_PATH" {output.fasta}.tmp
-        fi
-
-        HAS_CHR=$(head -n 1000 {output.fasta}.tmp | grep -q '^>chr' && echo "yes" || echo "no")
-
-        # Subset chromosomes if requested
-        if [ -n "{params.selected_chrs}" ]; then
-            if [ "$HAS_CHR" == "no" ]; then
-                CHRS_TO_EXTRACT=$(echo "{params.selected_chrs}" | sed 's/chr//g')
-                samtools faidx {output.fasta}.tmp $CHRS_TO_EXTRACT > {output.fasta}.tmp2
-                sed '/^>/s/^>/>chr/' {output.fasta}.tmp2 > {output.fasta}
-                rm {output.fasta}.tmp2
-            else
-                samtools faidx {output.fasta}.tmp {params.selected_chrs} > {output.fasta}
-            fi
-            rm {output.fasta}.tmp
-        else
-            if [ "$HAS_CHR" == "no" ]; then
-                sed '/^>/s/^>/>chr/' {output.fasta}.tmp > {output.fasta}
-                rm {output.fasta}.tmp
-            else
-                mv {output.fasta}.tmp {output.fasta}
-            fi
-        fi
+        bash ../scripts/format_fasta.sh "$FASTA_REAL_PATH" "{output.fasta}" "{params.selected_chrs}"
         """
 
 rule refgenie_fetch_gtf:
@@ -92,35 +65,52 @@ rule refgenie_fetch_gtf:
         refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
         GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
         
-        # Decompress if needed
-        if [[ "$GTF_REAL_PATH" == *.gz ]]; then
-            gunzip -c "$GTF_REAL_PATH" > {output.gtf}.tmp
-        else
-            cp "$GTF_REAL_PATH" {output.gtf}.tmp
-        fi
-
-        HAS_CHR=$(head -n 1000 {output.gtf}.tmp | grep -v '^#' | head -n1 | grep -q '^chr' && echo "yes" || echo "no")
-
-        # Subset chromosomes if requested
-        if [ -n "{params.selected_chrs}" ]; then
-            if [ "$HAS_CHR" == "no" ]; then
-                CHRS_TO_EXTRACT=$(echo "{params.selected_chrs}" | sed 's/chr//g')
-                awk -v chrs="$CHRS_TO_EXTRACT" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}.tmp2
-                sed '/^[^#]/s/^/chr/' {output.gtf}.tmp2 > {output.gtf}
-                rm {output.gtf}.tmp2
-            else
-                awk -v chrs="{params.selected_chrs}" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}
-            fi
-            rm {output.gtf}.tmp
-        else
-            if [ "$HAS_CHR" == "no" ]; then
-                sed '/^[^#]/s/^/chr/' {output.gtf}.tmp > {output.gtf}
-                rm {output.gtf}.tmp
-            else
-                mv {output.gtf}.tmp {output.gtf}
-            fi
-        fi
+        bash ../scripts/format_gtf.sh "$GTF_REAL_PATH" "{output.gtf}" "{params.selected_chrs}"
         """
+
+if "fasta_path" in config["genome"]:
+
+    rule format_custom_fasta:
+        input:
+            fasta=config["genome"]["fasta_path"],
+        output:
+            fasta=protected(str(fasta_path)),
+        params:
+            selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        conda:
+            "../env/bash.yml"
+        log:
+            log_folder.joinpath("download/genome/custom_fasta.log"),
+        threads: 1
+        resources:
+            runtime=60,
+            mem_mb=4000,
+        shell:
+            """
+            bash ../scripts/format_fasta.sh "{input.fasta}" "{output.fasta}" "{params.selected_chrs}"
+            """
+
+    rule format_custom_gtf:
+        input:
+            gtf=config["genome"]["gtf_path"],
+        output:
+            gtf=protected(str(gtf_path)),
+        conda:
+            "../env/bash.yml"
+        params:
+            selected_chrs=",".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        log:
+            log_folder.joinpath("download/genome/custom_gtf.log"),
+        threads: 1
+        resources:
+            runtime=60,
+            mem_mb=4000,
+        shell:
+            """
+            bash ../scripts/format_gtf.sh "{input.gtf}" "{output.gtf}" "{params.selected_chrs}"
+            """
+
+
 
 
 rule download_repeatmasker_annotation_file:
