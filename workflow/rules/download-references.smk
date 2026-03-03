@@ -46,12 +46,26 @@ rule refgenie_fetch_fasta:
             cp "$FASTA_REAL_PATH" {output.fasta}.tmp
         fi
 
+        HAS_CHR=$(head -n 1000 {output.fasta}.tmp | grep -q '^>chr' && echo "yes" || echo "no")
+
         # Subset chromosomes if requested
         if [ -n "{params.selected_chrs}" ]; then
-            samtools faidx {output.fasta}.tmp {params.selected_chrs} > {output.fasta}
+            if [ "$HAS_CHR" == "no" ]; then
+                CHRS_TO_EXTRACT=$(echo "{params.selected_chrs}" | sed 's/chr//g')
+                samtools faidx {output.fasta}.tmp $CHRS_TO_EXTRACT > {output.fasta}.tmp2
+                sed '/^>/s/^>/>chr/' {output.fasta}.tmp2 > {output.fasta}
+                rm {output.fasta}.tmp2
+            else
+                samtools faidx {output.fasta}.tmp {params.selected_chrs} > {output.fasta}
+            fi
             rm {output.fasta}.tmp
         else
-            mv {output.fasta}.tmp {output.fasta}
+            if [ "$HAS_CHR" == "no" ]; then
+                sed '/^>/s/^>/>chr/' {output.fasta}.tmp > {output.fasta}
+                rm {output.fasta}.tmp
+            else
+                mv {output.fasta}.tmp {output.fasta}
+            fi
         fi
         """
 
@@ -85,12 +99,26 @@ rule refgenie_fetch_gtf:
             cp "$GTF_REAL_PATH" {output.gtf}.tmp
         fi
 
+        HAS_CHR=$(head -n 1000 {output.gtf}.tmp | grep -v '^#' | head -n1 | grep -q '^chr' && echo "yes" || echo "no")
+
         # Subset chromosomes if requested
         if [ -n "{params.selected_chrs}" ]; then
-            awk -v chrs="{params.selected_chrs}" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}
+            if [ "$HAS_CHR" == "no" ]; then
+                CHRS_TO_EXTRACT=$(echo "{params.selected_chrs}" | sed 's/chr//g')
+                awk -v chrs="$CHRS_TO_EXTRACT" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}.tmp2
+                sed '/^[^#]/s/^/chr/' {output.gtf}.tmp2 > {output.gtf}
+                rm {output.gtf}.tmp2
+            else
+                awk -v chrs="{params.selected_chrs}" 'BEGIN{{split(chrs,a,","); for(i in a) keep[a[i]]}} /^#/ || $1 in keep' {output.gtf}.tmp > {output.gtf}
+            fi
             rm {output.gtf}.tmp
         else
-            mv {output.gtf}.tmp {output.gtf}
+            if [ "$HAS_CHR" == "no" ]; then
+                sed '/^[^#]/s/^/chr/' {output.gtf}.tmp > {output.gtf}
+                rm {output.gtf}.tmp
+            else
+                mv {output.gtf}.tmp {output.gtf}
+            fi
         fi
         """
 

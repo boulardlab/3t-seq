@@ -1,25 +1,5 @@
-rule validate_genome_and_annotation:
-    input:
-        genome_fasta_file=fasta_path,
-        genome_annotation_file=gtf_path,
-    output:
-        touch(references_folder.joinpath("genome-and-annotation-validated.done")),
-    cache: True
-    conda:
-        "../env/bash.yml"
-    threads: 1
-    resources:
-        runtime=20,
-        mem_mb=1024,
-    log:
-        log_folder.joinpath("star/validata_genome_and_annotation.log"),
-    script:
-        "../scripts/validate_genome_and_annotation.sh"
-
-
 rule star_genome_preparation:
     input:
-        references_folder.joinpath("genome-and-annotation-validated.done"),
         genome_fasta_file=fasta_path,
         genome_annotation_file=gtf_path,
     output:
@@ -55,7 +35,6 @@ rule star_genome_preparation:
 
 rule star:
     input:
-        references_folder.joinpath("genome-and-annotation-validated.done"),
         fastq=get_star_input,
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
