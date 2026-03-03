@@ -2,12 +2,6 @@ sequencing_libraries:
   - name: GSE130735-subset
     protocol: pe
     # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
-    # E.g.
-    #  Name,Filename,Genotype
-    #  s01,some_complicate_filename_s01,WT
-    #  s02,some_complicate_filename_s02,WT
-    #  s03,some_complicate_filename_s03,KO
-    #  s04,some_complicate_filename_s04,KO    
     sample_sheet: sample-sheet.csv
     deseq2:
       test: Wald
@@ -24,10 +18,12 @@ globals:
   results_folder: results/
 
 genome:
-  label: mm10
-  annotation_type: mgi
-  # Refgenie will automatically fetch mm10 assets.
+  # Using local paths instead of refgenie label
+  fasta_path: /Users/francesco/scratch/3t-seq/ui-improvements/.tests/integration/references/GRCm38.primary_assembly.genome.chr19.fa
+  gtf_path: /Users/francesco/scratch/3t-seq/ui-improvements/.tests/integration/references/MGI.chr19.gff3
+  salmonte_species: mm
 
+  annotation_type: mgi
   # URL to GtRNAdb files
   gtrnadb_url: https://gtrnadb.org/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
   
@@ -40,4 +36,3 @@ deseq2:
   variable: genotype
   test: Wald
   reference_level: WT
-

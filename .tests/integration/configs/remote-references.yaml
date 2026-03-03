@@ -1,0 +1,37 @@
+sequencing_libraries:
+  - name: GSE130735-subset
+    protocol: pe
+    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE  
+    sample_sheet: sample-sheet.csv
+    deseq2:
+      test: Wald
+      variable: genotype
+      reference_level: WT
+  
+
+disable_TE_analysis: false
+disable_salmonTE_analysis: false
+disable_tRNA_analysis: false
+
+globals:
+  reads_folder: .tests/integration
+  results_folder: results/
+
+genome:
+  label: mm10
+  annotation_type: mgi
+  # Refgenie will automatically fetch mm10 assets.
+
+  # URL to GtRNAdb files
+  gtrnadb_url: https://gtrnadb.org/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
+  
+  # for testing purpose, focus on chr19 only
+  selected_chromosomes:
+    - chr19
+
+deseq2:
+  working_directory: .
+  variable: genotype
+  test: Wald
+  reference_level: WT
+

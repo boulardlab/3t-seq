@@ -1,72 +1,73 @@
-rule refgenie_init:
-    output:
-        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
-    log:
-        log_folder.joinpath("download/genome/refgenie_init.log"),
-    conda:
-        "../env/refgenie.yml"
-    threads: 1
-    resources:
-        runtime=10,
-        mem_mb=1000,
-    shell:
-        """
-        export REFGENIE={output.refgenie_cfg}
-        if [ ! -f "$REFGENIE" ]; then
-            refgenie init -c $REFGENIE &> {log}
-        fi
-        """
-
-rule refgenie_fetch_fasta:
-    input:
-        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
-    output:
-        fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
-    params:
-        genome_id=config["genome"]["label"],
-        selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
-    conda:
-        "../env/refgenie.yml"
-    log:
-        log_folder.joinpath("download/genome/{}_fasta.log".format(config["genome"]["label"])),
-    threads: 1
-    resources:
-        runtime=60,
-        mem_mb=4000,
-    shell:
-        """
-        export REFGENIE={input.refgenie_cfg}
-        refgenie pull {params.genome_id}/fasta &> {log}
-        FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
-        
-        bash ../scripts/format_fasta.sh "$FASTA_REAL_PATH" "{output.fasta}" "{params.selected_chrs}"
-        """
-
-rule refgenie_fetch_gtf:
-    input:
-        refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
-    output:
-        gtf=protected(str(references_folder.joinpath(config["genome"]["label"], "annotation.gtf"))),
-    cache: True
-    conda:
-        "../env/refgenie.yml"
-    params:
-        genome_id=config["genome"]["label"],
-        selected_chrs=",".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
-    log:
-        log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
-    threads: 1
-    resources:
-        runtime=60,
-        mem_mb=4000,
-    shell:
-        """
-        export REFGENIE={input.refgenie_cfg}
-        refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
-        GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
-        
-        bash ../scripts/format_gtf.sh "$GTF_REAL_PATH" "{output.gtf}" "{params.selected_chrs}"
-        """
+if "label" in config["genome"]:
+    rule refgenie_init:
+        output:
+            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+        log:
+            log_folder.joinpath("download/genome/refgenie_init.log"),
+        conda:
+            "../env/refgenie.yml"
+        threads: 1
+        resources:
+            runtime=10,
+            mem_mb=1000,
+        shell:
+            """
+            export REFGENIE={output.refgenie_cfg}
+            if [ ! -f "$REFGENIE" ]; then
+                refgenie init -c $REFGENIE &> {log}
+            fi
+            """
+    
+    rule refgenie_fetch_fasta:
+        input:
+            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+        output:
+            fasta=protected(str(references_folder.joinpath(config["genome"]["label"], "fasta.fa"))),
+        params:
+            genome_id=config["genome"]["label"],
+            selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        conda:
+            "../env/refgenie.yml"
+        log:
+            log_folder.joinpath("download/genome/{}_fasta.log".format(config["genome"]["label"])),
+        threads: 1
+        resources:
+            runtime=60,
+            mem_mb=4000,
+        shell:
+            """
+            export REFGENIE={input.refgenie_cfg}
+            refgenie pull {params.genome_id}/fasta &> {log}
+            FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
+            
+            bash ../scripts/format_fasta.sh "$FASTA_REAL_PATH" "{output.fasta}" "{params.selected_chrs}"
+            """
+    
+    rule refgenie_fetch_gtf:
+        input:
+            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+        output:
+            gtf=protected(str(references_folder.joinpath(config["genome"]["label"], "annotation.gtf"))),
+        cache: True
+        conda:
+            "../env/refgenie.yml"
+        params:
+            genome_id=config["genome"]["label"],
+            selected_chrs=",".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        log:
+            log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
+        threads: 1
+        resources:
+            runtime=60,
+            mem_mb=4000,
+        shell:
+            """
+            export REFGENIE={input.refgenie_cfg}
+            refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
+            GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
+            
+            bash ../scripts/format_gtf.sh "$GTF_REAL_PATH" "{output.gtf}" "{params.selected_chrs}"
+            """
 
 if "fasta_path" in config["genome"]:
 
@@ -117,12 +118,12 @@ rule download_repeatmasker_annotation_file:
     output:
         protected(
             multiext(
-                str(rmsk_folder.joinpath(config["genome"]["label"])), ".gtf", ".bed"
+                str(rmsk_folder.joinpath(config["genome"].get("label", "custom"))), ".gtf", ".bed"
             )
         ),
     cache: True
     params:
-        genome_id=config["genome"]["label"],
+        genome_id=config["genome"].get("label", "custom"),
         selected_chromosome=config["genome"]["selected_chromosomes"],
     conda:
         "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
@@ -155,7 +156,7 @@ if config["genome"]["selected_chromosomes"]:
         output:
             temp(
                 multiext(
-                    str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
+                    str(gtrnadb_raw_dir.joinpath(config["genome"].get("label", "custom"))),
                     *GTRNADB_EXTS
                 )
             ),
@@ -173,13 +174,13 @@ if config["genome"]["selected_chromosomes"]:
     rule filter_gtRNAdb:
         input:
             multiext(
-                str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
+                str(gtrnadb_raw_dir.joinpath(config["genome"].get("label", "custom"))),
                 *GTRNADB_EXTS
             )
         output:
             protected(
                 multiext(
-                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
+                    str(tRNA_annotation_dir.joinpath(config["genome"].get("label", "custom"))),
                     *GTRNADB_EXTS
                 )
             )
@@ -195,7 +196,7 @@ else:
         output:
             protected(
                 multiext(
-                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
+                    str(tRNA_annotation_dir.joinpath(config["genome"].get("label", "custom"))),
                     *GTRNADB_EXTS
                 )
             ),

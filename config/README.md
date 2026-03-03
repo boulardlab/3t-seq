@@ -7,9 +7,11 @@ See below for an example config file with explanation of each option and descrip
 ```yaml
 # config/config.yaml
 
-# A list of datasets 
-# Every dataset is defined by a name and a path to a sample sheet.
-# The trimmomatic, star, and bamCoverage options are optional and will fall back to sensible defaults if omitted.
+# A list of sequencing libraries to process.
+# Each item in the list represents a distinct sequencing run or library batch, 
+# defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
+# Tool parameter overrides (trimmomatic, star, bamCoverage) are optional per-library 
+# and will fall back to sensible defaults if omitted.
 sequencing_libraries:
   - name: GSE13073
     sample_sheet: sample-sheet.csv
@@ -39,8 +41,8 @@ disable_TE_analysis: false
 disable_tRNA_analysis: false
 
 globals:
-  # path to reads folder 
-  # NB: ./GSE13073 is expected to exist
+  # Base path to the reads folder. 
+  # Used primarily as a fallback for resolving relative paths in sample sheets.
   reads_folder: .
 
   # path to results folder
@@ -130,6 +132,9 @@ genome:
   
   # Provide an absolute path to your gtf:
   gtf_path: /path/to/references/custom-mm10.gtf
+  
+  # Specify the target species for SalmonTE quantification (e.g. mm, hs, dr, dm):
+  salmonte_species: mm
 ```
 
 These two approaches are mutually exclusive; the configuration validator will alert you if you mix a `label` with explicit `fasta_path` or `gtf_path` parameters.

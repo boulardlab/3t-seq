@@ -63,12 +63,24 @@ A `report.zip` archive will be generated in the current working directory. The a
 
 Adjust parameters in the `config.yaml` file to match your experimental setup. See `config/README.md` for further instructions.
 
+### Custom Genome References
+
+If you prefer to provide your own explicit FASTA and GTF reference files rather than having them downloaded automatically via Refgenie, you can omit the `label` parameter and provide `fasta_path` and `gtf_path` instead in `config.yaml`:
+
+```yaml
+genome:
+  fasta_path: /absolute/path/to/your/genome.fa
+  gtf_path: /absolute/path/to/your/annotation.gtf
+  salmonte_species: mm # "mm", "hs", "dr", or "dm"
+```
+
+The pipeline will automatically apply necessary pre-processing to these files (like enforcing `chr` nomenclature and subsetting chromosomes) just like it does with Refgenie downloads. Make sure to specify `salmonte_species` to define the target species for SalmonTE quantification since the `label` parameter is missing.
 
 ### Sample sheet preparation
 
 The sample sheet is a csv file that describe samples metadata:
 
-- The `sample` column reports a human readable name for each sample.
+- The `name` column reports a human readable name for each sample.
 - For pe libraries, `filename_1` and `filename_2` columns report file names for each of the two
 sequencing reads mates. For se libraries, `filename` is sufficient. **The pipeline will use these columns to determine if a given dataset was sequenced with pe or se method**.
 - The `genotype` column reports the variable of interest. The name of this column is flexible and can be anything as long as you specify what's this name in the config file (in the `deseq2` section).

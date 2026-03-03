@@ -47,6 +47,9 @@ properties:
       label:
         type: string
         description: "Standard genome label (e.g. mm10, hg38) to automatically fetch references."
+      salmonte_species:
+        type: string
+        description: "Fallback species identifier for SalmonTE (e.g. mm, hs, dr, dm) when using custom references without a top-level label."
       fasta_path:
         type: string
         description: "Local path to explicit genome fasta."

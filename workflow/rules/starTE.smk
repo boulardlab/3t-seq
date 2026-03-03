@@ -63,7 +63,7 @@ rule featureCounts_random:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
@@ -209,7 +209,7 @@ rule featureCounts_multihit:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),

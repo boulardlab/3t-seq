@@ -302,7 +302,8 @@ def get_salmonTE_quant_input(wildcards):
 
 
 def set_salmonTE_genome():
-    genome_label = config["genome"]["label"][:2]
+    # Allow explicit override if no label is present.
+    genome_label = config["genome"].get("salmonte_species", config["genome"].get("label", "custom"))[:2]
     salmon_label = ""
     if genome_label == "mm":
         salmon_label = "mm"
@@ -313,7 +314,7 @@ def set_salmonTE_genome():
     elif genome_label == "dm":
         salmon_label = "dm"
     else:
-        raise ValueError(f'Unsupported genome label: {config["genome"]["label"]}')
+        raise ValueError(f'Unsupported genome label for salmonTE: {config["genome"].get("label", "custom")}. Provide `salmonte_species: mm/hg/dr/dm` in the config if using custom referenes.')
     return salmon_label
 
 
