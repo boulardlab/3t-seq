@@ -80,7 +80,7 @@ rule format_fasta:
     params:
         selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
     conda:
-        "../env/bash.yml"
+        "../env/samtools.yml"
     log:
         log_folder.joinpath("download/genome/format_fasta.log"),
     threads: 1
