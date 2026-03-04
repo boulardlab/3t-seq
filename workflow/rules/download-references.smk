@@ -36,7 +36,7 @@ if "label" in config["genome"]:
         shell:
             """
             export REFGENIE={input.refgenie_cfg}
-            refgenie pull {params.genome_id}/fasta &> {log}
+            refgenie pull --force-overwrite {params.genome_id}/fasta &> {log}
             FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
             cp -L "$FASTA_REAL_PATH" "{output.fasta}"
             """
@@ -60,7 +60,7 @@ if "label" in config["genome"]:
         shell:
             """
             export REFGENIE={input.refgenie_cfg}
-            refgenie pull {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
+            refgenie pull --force-overwrite {params.genome_id}/ensembl_gtf &> {log} || refgenie pull {params.genome_id}/gencode_gtf &>> {log}
             GTF_REAL_PATH=$(refgenie seek {params.genome_id}/ensembl_gtf) || GTF_REAL_PATH=$(refgenie seek {params.genome_id}/gencode_gtf)
             cp -L "$GTF_REAL_PATH" "{output.gtf}"
             """
