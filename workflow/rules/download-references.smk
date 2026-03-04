@@ -45,7 +45,7 @@ if "label" in config["genome"]:
         input:
             refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
         output:
-            gtf=temp(str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf"))),
+            gtf=temp(str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))),
         cache: True
         conda:
             "../env/refgenie.yml"
@@ -94,7 +94,7 @@ def get_raw_gtf(wildcards):
     if "gtf_path" in config["genome"]:
         return config["genome"]["gtf_path"]
     else:
-        return str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf"))
+        return str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))
 
 rule format_gtf:
     input:
