@@ -1,22 +1,21 @@
 ruleorder: trimmomatic_pe > trimmomatic_se
 
 
-rule trimmomatic_pe:
-    wildcard_constraints:
-        serie="|".join(
-            library_names_paired if len(library_names_paired) > 0 else ["none"]
-        ),
+rule trimmomatic_shared_pe:
+    """Deduplicated trimmomatic for paired-end reads."""
     input:
-        unpack(get_fastq_paired),
+        unpack(lambda wildcards: get_fastq_paired(
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+        )),
     output:
-        paired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.fastq.gz"),
-        paired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.fastq.gz"),
-        unpaired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.unpaired.fastq.gz"),
-        unpaired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.unpaired.fastq.gz"),
-        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
+        paired1=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.fastq.gz"),
+        paired2=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.fastq.gz"),
+        unpaired1=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.unpaired.fastq.gz"),
+        unpaired2=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.unpaired.fastq.gz"),
+        summary=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt"),
     params:
         lambda wildcards: get_params(
-            wildcards, 
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 
             "trimmomatic", 
             default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
         ),
@@ -25,7 +24,7 @@ rule trimmomatic_pe:
         runtime=lambda wildcards, attempt: 240 * attempt,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
-        trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+        trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
     shell:
@@ -39,30 +38,53 @@ rule trimmomatic_pe:
         {params} |& tee {log}
         """
 
-
-rule trimmomatic_se:
-    wildcard_constraints:
-        serie="|".join(
-            library_names_single if len(library_names_single) > 0 else ["none"]
-        ),
+rule symlink_trim_pe:
     input:
-        get_fastq,
+        paired1=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "_1"),
+        paired2=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "_2"),
+        unpaired1=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "_1.unpaired"),
+        unpaired2=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "_2.unpaired"),
+        summary=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "").with_suffix(".summary.txt"),
+        stats=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample, "").with_suffix(".stats.txt"),
     output:
-        fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
+        paired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.fastq.gz"),
+        paired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.fastq.gz"),
+        unpaired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.unpaired.fastq.gz"),
+        unpaired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.unpaired.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
+        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+    shell:
+        """
+        ln -sfr {input.paired1} {output.paired1}
+        ln -sfr {input.paired2} {output.paired2}
+        ln -sfr {input.unpaired1} {output.unpaired1}
+        ln -sfr {input.unpaired2} {output.unpaired2}
+        ln -sfr {input.summary} {output.summary}
+        ln -sfr {input.stats} {output.stats}
+        """
+
+
+rule trimmomatic_shared_se:
+    """Deduplicated trimmomatic for single-end reads."""
+    input:
+        lambda wildcards: get_fastq(
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+        ),
+    output:
+        fastq=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.fastq.gz"),
+        summary=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt"),
     params:
         lambda wildcards: get_params(
-            wildcards, 
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 
             "trimmomatic", 
             default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-SE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
         ),
-    retries: 2
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: 180 * attempt,
         mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
-        trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+        trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
     shell:
@@ -73,6 +95,22 @@ rule trimmomatic_se:
         {input} \
         {output.fastq} \
         {params} |& tee {log}
+        """
+
+rule symlink_trim_se:
+    input:
+        fastq=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample),
+        summary=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample).with_suffix(".summary.txt"),
+        stats=lambda wildcards: get_shared_trim_path(get_sample_hash(wildcards.serie, wildcards.sample, "trim"), wildcards.sample).with_suffix(".stats.txt"),
+    output:
+        fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
+        summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
+        stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+    shell:
+        """
+        ln -sfr {input.fastq} {output.fastq}
+        ln -sfr {input.summary} {output.summary}
+        ln -sfr {input.stats} {output.stats}
         """
 
 

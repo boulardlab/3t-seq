@@ -1,4 +1,7 @@
 from pathlib import PosixPath
+from snakemake.utils import Struct
+import hashlib
+import json
 
 filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
 filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)?(?P<gzipped>\.gz)?$"
@@ -126,7 +129,142 @@ def parse_filepath(filepath: PosixPath):
     raise ValueError("Invalid path: {}".format(filepath))
 
 
-def resolve_raw_read_path(serie: str, file_val: str) -> Path:
+# Global registries
+SAMPLE_HASHES = {}
+HASH_TO_PARAMS = {"trim": {}, "alignment": {}}
+
+def get_sample_hash(serie, sample, step="alignment"):
+    """Returns the pre-calculated hash for a given sample and step."""
+    return SAMPLE_HASHES.get((serie, sample), {}).get(step, "unknown")
+
+def calculate_content_hash(data_dict):
+    """Generates a stable hash from a dictionary of parameters/files."""
+    encoded = json.dumps(data_dict, sort_keys=True).encode()
+    return hashlib.sha256(encoded).hexdigest()[:16]
+
+def populate_sample_registry():
+    """
+    Scans all sequencing libraries and populates SAMPLE_HASHES and HASH_TO_PARAMS
+    for deduplication of trimming and alignment tasks.
+    """
+    global SAMPLE_HASHES, HASH_TO_PARAMS
+    
+    genome_params = {
+        "label": config["genome"].get("label"),
+        "fasta": config["genome"].get("fasta_path"),
+        "gtf": config["genome"].get("gtf_path"),
+    }
+
+    for lib in config.get("sequencing_libraries", []):
+        serie = lib["name"]
+        sheet_path = Path(lib["sample_sheet"])
+        if not sheet_path.is_absolute():
+            sheet_path = sheet_path.resolve()
+        
+        if not sheet_path.exists():
+            continue
+            
+        df = pd.read_csv(sheet_path)
+        is_paired = serie in library_names_paired
+        
+        trim_params = lib.get("trimmomatic", "default")
+        star_params = lib.get("star", "default")
+        
+        for _, row in df.iterrows():
+            sample_name = row["name"]
+            
+            # --- Trimming Hash ---
+            if is_paired:
+                inputs = {
+                    "f1": str(resolve_raw_read_path(serie, row.get("filename_1"))),
+                    "f2": str(resolve_raw_read_path(serie, row.get("filename_2")))
+                }
+            else:
+                inputs = {
+                    "f": str(resolve_raw_read_path(serie, row.get("filename")))
+                }
+            
+            trim_data = {
+                "inputs": inputs,
+                "params": trim_params,
+                "paired": is_paired
+            }
+            trim_hash = calculate_content_hash(trim_data)
+            
+            # --- Alignment Hash (STAR) ---
+            align_data = {
+                "trim_hash": trim_hash,
+                "star_params": star_params,
+                "genome": genome_params
+            }
+            align_hash = calculate_content_hash(align_data)
+            
+            # --- starTE Hash ---
+            starte_data = {
+                "trim_hash": trim_hash,
+                "genome": genome_params,
+                "params": "starTE_v1_fixed" # Fixed params in starTE.smk
+            }
+            starte_hash = calculate_content_hash(starte_data)
+
+            # --- Markdup Hash ---
+            markdup_data = {
+                "align_hash": align_hash,
+                "params": "picard_v1_fixed"
+            }
+            markdup_hash = calculate_content_hash(markdup_data)
+
+            SAMPLE_HASHES[(serie, sample_name)] = {
+                "trim": trim_hash,
+                "alignment": align_hash,
+                "starTE": starte_hash,
+                "markdup": markdup_hash
+            }
+
+            # --- Reverse Mappings ---
+            if trim_hash not in HASH_TO_PARAMS["trim"]:
+                HASH_TO_PARAMS["trim"][trim_hash] = {
+                    "serie": serie,
+                    "sample": sample_name,
+                    "paired": is_paired
+                }
+            
+            if align_hash not in HASH_TO_PARAMS["alignment"]:
+                HASH_TO_PARAMS["alignment"][align_hash] = {
+                    "serie": serie,
+                    "sample": sample_name,
+                    "trim_hash": trim_hash
+                }
+
+            if starte_hash not in HASH_TO_PARAMS["starTE"]:
+                HASH_TO_PARAMS["starTE"][starte_hash] = {
+                    "serie": serie,
+                    "sample": sample_name,
+                    "paired": is_paired
+                }
+            
+            if markdup_hash not in HASH_TO_PARAMS["markdup"]:
+                HASH_TO_PARAMS["markdup"][markdup_hash] = {
+                    "serie": serie,
+                    "sample": sample_name,
+                    "align_hash": align_hash
+                }
+
+def get_shared_trim_path(trim_hash, sample, suffix=""):
+    """Returns the path to a shared trimmed fastq."""
+    return trim_reads_folder.joinpath("_shared", trim_hash, f"{sample}{suffix}.fastq.gz")
+
+def get_shared_star_path(align_hash, sample, suffix=""):
+    """Returns the path to a shared alignment result."""
+    return star_folder.joinpath("_shared", align_hash, f"{sample}{suffix}")
+
+def get_shared_starTE_path(starte_hash, sample, mode="random", suffix=""):
+    """Returns the path to a shared starTE result."""
+    return starTE_folder.joinpath("_shared", starte_hash, mode, f"{sample}{suffix}")
+
+def get_shared_markdup_path(markdup_hash, sample, suffix=""):
+    """Returns the path to a shared markdup result."""
+    return markdup_folder.joinpath("_shared", markdup_hash, f"{sample}{suffix}")
     """
     Resolves a raw read filename string from the sample sheet into an actual Path.
     - If absolute, returns it directly (testing common extensions if the exact path is missing).

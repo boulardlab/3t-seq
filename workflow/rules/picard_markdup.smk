@@ -1,13 +1,18 @@
 
 
-rule picard_markdup:
+rule picard_markdup_shared:
+    """Deduplicated Picard MarkDuplicates."""
     input:
-        star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        lambda wildcards: get_shared_star_path(
+            HASH_TO_PARAMS["markdup"][wildcards.markdup_hash]["align_hash"], 
+            wildcards.sample, 
+            ".Aligned.sortedByCoord.out.bam"
+        ),
     output:
-        bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
-        stats=markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
+        bam=markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.bam"),
+        stats=markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.stats.txt"),
     log:
-        log_folder.joinpath("picard/{serie}/{sample}.log"),
+        markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.log"),
     threads: 2
     resources:
         runtime=360,
@@ -23,6 +28,23 @@ rule picard_markdup:
         O={output.bam} \
         M={output.stats} |& \
         tee {log}
+        """
+
+rule symlink_markdup:
+    """Links shared markdup results back to per-serie folders."""
+    input:
+        bam=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".markdup.bam"),
+        stats=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".markdup.stats.txt"),
+        log=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".log"),
+    output:
+        bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
+        stats=markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
+        log=log_folder.joinpath("picard/{serie}/{sample}.log"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.stats} {output.stats}
+        ln -sfr {input.log} {output.log}
         """
 
 

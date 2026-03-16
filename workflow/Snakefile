@@ -121,6 +121,7 @@ if "label" in config["genome"] and "annotation_type" not in config["genome"]:
     config["genome"]["annotation_type"] = "ensembl"
 
 validate_sample_sheets()
+populate_sample_registry()
 
 ####################
 ## ONSTART BLOCK
