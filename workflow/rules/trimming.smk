@@ -1,5 +1,5 @@
-ruleorder: trimmomatic_pe > trimmomatic_se
-
+ruleorder: trimmomatic_shared_pe > trimmomatic_shared_se
+ruleorder: symlink_trim_pe > symlink_trim_se
 
 rule trimmomatic_shared_pe:
     """Deduplicated trimmomatic for paired-end reads."""

@@ -170,7 +170,7 @@ wildcard_constraints:
 
 include: "rules/download-references.smk"
 include: "rules/fastqc.smk"
-include: "rules/trim_single.smk"
+include: "rules/trimming.smk"
 include: "rules/star.smk"
 include: "rules/deseq2.smk"
 include: "rules/salmonTE.smk"

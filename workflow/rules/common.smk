@@ -1,7 +1,11 @@
 from pathlib import PosixPath
-from snakemake.utils import Struct
 import hashlib
 import json
+
+class Struct:
+    """A simple class to convert a dictionary into an object with attributes."""
+    def __init__(self, **entries):
+        self.__dict__.update(entries)
 
 filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
 filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)?(?P<gzipped>\.gz)?$"
@@ -131,7 +135,7 @@ def parse_filepath(filepath: PosixPath):
 
 # Global registries
 SAMPLE_HASHES = {}
-HASH_TO_PARAMS = {"trim": {}, "alignment": {}}
+HASH_TO_PARAMS = {"trim": {}, "alignment": {}, "starTE": {}, "markdup": {}}
 
 def get_sample_hash(serie, sample, step="alignment"):
     """Returns the pre-calculated hash for a given sample and step."""
@@ -265,6 +269,8 @@ def get_shared_starTE_path(starte_hash, sample, mode="random", suffix=""):
 def get_shared_markdup_path(markdup_hash, sample, suffix=""):
     """Returns the path to a shared markdup result."""
     return markdup_folder.joinpath("_shared", markdup_hash, f"{sample}{suffix}")
+
+def resolve_raw_read_path(serie: str, file_val: str) -> Path:
     """
     Resolves a raw read filename string from the sample sheet into an actual Path.
     - If absolute, returns it directly (testing common extensions if the exact path is missing).
