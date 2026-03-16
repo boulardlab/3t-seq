@@ -56,9 +56,6 @@ references_folder = data_folder.joinpath("references")
 tmp_folder = data_folder.joinpath("tmp")
 analysis_folder = data_folder.joinpath("analysis")
 
-# reads_folder is temporarily kept until we update the sample sheet parser to use absolute paths (Task 3)
-reads_folder = Path(config["globals"].get("reads_folder", "."))
-raw_reads_folder = reads_folder
 trim_reads_folder = data_folder.joinpath("trim")
 rdata_folder = analysis_folder.joinpath("rdata")
 pictures_folder = analysis_folder.joinpath("pictures")
@@ -122,6 +119,10 @@ for library in libraries:
 if not "selected_chromosomes" in config["genome"]:
     config["genome"]["selected_chromosomes"] = None
 
+# Default annotation_type to "ensembl" when using refgenie (label)
+if "label" in config["genome"] and "annotation_type" not in config["genome"]:
+    config["genome"]["annotation_type"] = "ensembl"
+
 validate_sample_sheets()
 
 ####################
@@ -131,8 +132,6 @@ validate_sample_sheets()
 ## These folders will be create at the beginning of the pipeline
 init_folders = [
     log_folder,
-    reads_folder,
-    raw_reads_folder,
     trim_reads_folder,
     multiqc_folder,
     alignments_folder,
