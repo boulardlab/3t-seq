@@ -129,42 +129,34 @@ def parse_filepath(filepath: PosixPath):
 def resolve_raw_read_path(serie: str, file_val: str) -> Path:
     """
     Resolves a raw read filename string from the sample sheet into an actual Path.
-    - If absolute, returns it if it exists.
-    - If relative, checks relative to CWD, then relative to raw_reads_folder / serie.
+    - If absolute, returns it directly (testing common extensions if the exact path is missing).
+    - If relative, resolves relative to the current working directory.
     - Tries common extensions if they are missing.
     """
     if pd.isna(file_val) or not file_val:
         return None
-        
+
     p = Path(file_val)
-    
+
     # Possible extensions if the user didn't provide one
     extensions = ["", ".fastq.gz", ".fq.gz", ".fastq", ".fq"]
-    
+
     # 1. Check if it's an absolute path
     if p.is_absolute():
         for ext in extensions:
             test_p = p.with_name(p.name + ext)
             if test_p.exists():
                 return test_p
-        # If absolute path doesn't exist, we still return it (validation will catch it later)
+        # If absolute path doesn't exist, return as-is so validation fails informatively
         return p
-        
-    # 2. Check if it's relative to the current working directory
+
+    # 2. Check relative to the current working directory
     for ext in extensions:
         test_p = p.with_name(p.name + ext)
         if test_p.exists():
             return test_p.resolve()
-            
-    # 3. Check if it's in the standard raw_reads_folder / serie structure (legacy support)
-    base_dir = raw_reads_folder.joinpath(serie)
-    if base_dir.exists():
-        for ext in extensions:
-            test_p = base_dir.joinpath(p.name + ext)
-            if test_p.exists():
-                return test_p.resolve()
-                
-    # If we can't find it, just return the path relative to CWD so that snakemake/validation fails informatively
+
+    # If we can't find it, return the CWD-resolved path so snakemake/validation fails informatively
     return p.resolve()
 
 

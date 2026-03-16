@@ -41,10 +41,6 @@ disable_TE_analysis: false
 disable_tRNA_analysis: false
 
 globals:
-  # Base path to the reads folder. 
-  # Used primarily as a fallback for resolving relative paths in sample sheets.
-  reads_folder: .
-
   # path to results folder
   results_folder: results/
 
@@ -53,18 +49,19 @@ genome:
   # To use built-in reference genomes automatically downloaded via Refgenie,
   # specify a supported label (e.g., mm10, hg38). 
   # This is MUTUALLY EXCLUSIVE with providing fasta_path and gtf_path below.
+  # When using a label, 'annotation_type' is optional and defaults to 'ensembl'.
   label: mm10
 
-  # annotation type
-  # can be ensembl, mgi, gencode
-  annotation_type: ensembl
-
-  # OR, to use your own local reference files, provide absolute paths.
+  # OR, to use your own local reference files, provide absolute paths AND annotation_type.
   # If specifying these, do NOT provide a 'label' above.
   # fasta_path: /path/to/my/local/genome.fa
   
   # URL or path to genome annotation file
   # gtf_path: /path/to/my/local/annotation.gtf
+
+  # Annotation type is required when using custom references
+  # can be ensembl, mgi, gencode
+  # annotation_type: ensembl
 
   # URL to gtRNAdb zip file
   gtrnadb_url: <GtRNADb bundle URL>
@@ -91,7 +88,7 @@ For each sample, you can provide paths in the `filename` (for single-end) or `fi
 
 These paths can be provided in several flexible formats:
 1. **Absolute Paths:** If an absolute path (e.g. `/data/my_experiment/reads/sample1_R1.fq.gz`) is provided, 3t-seq will use it directly.
-2. **Relative Paths:** If a relative path is provided, 3t-seq will first attempt to resolve it relative to the current working directory, and then fall back to looking inside `reads_folder / sequence_library_name` for legacy compatibility.
+2. **Relative Paths:** If a relative path is provided, 3t-seq will resolve it relative to the current working directory.
 
 *Note:* You do not need to provide the file extension (`.fastq.gz`, `.fq.gz`, etc.) if you don't want to. 3t-seq will automatically test standard fastq extensions if the exact path specified doesn't exist.
 
@@ -132,6 +129,9 @@ genome:
   
   # Provide an absolute path to your gtf:
   gtf_path: /path/to/references/custom-mm10.gtf
+  
+  # Explicitly specify the annotation type (required for custom references)
+  annotation_type: ensembl
   
   # Specify the target species for SalmonTE quantification (e.g. mm, hs, dr, dm):
   salmonte_species: mm

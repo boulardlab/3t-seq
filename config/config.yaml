@@ -19,7 +19,6 @@ tRNA_quantification:
     min_cov: 10
 
 globals:
-  reads_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/raw_sequencing_files
   results_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results
 
 genome:

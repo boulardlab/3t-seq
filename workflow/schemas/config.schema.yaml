@@ -9,9 +9,6 @@ properties:
       results_folder:
         type: string
         description: "Path to the main results folder where all pipeline outputs will be saved."
-      reads_folder:
-        type: string
-        description: "Path to the folder containing raw reads structure"
     required:
       - results_folder
     additionalProperties: false
@@ -71,10 +68,10 @@ properties:
           anyOf:
             - required: [fasta_path]
             - required: [gtf_path]
-      - required: [fasta_path, gtf_path]
+      - required: [fasta_path, gtf_path, annotation_type]
         not:
           required: [label]
-    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' (for custom genomes), but not a mix."
+    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' with 'annotation_type' (for custom genomes), but not a mix."
 required:
   - globals
   - sequencing_libraries
