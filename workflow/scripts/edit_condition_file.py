@@ -36,4 +36,4 @@ joined["condition"] = joined.apply(
 joined = joined.reset_index()
 
 out = joined[["SampleID", "condition"]]
-out.to_csv(serie_folder.joinpath("condition.csv"), index=False)
+out.to_csv(condition_file_path, index=False)
