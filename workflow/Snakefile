@@ -68,10 +68,7 @@ fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
 fastqc_star_folder = qc_folder.joinpath("star")
 
 multiqc_folder = qc_folder.joinpath("multiqc")
-multiqc_raw_folder = multiqc_folder.joinpath("raw")
-multiqc_trim_folder = multiqc_folder.joinpath("trim")
-multiqc_star_folder = multiqc_folder.joinpath("star")
-multiqc_markdup_folder = multiqc_folder.joinpath("markdup")
+
 
 alignments_folder = data_folder.joinpath("alignments")
 star_folder = alignments_folder.joinpath("star")
@@ -181,6 +178,7 @@ include: "rules/filter_bam.smk"
 include: "rules/picard_markdup.smk"
 include: "rules/make_bw.smk"
 include: "rules/coverage_tRNA.smk"
+include: "rules/multiqc.smk"
 
 
 rule all:

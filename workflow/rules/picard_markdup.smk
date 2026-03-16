@@ -60,33 +60,3 @@ rule fastqc_markdup:
         """
 
 
-rule multiqc_markdup:
-    input:
-        unpack(get_markdup_fastqc),
-    output:
-        report(
-            multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
-            category="MultiQC",
-            subcategory="Deduplicated alignments",
-            labels={"serie": "{serie}"},
-        ),
-    params:
-        fastqc_folder=fastqc_markdup_folder,
-        markdup_folder=markdup_folder,
-        multiqc_folder=multiqc_markdup_folder,
-    log:
-        log_folder.joinpath("multiqc-markdup", "multiqc-{serie}.log"),
-    threads: 1
-    resources:
-        runtime=20,
-        mem_mb=2048,
-    conda:
-        "../env/qc.yml"
-    shell:
-        """
-
-        set -e 
-
-        multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.markdup_folder}/{wildcards.serie} |& tee {log}
-
-        """

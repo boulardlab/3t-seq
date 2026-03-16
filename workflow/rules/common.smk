@@ -310,18 +310,78 @@ def set_salmonTE_genome():
     return salmon_label
 
 
-def get_multiqc_star_inputs(wildcards):
+def get_multiqc_inputs(wildcards):
+    """Returns all QC files across every pipeline stage for the consolidated multiqc rule."""
+    samples = get_samples_names(wildcards)
+    is_paired = wildcards.serie in library_names_paired
+
+    # --- Raw FastQC ---
+    if is_paired:
+        raw_fastqc = expand(
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
+            sample=samples,
+        ) + expand(
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            sample=samples,
+        )
+    else:
+        raw_fastqc = expand(
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
+            sample=samples,
+        )
+
+    # --- Trimmed FastQC + Trimmomatic stats ---
+    if is_paired:
+        trim_fastqc = expand(
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
+            sample=samples,
+        ) + expand(
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            sample=samples,
+        )
+    else:
+        trim_fastqc = expand(
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
+            sample=samples,
+        )
+
+    trimmomatic_stats = expand(
+        trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
+        sample=samples,
+    )
+
+    # --- STAR logs + post-alignment FastQC ---
+    star_logs = expand(
+        star_folder.joinpath(wildcards.serie, "{sample}.Log.final.out"),
+        sample=samples,
+    )
+    star_fastqc = expand(
+        fastqc_star_folder.joinpath(
+            wildcards.serie, "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
+        ),
+        sample=samples,
+    )
+
+    # --- Markdup stats + FastQC ---
+    markdup_stats = expand(
+        markdup_folder.joinpath(wildcards.serie, "{sample}.markdup.stats.txt"),
+        sample=samples,
+    )
+    markdup_fastqc = expand(
+        fastqc_markdup_folder.joinpath(
+            wildcards.serie, "{sample}.markdup_fastqc.zip"
+        ),
+        sample=samples,
+    )
+
     return {
-        "star_stats": expand(
-            star_folder.joinpath("{{serie}}/{sample}.Log.final.out"),
-            sample=get_samples_names(wildcards),
-        ),
-        "fastqc": expand(
-            fastqc_star_folder.joinpath(
-                "{{serie}}", "{sample}.Aligned.sortedByCoord.out_fastqc.zip"
-            ),
-            sample=get_samples_names(wildcards),
-        ),
+        "raw_fastqc": raw_fastqc,
+        "trim_fastqc": trim_fastqc,
+        "trimmomatic_stats": trimmomatic_stats,
+        "star_logs": star_logs,
+        "star_fastqc": star_fastqc,
+        "markdup_stats": markdup_stats,
+        "markdup_fastqc": markdup_fastqc,
         "sample_sheet": get_sample_sheet_path(wildcards),
     }
 
@@ -346,36 +406,8 @@ def get_trimmed_fastq(wildcards):
         )
 
 
-def get_multiqc_trim_inputs(wildcards):
-    s = wildcards.serie
-    if s in library_names_paired:
-        fastqcs = [
-            *expand(
-                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
-                sample=get_samples(wildcards),
-            ),
-            *expand(
-                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
-                sample=get_samples(wildcards),
-            ),
-        ]
-    else:
-        fastqcs = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
-            sample=get_samples(wildcards),
-        )
-
-    return {
-        "trimmomatic_stats": expand(
-            trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
-            sample=get_samples(wildcards),
-        ),
-        "fastqc": fastqcs,
-        "sample_sheet": get_sample_sheet_path(wildcards),
-    }
-
-
-def get_fastqc(wildcards):
+def get_fastqc_raw(wildcards):
+    """Returns raw fastqc zip paths; used as input tracker in fastqc_raw rules."""
     s = get_samples(wildcards)
     if wildcards.serie in library_names_single:
         fastqcs = expand(
@@ -383,7 +415,6 @@ def get_fastqc(wildcards):
             sample=s,
         )
     else:
-        # For paired-end, fastqc is explicitly run on m1 and m2, emitting _1_fastqc.zip and _2_fastqc.zip (from fastqc_raw_pe)
         fastqcs = expand(
             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
             sample=s,
@@ -391,29 +422,15 @@ def get_fastqc(wildcards):
             fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
             sample=s,
         )
-                
     return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}
 
 
 def build_rule_all_inputs(wildcards):
     ret = []
 
-    # MultiQC reports at different steps
+    # MultiQC reports
     ret += expand(
-        multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
-        serie=library_names_single + library_names_paired,
-    )
-
-    ret += expand(
-        multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
-        serie=library_names_single + library_names_paired,
-    )
-    ret += expand(
-        multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
-        serie=library_names_single + library_names_paired,
-    )
-    ret += expand(
-        multiqc_markdup_folder.joinpath("{serie}", "multiqc_report.html"),
+        multiqc_folder.joinpath("{serie}", "multiqc_report.html"),
         serie=library_names_single + library_names_paired,
     )
 

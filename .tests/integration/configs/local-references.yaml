@@ -17,7 +17,6 @@ disable_salmonTE_analysis: false
 disable_tRNA_analysis: false
 
 globals:
-  reads_folder: .tests/integration
   results_folder: results/
 
 genome:

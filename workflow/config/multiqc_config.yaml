@@ -1,0 +1,20 @@
+# Pipeline-level MultiQC configuration for 3t-seq
+no_version_check: true
+
+module_order:
+  - fastqc
+  - trimmomatic
+  - star
+  - picard
+
+fn_clean_exts:
+  - ".fastq.gz"
+  - ".fq.gz"
+  - "_1"
+  - "_2"
+  - ".Aligned.sortedByCoord.out"
+  - ".markdup"
+  - "_fastqc"
+  - ".summary"
+  - ".stats"
+  - ".Log.final.out"

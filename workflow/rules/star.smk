@@ -154,31 +154,3 @@ rule index_bam:
         """
 
 
-rule multiqc_star:
-    input:
-        unpack(get_multiqc_star_inputs),
-    output:
-        report(
-            multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
-            category="MultiQC",
-            subcategory="Alignment",
-            labels={"serie": "{serie}"},
-        ),
-    params:
-        fastqc_folder=fastqc_star_folder,
-        star_folder=star_folder,
-        multiqc_folder=multiqc_star_folder,
-    log:
-        log_folder.joinpath("multiqc-star", "multiqc-{serie}.log"),
-    threads: 1
-    resources:
-        runtime=10,
-        mem_mb=2048,
-    conda:
-        # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
-    shell:
-        """
-        set -e 
-        multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.star_folder}/{wildcards.serie} |& tee {log}
-        """

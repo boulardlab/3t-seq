@@ -146,33 +146,3 @@ rule fastqc_trim_pe:
         """
 
 
-rule multiqc_trim:
-    input:
-        unpack(get_multiqc_trim_inputs),
-    output:
-        report(
-            multiqc_trim_folder.joinpath("{serie}", "multiqc_report.html"),
-            category="MultiQC",
-            subcategory="Trimmed reads",
-            labels={"serie": "{serie}"},
-        ),
-    params:
-        fastqc_folder=fastqc_trim_folder,
-        reads_folder=trim_reads_folder,
-        multiqc_folder=multiqc_trim_folder,
-    log:
-        log_folder.joinpath("multiqc-trim", "multiqc-{serie}.log"),
-    conda:
-        "../env/qc.yml"
-    threads: 1
-    resources:
-        runtime=10,
-        mem_mb=2048,
-    shell:
-        """
-        set -e 
-        multiqc --fullnames --dirs --export -f \
-        -o {params.multiqc_folder}/{wildcards.serie} \
-        {params.reads_folder}/{wildcards.serie} \
-        {params.fastqc_folder}/{wildcards.serie} |& tee {log}
-        """
