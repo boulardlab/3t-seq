@@ -18,7 +18,7 @@ for F in ${snakemake_input}; do
 done
 
 python /opt/SalmonTE/SalmonTE.py quant \
---reference=${snakemake_params.reference_genome} \
---outpath=${snakemake_output.outfolder} \
+--reference=${snakemake_params[reference_genome]} \
+--outpath=${snakemake_output[outfolder]} \
 --num_threads=${snakemake_threads} $I |& \
 tee ${snakemake_log}
