@@ -2,14 +2,14 @@
 
 set -e
 
-T=$(mktemp -d -p ${snakemake_resources.tmpdir})
+T=$(mktemp -d -p ${snakemake_resources[tmpdir]})
 
 I=""
 for F in ${snakemake_input}; do
     BN=$(basename $F)
     if [[ $BN == *.gz ]]; then
-        O=$T/${{BN%.gz}}
-        O=${{O/txt/fq}}
+        O=$T/${BN%.gz}
+        O=${O/txt/fq}
         gunzip -c $F > $O
         I="$I $O"
     else

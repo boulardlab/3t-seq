@@ -36,7 +36,6 @@ rule salmonTE_quant:
         # 13/10/2020 available references: hs mm dr dm
         # https://github.com/LiuzLab/SalmonTE#running-the-quant-mode-to-collect-te-expressions
         reference_genome=lambda w: set_salmonTE_genome(),
-        tmpdir=tmp_folder,
     log:
         log_folder.joinpath("salmonTE/{serie}/quant.log"),
     container:
@@ -45,6 +44,7 @@ rule salmonTE_quant:
     resources:
         runtime=720,
         mem_mb=16000,
+        tmpdir=tmp_folder,
     script: "../scripts/salmonTE-quant.sh"
 
 
