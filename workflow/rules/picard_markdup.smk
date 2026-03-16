@@ -9,10 +9,10 @@ rule picard_markdup_shared:
             ".Aligned.sortedByCoord.out.bam"
         ),
     output:
-        bam=markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.bam"),
-        stats=markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.stats.txt"),
+        bam=protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.bam")) ,
+        stats=protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.stats.txt")),
     log:
-        markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.log"),
+        protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.log")),
     threads: 2
     resources:
         runtime=360,

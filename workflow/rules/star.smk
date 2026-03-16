@@ -40,7 +40,7 @@ rule star_shared:
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        multiext(
+        protected(multiext(
             str(star_folder.joinpath("_shared", "{align_hash}", "{sample}")),
             ".Aligned.sortedByCoord.out.bam",
             ".Aligned.toTranscriptome.out.bam",
@@ -51,7 +51,7 @@ rule star_shared:
             ".Signal.UniqueMultiple.str1.out.wig",
             ".Signal.UniqueMultiple.str2.out.wig",
             ".Log.final.out",
-        ),
+        )),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,

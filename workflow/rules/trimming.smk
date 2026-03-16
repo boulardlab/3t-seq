@@ -8,11 +8,11 @@ rule trimmomatic_shared_pe:
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
         )),
     output:
-        paired1=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.fastq.gz"),
-        paired2=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.fastq.gz"),
-        unpaired1=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.unpaired.fastq.gz"),
-        unpaired2=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.unpaired.fastq.gz"),
-        summary=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt"),
+        paired1=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.fastq.gz")),
+        paired2=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.fastq.gz")),
+        unpaired1=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.unpaired.fastq.gz")),
+        unpaired2=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.unpaired.fastq.gz")),
+        summary=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt")),
     params:
         lambda wildcards: get_params(
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 
@@ -71,8 +71,8 @@ rule trimmomatic_shared_se:
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
         ),
     output:
-        fastq=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.fastq.gz"),
-        summary=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt"),
+        fastq=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.fastq.gz")),
+        summary=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt")),
     params:
         lambda wildcards: get_params(
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 

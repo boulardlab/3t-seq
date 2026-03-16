@@ -4,8 +4,8 @@ rule starTE_shared_random:
         fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        bam=starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam"),
-        log=starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out"),
+        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam")),
+        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out")),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
@@ -163,8 +163,8 @@ rule starTE_shared_multihit:
         fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        bam=starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam"),
-        log=starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out"),
+        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam")),
+        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out")),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
