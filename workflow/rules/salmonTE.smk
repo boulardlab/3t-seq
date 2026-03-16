@@ -43,8 +43,7 @@ rule salmonTE_quant:
     threads: 8
     resources:
         runtime=720,
-        mem_mb=16000,
-        tmpdir=tmp_folder,
+        mem_mb=16000
     script: "../scripts/salmonTE-quant.sh"
 
 

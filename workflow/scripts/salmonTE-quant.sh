@@ -2,7 +2,7 @@
 
 set -e
 
-T=$(mktemp -d -p ${snakemake_resources[tmpdir]})
+T=$(mktemp -d -p $TMPDIR)
 
 I=""
 for F in ${snakemake_input}; do
