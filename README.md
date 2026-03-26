@@ -63,6 +63,14 @@ A `report.zip` archive will be generated in the current working directory. The a
 
 Adjust parameters in the `config.yaml` file to match your experimental setup. See `config/README.md` for further instructions.
 
+### Automatic Resource Allocation
+
+3t-seq automatically calculates the necessary computing resources (threads, memory, and runtime) based on the size of your input FASTQ files and the known requirements of tools like STAR and featureCounts.
+
+- **Memory**: STAR is allocated base memory for the genome index (~32GB for human/mouse) plus dynamic memory for sorting proportional to input size.
+- **Runtime**: Scaled linearly with the size of the compressed input reads.
+- **Threads**: Optimized for different pipeline stages (8 threads for alignment, 4 for quantification).
+
 ### Custom Genome References
 
 If you prefer to provide your own explicit FASTA and GTF reference files rather than having them downloaded automatically via Refgenie, you can omit the `label` parameter and provide `fasta_path` and `gtf_path` instead in `config.yaml`:

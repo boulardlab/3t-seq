@@ -1,3 +1,12 @@
+defaults:
+  strandedness: 0
+  starTE_random:
+    outFilterMultimapNmax: 5000
+    winAnchorMultimapNmax: 5000
+  starTE_multihit:
+    outFilterMultimapNmax: 1
+    winAnchorMultimapNmax: 5000
+
 sequencing_libraries:
   - name: GSE130735-subset
     protocol: pe

@@ -54,17 +54,16 @@ rule star_shared:
         )),
     threads: 8
     resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
+        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
         out_prefix=lambda wildcards: str(star_folder.joinpath("_shared", wildcards.align_hash, wildcards.sample)) + ".",
         tmp_folder=tmp_folder,
-        others=lambda wildcards: get_params(
+        params_others=lambda wildcards: get_params(
             Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash]), 
             "star", 
             default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
         ),
-        mem_bytes=giga_to_byte(32),
     conda:
         "../env/alignment.yml"
     shell:
@@ -83,14 +82,15 @@ rule star_shared:
          --readFilesCommand zcat \
          --outFileNamePrefix {params.out_prefix} \
          --readFilesIn {input.fastq} \
-         --limitBAMsortRAM {params.mem_bytes} \
+         --limitBAMsortRAM {resources.mem_mb} \
          --genomeLoad NoSharedMemory \
          --outSAMunmapped Within \
          --outReadsUnmapped FastX \
          --outBAMsortingThreadN {threads} \
          --bamRemoveDuplicatesType UniqueIdentical \
          --quantTranscriptomeBAMcompression -1 \
-         --outBAMcompression -1 --outWigType wiggle
+         --outBAMcompression -1 --outWigType wiggle \
+         {params.params_others}
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """

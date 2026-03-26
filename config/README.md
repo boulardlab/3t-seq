@@ -7,10 +7,21 @@ See below for an example config file with explanation of each option and descrip
 ```yaml
 # config/config.yaml
 
+# Global default parameters for all sequencing libraries.
+# These can be overridden at the library level.
+defaults:
+  strandedness: 0 # 0: unstranded, 1: stranded, 2: reversely stranded
+  starTE_random:
+    outFilterMultimapNmax: 5000
+    winAnchorMultimapNmax: 5000
+  starTE_multihit:
+    outFilterMultimapNmax: 1
+    winAnchorMultimapNmax: 5000
+
 # A list of sequencing libraries to process.
 # Each item in the list represents a distinct sequencing run or library batch, 
 # defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
-# Tool parameter overrides (trimmomatic, star, bamCoverage) are optional per-library 
+# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness) are optional per-library 
 # and will fall back to sensible defaults if omitted.
 sequencing_libraries:
   - name: GSE13073
@@ -28,6 +39,11 @@ sequencing_libraries:
       "--seedSearchStartLmax 30
        --outFilterMismatchNoverReadLmax 0.04
        --winAnchorMultimapNmax 40"
+    # Optional: overrides for starTE modes
+    starTE_random:
+      outFilterMultimapNmax: 10
+    # Optional: library-level strandedness override (0, 1, or 2)
+    strandedness: 1
     # Optional: overrides default parameters for bamCoverage
     bamCoverage: "--binSize 50 --normalizeUsing None"
 

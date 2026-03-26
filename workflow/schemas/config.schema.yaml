@@ -13,6 +13,32 @@ properties:
       - results_folder
     additionalProperties: false
     errorMessage: "Invalid globals configuration. Paths like qc_folder, log_folder, references_folder, tmp_folder, and analysis_folder are now automatically derived from results_folder and should be removed from the config file."
+  defaults:
+    type: object
+    description: "Global default parameters for all sequencing libraries."
+    properties:
+      strandedness:
+        type: integer
+        enum: [0, 1, 2]
+        description: "Library strandedness (0: unstranded, 1: stranded, 2: reversely stranded)."
+      starTE_random:
+        type: object
+        properties:
+          outFilterMultimapNmax:
+            type: integer
+          winAnchorMultimapNmax:
+            type: integer
+          alignTranscriptsPerWindowNmax:
+            type: integer
+      starTE_multihit:
+        type: object
+        properties:
+          outFilterMultimapNmax:
+            type: integer
+          winAnchorMultimapNmax:
+            type: integer
+          alignTranscriptsPerWindowNmax:
+            type: integer
   sequencing_libraries:
     type: array
     description: "List of sequencing libraries to process."
@@ -30,7 +56,17 @@ properties:
           description: "Optional custom Trimmomatic parameters."
         star:
           type: string
-          description: "Optional custom STAR aligner parameters."
+          description: "Optional custom STAR aligner parameters for single-copy genes."
+        starTE_random:
+          type: object
+          description: "Optional override for starTE random mode."
+        starTE_multihit:
+          type: object
+          description: "Optional override for starTE multihit mode."
+        strandedness:
+          type: integer
+          enum: [0, 1, 2]
+          description: "Library override for strandedness."
         bamCoverage:
           type: string
           description: "Optional custom bamCoverage parameters."

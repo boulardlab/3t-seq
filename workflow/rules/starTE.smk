@@ -8,13 +8,16 @@ rule starTE_shared_random:
         log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out")),
     threads: 8
     resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
+        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
         libtype=lambda wildcards: (
             "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
         ),
         out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "random", wildcards.sample)) + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "outFilterMultimapNmax", default=5000),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "winAnchorMultimapNmax", default=5000),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "alignTranscriptsPerWindowNmax", default=300),
     conda:
         "../env/alignment.yml"
     shell:
@@ -25,18 +28,18 @@ rule starTE_shared_random:
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
-            --outFilterMultimapNmax 5000 \
+            --outFilterMultimapNmax {params.outFilterMultimapNmax} \
             --outSAMmultNmax 1 \
             --outFilterMismatchNmax 3 \
             --outMultimapperOrder Random \
-            --winAnchorMultimapNmax 5000 \
+            --winAnchorMultimapNmax {params.winAnchorMultimapNmax} \
             --alignEndsType EndToEnd \
             --alignIntronMax 1 \
             --alignMatesGapMax 350 \
             --seedSearchStartLmax 30 \
             --alignTranscriptsPerReadNmax 30000 \
             --alignWindowsPerReadNmax 30000 \
-            --alignTranscriptsPerWindowNmax 300 \
+            --alignTranscriptsPerWindowNmax {params.alignTranscriptsPerWindowNmax} \
             --seedPerReadNmax 3000 \
             --seedPerWindowNmax 300 \
             --seedNoneLociPerWindow 1000 \
@@ -86,11 +89,13 @@ rule featureCounts_random:
     threads: 4
     resources:
         runtime=360,
-        mem_mb=16000,
+        mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
+    params:
+        strandedness=lambda wildcards: get_resolved_param(wildcards, "strandedness", default=0),
     shell:
         """
          set -e 
-         featureCounts -M -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
         """
 
 
@@ -167,13 +172,16 @@ rule starTE_shared_multihit:
         log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out")),
     threads: 8
     resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
+        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
         libtype=lambda wildcards: (
             "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
         ),
         out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "multihit", wildcards.sample)) + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "outFilterMultimapNmax", default=1),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "winAnchorMultimapNmax", default=5000),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax", default=3000),
     conda:
         "../env/alignment.yml"
     shell:
@@ -184,17 +192,17 @@ rule starTE_shared_multihit:
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
-            --outFilterMultimapNmax 1 \
+            --outFilterMultimapNmax {params.outFilterMultimapNmax} \
             --outFilterMismatchNmax 3 \
             --outMultimapperOrder Random \
-            --winAnchorMultimapNmax 5000 \
+            --winAnchorMultimapNmax {params.winAnchorMultimapNmax} \
             --alignEndsType EndToEnd \
             --alignIntronMax 1 \
             --alignMatesGapMax 350 \
             --seedSearchStartLmax 30 \
             --alignTranscriptsPerReadNmax 30000 \
             --alignWindowsPerReadNmax 30000 \
-            --alignTranscriptsPerWindowNmax 3000 \
+            --alignTranscriptsPerWindowNmax {params.alignTranscriptsPerWindowNmax} \
             --seedPerReadNmax 3000 \
             --seedPerWindowNmax 300 \
             --seedNoneLociPerWindow 1000 \
@@ -244,9 +252,11 @@ rule featureCounts_multihit:
     threads: 4
     resources:
         runtime=360,
-        mem_mb=16000,
+        mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
+    params:
+        strandedness=lambda wildcards: get_resolved_param(wildcards, "strandedness", default=0),
     shell:
         """
          set -e 
-         featureCounts -M --fraction -F GTF -T {threads} -s 0 -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
          """

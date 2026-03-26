@@ -2,6 +2,8 @@ from pathlib import PosixPath
 import hashlib
 import json
 
+from snakemake.io import Wildcards
+
 class Struct:
     """A simple class to convert a dictionary into an object with attributes."""
     def __init__(self, **entries):
@@ -120,6 +122,68 @@ def get_params(wildcards, key, default=""):
     return params
 
 
+def get_resolved_param(wildcards, key, nested_key=None, default=None):
+    """
+    Resolves a parameter by checking:
+    1. Library-specific override in config["sequencing_libraries"]
+    2. Global default in config["defaults"]
+    3. Provided default fallback
+    """
+    # 1. Library override
+    for lib in config.get("sequencing_libraries", []):
+        if lib["name"] == wildcards.serie:
+            val = lib.get(key)
+            if nested_key and isinstance(val, dict):
+                val = val.get(nested_key)
+            if val is not None:
+                return val
+
+    # 2. Global defaults
+    defaults = config.get("defaults", {})
+    val = defaults.get(key)
+    if nested_key and isinstance(val, dict):
+        val = val.get(nested_key)
+
+    if val is not None:
+        return val
+
+    return default
+
+
+def get_input_size_gb(input_files):
+    if isinstance(input_files, str):
+        input_files = [input_files]
+    total_bytes = 0
+    for f in input_files:
+        f_path = Path(f)
+        if f_path.exists():
+            total_bytes += f_path.stat().st_size
+    return total_bytes / (1024**3)
+
+
+def get_star_mem_mb(wildcards, input):
+    # Base memory for index (e.g., 32GB)
+    base_mem = 32000
+    # Extra memory based on input size (1GB of compressed FASTQ ~ 4GB RAM for sorting)
+    input_size_gb = get_input_size_gb(input)
+    sort_mem = max(5000, input_size_gb * 4000)
+    return int(base_mem + sort_mem)
+
+
+def get_star_runtime(wildcards, input, attempt):
+    input_size_gb = get_input_size_gb(input)
+    # 1 hour base + 1 hour per GB of compressed FASTQ
+    base_runtime = 60
+    scaling = input_size_gb * 60
+    return int((base_runtime + scaling) * attempt)
+
+
+def get_featurecounts_mem_mb(wildcards, input):
+    input_size_gb = get_input_size_gb(input)
+    # Base 4GB + 2GB per GB of input BAM (approximate)
+    return int(max(4000, input_size_gb * 2000))
+
+
 def get_sample_sheet(wildcards):
     """Returns path to sample sheet for current serie"""
     return get_params(wildcards, "sample_sheet")
@@ -174,6 +238,14 @@ def populate_sample_registry():
         trim_params = lib.get("trimmomatic", "default")
         star_params = lib.get("star", "default")
         
+        # New: Resolve starTE and strandedness for hashing
+        # We use empty wildcards here since we only care about the 'serie' (lib name)
+        w = Wildcards(fromdict={"serie": serie})
+        
+        lib_strandedness = get_resolved_param(w, "strandedness", default=0)
+        lib_starTE_random = get_resolved_param(w, "starTE_random", default={})
+        lib_starTE_multihit = get_resolved_param(w, "starTE_multihit", default={})
+
         for _, row in df.iterrows():
             sample_name = row["name"]
             
@@ -207,7 +279,10 @@ def populate_sample_registry():
             starte_data = {
                 "trim_hash": trim_hash,
                 "genome": genome_params,
-                "params": "starTE_v1_fixed" # Fixed params in starTE.smk
+                "strandedness": lib_strandedness,
+                "starTE_random": lib_starTE_random,
+                "starTE_multihit": lib_starTE_multihit,
+                "version": "v3_refined_modes"
             }
             starte_hash = calculate_content_hash(starte_data)
 
