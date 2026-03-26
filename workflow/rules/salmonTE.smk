@@ -69,4 +69,4 @@ rule salmonTE_test:
     resources:
         runtime=360,
         mem_mb=16000,
-    shell: "../scripts/salmonTE-test.sh"
+    script: "../scripts/salmonTE-test.sh"

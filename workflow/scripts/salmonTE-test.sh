@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 python /opt/SalmonTE/SalmonTE.py test \
-	--inpath=${snakemake_input.infolder} \
+	--inpath=${snakemake_input[infolder]} \
 	--outpath=${snakemake_output} \
 	--tabletype=csv \
 	--figtype=png \

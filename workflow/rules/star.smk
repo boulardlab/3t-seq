@@ -127,9 +127,10 @@ rule symlink_star:
         ),
     shell:
         """
+		set -x
         # Note: input is a list, output is a list. Iterate and link.
         for i in {{0..8}}; do
-            ln -sfr ${{input[$i]}} ${{output[$i]}}
+            ln -sfr {input[$i]} {output[$i]}
         done
         """
 
