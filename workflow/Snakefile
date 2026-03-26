@@ -164,7 +164,7 @@ wildcard_constraints:
     serie="|".join(library_names_single + library_names_paired),
     se_serie="|".join(library_names_single),
     pe_serie="|".join(library_names_paired),
-    method="multihit|random",
+    method="multihit|random|mimseq|standard",
     mate=r"_[MR][12](?:_sequence)?",
 
 

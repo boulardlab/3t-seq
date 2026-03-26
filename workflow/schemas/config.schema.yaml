@@ -62,16 +62,31 @@ properties:
         type: array
         items:
           type: string
-    oneOf:
+    anyOf:
       - required: [label]
-        not:
-          anyOf:
-            - required: [fasta_path]
-            - required: [gtf_path]
       - required: [fasta_path, gtf_path, annotation_type]
-        not:
-          required: [label]
-    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' with 'annotation_type' (for custom genomes), but not a mix."
+    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' with 'annotation_type' (for custom genomes)."
+  disable_TE_analysis:
+    type: boolean
+  disable_salmonTE_analysis:
+    type: boolean
+  disable_tRNA_analysis:
+    type: boolean
+  tRNA_quantification:
+    type: object
+    properties:
+      method:
+        type: string
+        enum: ["standard", "mim-tRNA-seq"]
+      mimseq_params:
+        type: object
+        properties:
+          max_mismatches:
+            type: number
+          cluster_identity:
+            type: number
+          min_cov:
+            type: integer
 required:
   - globals
   - sequencing_libraries

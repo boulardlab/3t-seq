@@ -541,7 +541,7 @@ def get_trimmed_fastq(wildcards):
                 wildcards.serie, "{0}_1.fastq.gz".format(wildcards.sample)
             ),
             trim_reads_folder.joinpath(
-                wildcards.serie, "{1}_2.fastq.gz".format(wildcards.sample)
+                wildcards.serie, "{0}_2.fastq.gz".format(wildcards.sample)
             ),
         ]
     else:
