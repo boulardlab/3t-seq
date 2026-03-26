@@ -129,14 +129,29 @@ def get_resolved_param(wildcards, key, nested_key=None, default=None):
     2. Global default in config["defaults"]
     3. Provided default fallback
     """
+    # Determine the library name (serie)
+    serie = getattr(wildcards, "serie", None)
+    
+    # Fallback to hash-based lookup if serie is missing
+    if serie is None:
+        starte_hash = getattr(wildcards, "starte_hash", None)
+        if starte_hash and starte_hash in HASH_TO_PARAMS["starTE"]:
+            serie = HASH_TO_PARAMS["starTE"][starte_hash].get("serie")
+        
+        if serie is None:
+            align_hash = getattr(wildcards, "align_hash", None)
+            if align_hash and align_hash in HASH_TO_PARAMS["alignment"]:
+                serie = HASH_TO_PARAMS["alignment"][align_hash].get("serie")
+
     # 1. Library override
-    for lib in config.get("sequencing_libraries", []):
-        if lib["name"] == wildcards.serie:
-            val = lib.get(key)
-            if nested_key and isinstance(val, dict):
-                val = val.get(nested_key)
-            if val is not None:
-                return val
+    if serie:
+        for lib in config.get("sequencing_libraries", []):
+            if lib["name"] == serie:
+                val = lib.get(key)
+                if nested_key and isinstance(val, dict):
+                    val = val.get(nested_key)
+                if val is not None:
+                    return val
 
     # 2. Global defaults
     defaults = config.get("defaults", {})
