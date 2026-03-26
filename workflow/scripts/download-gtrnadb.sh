@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
 
 set -euo pipefail
+set -x 
 
-echo "Download GtRNAdb" 2>&1 > "${snakemake_log}"
+# Redirect all output and stderr to the snakemake log file
+exec &> "${snakemake_log[0]}"
 
-mkdir -pv "${snakemake_params[output_dir]}"
-cd "${snakemake_params[output_dir]}"
+echo "Starting GtRNAdb download script..."
 
-F=$(basename "${snakemake_params[url]}")
+OUTPUT_DIR="${snakemake_params[output_dir]}"
+URL="${snakemake_params[url]}"
 
-wget --quiet "${snakemake_params[url]}"
+echo "Creating output directory: $OUTPUT_DIR"
+mkdir -pv "$OUTPUT_DIR"
 
-tar xvf "$F"
-sleep $(( $RANDOM % 10 + 2 ))
+F=$(basename "$URL")
+TARGET_FILE="$OUTPUT_DIR/$F"
+
+echo "Downloading GtRNAdb from $URL to $TARGET_FILE..."
+wget -O "$TARGET_FILE" "$URL"
+
+echo "Extracting $TARGET_FILE into $OUTPUT_DIR..."
+tar -xvf "$TARGET_FILE" -C "$OUTPUT_DIR"
+
+echo "Cleaning up downloaded archive $TARGET_FILE..."
+rm "$TARGET_FILE"
+
+echo "GtRNAdb download and extraction completed successfully."

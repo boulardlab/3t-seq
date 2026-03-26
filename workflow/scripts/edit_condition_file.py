@@ -1,13 +1,13 @@
 import pandas as pd
 from pathlib import Path
 
-serie_folder = Path(snakemake.input[0])
-sample_sheet_path = Path(snakemake.input[1])
+condition_file_path = Path(snakemake.input.condition_file)
+sample_sheet_path = Path(snakemake.input.sample_sheet)
 
 experimental_variable = snakemake.params.variable
 reference_level = snakemake.params.reference_level
 
-salmon_condition_sheet = pd.read_csv(serie_folder.joinpath("condition.csv"))
+salmon_condition_sheet = pd.read_csv(condition_file_path)
 salmon_condition_sheet = salmon_condition_sheet.set_index("SampleID")
 
 sample_sheet = pd.read_csv(sample_sheet_path)
@@ -36,4 +36,4 @@ joined["condition"] = joined.apply(
 joined = joined.reset_index()
 
 out = joined[["SampleID", "condition"]]
-out.to_csv(serie_folder.joinpath("condition.csv"), index=False)
+out.to_csv(condition_file_path, index=False)

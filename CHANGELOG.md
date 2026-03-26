@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **Auto-derive Results Subdirectories:** Internal pipeline folders (`qc`, `log`, `references`, `tmp`, `analysis`) are now automatically derived from `results_folder`, removing them from manual user configuration.
+* **Sensible Tool Defaults:** Complex parameters for `trimmomatic`, `star`, and `bamCoverage` are now natively embedded as sensible defaults and are entirely optional in the `config.yaml`.
+* **Enhanced Sample Sheet Parsing:** The pipeline now resolves input sequence paths directly via the `filename_1` and `filename_2` mappings in the sample sheet, enabling flexible filename variations and direct absolute path imports without requiring rigid directory restructuring. Includes pre-flight validation to catch missing files before launch.
+
 ## [1.1.0](https://github.com/boulardlab/3t-seq/compare/v1.0.1...v1.1.0) (2024-03-12)
 
 

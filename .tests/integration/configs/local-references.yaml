@@ -1,0 +1,40 @@
+sequencing_libraries:
+  - name: GSE130735-subset
+    protocol: pe
+    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
+    sample_sheet: sample-sheet.csv
+    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:15:10 SLIDINGWINDOW:8:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
+    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
+    bamCoverage: "--binSize 10 --normalizeUsing None"   
+    deseq2:
+      test: Wald
+      variable: genotype
+      reference_level: WT
+  
+
+disable_TE_analysis: false
+disable_salmonTE_analysis: false
+disable_tRNA_analysis: false
+
+globals:
+  results_folder: results/
+
+genome:
+  # Using local paths instead of refgenie label
+  fasta_path: /Users/francesco/scratch/3t-seq/ui-improvements/.tests/integration/references/GRCm38.primary_assembly.genome.chr19.fa
+  gtf_path: /Users/francesco/scratch/3t-seq/ui-improvements/.tests/integration/references/MGI.chr19.gff3
+  salmonte_species: mm
+
+  annotation_type: mgi
+  # URL to GtRNAdb files
+  gtrnadb_url: https://gtrnadb.org/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
+  
+  # for testing purpose, focus on chr19 only
+  selected_chromosomes:
+    - chr19
+
+deseq2:
+  working_directory: .
+  variable: genotype
+  test: Wald
+  reference_level: WT

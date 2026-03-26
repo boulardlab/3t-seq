@@ -2,14 +2,14 @@
 
 set -e
 
-T=$(mktemp -d -p ${snakemake_resources.tmpdir})
+T=$(mktemp -d -p $TMPDIR)
 
 I=""
 for F in ${snakemake_input}; do
     BN=$(basename $F)
     if [[ $BN == *.gz ]]; then
-        O=$T/${{BN%.gz}}
-        O=${{O/txt/fq}}
+        O=$T/${BN%.gz}
+        O=${O/txt/fq}
         gunzip -c $F > $O
         I="$I $O"
     else
@@ -18,7 +18,7 @@ for F in ${snakemake_input}; do
 done
 
 python /opt/SalmonTE/SalmonTE.py quant \
---reference=${snakemake_params.reference_genome} \
---outpath=${snakemake_output.outfolder} \
---num_threads=${snakemake_threads} $I |& \
+--reference=${snakemake_params[reference_genome]} \
+--outpath=${snakemake_output[outfolder]} \
+--num_threads=${snakemake[threads]} $I |& \
 tee ${snakemake_log}

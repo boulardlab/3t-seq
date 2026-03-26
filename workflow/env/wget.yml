@@ -1,7 +1,9 @@
 channels:
   - conda-forge
   - anaconda
+  - bioconda
 dependencies:
   - wget=1.21.4
   - gzip
   - openssl=3.3.0
+  - samtools=1.16.1

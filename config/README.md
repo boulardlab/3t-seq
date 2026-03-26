@@ -7,12 +7,15 @@ See below for an example config file with explanation of each option and descrip
 ```yaml
 # config/config.yaml
 
-# A list of datasets 
-# Every dataset is defined by a name, a path to a sample sheet, trimmomatic, star and bamCoverage options.
-# All these options are mandatory.
+# A list of sequencing libraries to process.
+# Each item in the list represents a distinct sequencing run or library batch, 
+# defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
+# Tool parameter overrides (trimmomatic, star, bamCoverage) are optional per-library 
+# and will fall back to sensible defaults if omitted.
 sequencing_libraries:
   - name: GSE13073
     sample_sheet: sample-sheet.csv
+    # Optional: overrides default parameters for trimmomatic
     trimmomatic: >-
       "ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
        SLIDINGWINDOW:20:22
@@ -20,17 +23,16 @@ sequencing_libraries:
        LEADING:22
        TRAILING:20
        MINLEN:75"
+    # Optional: overrides default parameters for star
     star: >-
       "--seedSearchStartLmax 30
        --outFilterMismatchNoverReadLmax 0.04
        --winAnchorMultimapNmax 40"
+    # Optional: overrides default parameters for bamCoverage
     bamCoverage: "--binSize 50 --normalizeUsing None"
 
 #   - name: ...
 #     sample_sheet: ...
-#     trimmomatic: ...
-#     star: ...
-#     bamCoverage: ...
 
 # Disable all functionalities related to TE analysis
 disable_TE_analysis: false
@@ -39,42 +41,27 @@ disable_TE_analysis: false
 disable_tRNA_analysis: false
 
 globals:
-  # path to reads folder 
-  # NB: ./GSE13073 is expected to exist
-  reads_folder: .
-
   # path to results folder
   results_folder: results/
 
-  # path to qc
-  qc_folder: results/qc
-
-  # path to log
-  log_folder: results/log
-
-  # path to references
-  references_folder: results/references
-
-  # temp folder
-  tmp_folder: /tmp
-
-  # path to analysis
-  analysis_folder: results/analysis
-
 # genome informations
 genome:
-  # genome label
+  # To use built-in reference genomes automatically downloaded via Refgenie,
+  # specify a supported label (e.g., mm10, hg38). 
+  # This is MUTUALLY EXCLUSIVE with providing fasta_path and gtf_path below.
+  # When using a label, 'annotation_type' is optional and defaults to 'ensembl'.
   label: mm10
 
-  # annotation type
-  # can be ensembl, mgi, gencode
-  annotation_type: ensembl
-
-  # URL or path to genome sequence
-  fasta_url: <Genome fasta URL>
+  # OR, to use your own local reference files, provide absolute paths AND annotation_type.
+  # If specifying these, do NOT provide a 'label' above.
+  # fasta_path: /path/to/my/local/genome.fa
   
   # URL or path to genome annotation file
-  gtf_url: <Genome annotation URL>
+  # gtf_path: /path/to/my/local/annotation.gtf
+
+  # Annotation type is required when using custom references
+  # can be ensembl, mgi, gencode
+  # annotation_type: ensembl
 
   # URL to gtRNAdb zip file
   gtrnadb_url: <GtRNADb bundle URL>
@@ -96,58 +83,58 @@ deseq2:
 
 ## How 3t-seq resolves reads paths
 
-The pipeline resolves reads paths starting from two bits of information:
-1. `reads_folder` in the `globals` sections
-2. The name of a library in `sequencing_libraries` list of objects
+The pipeline relies primarily on the paths provided in your sample sheet to locate input read files.
+For each sample, you can provide paths in the `filename` (for single-end) or `filename_1` and `filename_2` (for paired-end) columns.
 
-In the example configuration above, `reads_folder: .` and `sequencing_libraries[0].name: GSE13073`. These resolve to `./GSE13073`. It is crucial that **this folder exists before starting the pipeline**. This is because in this folder, the pipeline will look for input files.
+These paths can be provided in several flexible formats:
+1. **Absolute Paths:** If an absolute path (e.g. `/data/my_experiment/reads/sample1_R1.fq.gz`) is provided, 3t-seq will use it directly.
+2. **Relative Paths:** If a relative path is provided, 3t-seq will resolve it relative to the current working directory.
 
-Another example:
-```yaml
-sequencing_libraries:
-  - name: first-batch
-    sample_sheet: sample-sheet-first-batch.csv
-    # [...]
-  
-  - name: second-batch
-    sample_sheet: sample-sheet-second-batch.csv
-    # [...]
+*Note:* You do not need to provide the file extension (`.fastq.gz`, `.fq.gz`, etc.) if you don't want to. 3t-seq will automatically test standard fastq extensions if the exact path specified doesn't exist.
 
-globals:
-  reads_folder: reads
-  # [...]
+Because 3t-seq now relies on explicit paths in the sample sheet, **you do not need to rename your raw data files or move them into rigid directory structures**.
+
+### Sample Sheet Format
+
+The sample sheet is a CSV file. It must contain a `name` column representing the sample ID, and either:
+- A `filename` column for single-end libraries.
+- `filename_1` and `filename_2` columns for paired-end libraries.
+
+*Example (Absolute Paths):*
+```csv
+name,filename_1,filename_2,genotype
+sampleA,/data/raw/batch1/A_read1.fq.gz,/data/raw/batch1/A_read2.fq.gz,WT
+sampleB,/data/raw/batch1/B_read1.fq.gz,/data/raw/batch1/B_read2.fq.gz,KO
 ```
 
-In this scenario, 3t-seq will look for the `reads` folder and inside of it will look for two folders names `first-batch` and `second-batch`: `reads/first-batch` and `reads/second-batch`. If any of the two is not detected, the pipeline will fail.
+## Built-in Reference Genomes via Refgenie
 
-### Naming convetion
+3t-seq now natively integrates with **Refgenie** to automatically retrieve and manage standard reference genomes (like `mm10` or `hg38`). 
 
-Reads files need to have one of the following extensions: `fq`, `fq.gz`, `fastq`, `fastq.gz`. For a given sequencing library, the pipeline expects files to have the same extension.
+To use this feature, simply provide the `label` in your configuration's `genome` section and omit `fasta_path` and `gtf_path`. The pipeline will automatically fetch the FASTA and GTF files for that genome and symlink them into your results directory. 
 
-For paired-end reads, the two mates should have one of the following idenfiers **before** the extension: `(_1, _2)`, `(_R1, _R2)`, `(_1_sequence, _2_sequence)`.
+*Note: You do not need to configure or set the `$REFGENIE` environment variable on your system; the pipeline handles initialization underneath the hood at runtime.*
 
+## How to use custom local reference files
 
-## How to use local reference files
-
-The `references_folder` can be outside of `results_folder`. For instance:
-```yaml
-globals:
-  # [...]
-  # path to results folder
-  results_folder: results/
-
-  # path to references
-  references_folder: /path/to/references
-```
-
-This allows users to host their own reference files locally and set `genome` informations accordingly
+If you are working with a non-standard genome or prefer to use your own reference files, you can override the built-in profiles by removing the `label` property and providing absolute paths to your local `fasta_path` and `gtf_path`:
 
 ```yaml
 genome:
-  # [...]
-  # This will evaluate to /path/to/references/custom-mm10.fa.gz
-  fasta_url: custom-mm10.fa.gz
+  # Remove 'label' to prevent Refgenie lookups
+  # label: mm10
   
-  # This will evaluate to /path/to/references/custom-mm10.gtf.gz
-  gtf_url: custom-mm10.gtf.gz
+  # Provide an absolute path to your fasta:
+  fasta_path: /path/to/references/custom-mm10.fa
+  
+  # Provide an absolute path to your gtf:
+  gtf_path: /path/to/references/custom-mm10.gtf
+  
+  # Explicitly specify the annotation type (required for custom references)
+  annotation_type: ensembl
+  
+  # Specify the target species for SalmonTE quantification (e.g. mm, hs, dr, dm):
+  salmonte_species: mm
 ```
+
+These two approaches are mutually exclusive; the configuration validator will alert you if you mix a `label` with explicit `fasta_path` or `gtf_path` parameters.

@@ -10,7 +10,7 @@ import pandas as pd
 ## PIN SNAKEMAKE VERSION
 ##########################
 
-from snakemake.utils import min_version
+from snakemake.utils import min_version, validate
 
 min_version("7.21.0")
 
@@ -21,6 +21,7 @@ min_version("7.21.0")
 
 
 configfile: "config/config.yaml"
+validate(config, schema="schemas/config.schema.yaml")
 
 
 #############################
@@ -36,7 +37,7 @@ include: "rules/common.smk"
 ###########################
 
 
-containerized: "docker://ftabaro/rna-seq:1.3"
+containerized: "docker://ghcr.io/boulardlab/3t-seq:feature-ui-simplifications@sha256:98add65f115f5e9e752d824b95436ef75867afd038e05ec3545cb511dc3a6b04"
 
 
 #######################
@@ -46,17 +47,15 @@ containerized: "docker://ftabaro/rna-seq:1.3"
 
 date = datetime.now()
 timestamp = date.strftime("%Y-%m-%d")
-log_folder = Path(config["globals"]["log_folder"])
-log_folder = log_folder.joinpath(timestamp)
 
 data_folder = Path(config["globals"]["results_folder"])
-qc_folder = Path(config["globals"]["qc_folder"])
-reads_folder = Path(config["globals"]["reads_folder"])
-references_folder = Path(config["globals"]["references_folder"])
-tmp_folder = Path(config["globals"]["tmp_folder"])
-analysis_folder = Path(config["globals"]["analysis_folder"])
 
-raw_reads_folder = reads_folder
+log_folder = data_folder.joinpath("log", timestamp)
+qc_folder = data_folder.joinpath("qc")
+references_folder = data_folder.joinpath("references")
+tmp_folder = data_folder.joinpath("tmp")
+analysis_folder = data_folder.joinpath("analysis")
+
 trim_reads_folder = data_folder.joinpath("trim")
 rdata_folder = analysis_folder.joinpath("rdata")
 pictures_folder = analysis_folder.joinpath("pictures")
@@ -69,10 +68,7 @@ fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
 fastqc_star_folder = qc_folder.joinpath("star")
 
 multiqc_folder = qc_folder.joinpath("multiqc")
-multiqc_raw_folder = multiqc_folder.joinpath("raw")
-multiqc_trim_folder = multiqc_folder.joinpath("trim")
-multiqc_star_folder = multiqc_folder.joinpath("star")
-multiqc_markdup_folder = multiqc_folder.joinpath("markdup")
+
 
 alignments_folder = data_folder.joinpath("alignments")
 star_folder = alignments_folder.joinpath("star")
@@ -83,14 +79,21 @@ trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
 deseq2_working_directory = Path(config["deseq2"]["working_directory"])
 # deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
 
-## Generate paths for sequence data from links
-fasta_path = references_folder.joinpath(
-    get_filename(config["genome"]["fasta_url"], decompress=True)
-)
 
-gtf_path = references_folder.joinpath(
-    get_filename(config["genome"]["gtf_url"], decompress=True)
-)
+if "fasta_path" in config["genome"]:
+    ## Generate paths for sequence data from links
+    fasta_path = references_folder.joinpath(
+        get_filename(config["genome"]["fasta_path"], decompress=True)
+    )
+else:
+    fasta_path = references_folder.joinpath(config["genome"]["label"], "fasta.fa")
+
+if "gtf_path" in config["genome"]:
+    gtf_path = references_folder.joinpath(
+        get_filename(config["genome"]["gtf_path"], decompress=True)
+    )
+else:
+    gtf_path = references_folder.joinpath(config["genome"]["label"], "annotation.gtf")
 
 rmsk_folder = references_folder.joinpath("rmsk")
 tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
@@ -113,6 +116,13 @@ for library in libraries:
 if not "selected_chromosomes" in config["genome"]:
     config["genome"]["selected_chromosomes"] = None
 
+# Default annotation_type to "ensembl" when using refgenie (label)
+if "label" in config["genome"] and "annotation_type" not in config["genome"]:
+    config["genome"]["annotation_type"] = "ensembl"
+
+validate_sample_sheets()
+populate_sample_registry()
+
 ####################
 ## ONSTART BLOCK
 ####################
@@ -120,8 +130,6 @@ if not "selected_chromosomes" in config["genome"]:
 ## These folders will be create at the beginning of the pipeline
 init_folders = [
     log_folder,
-    reads_folder,
-    raw_reads_folder,
     trim_reads_folder,
     multiqc_folder,
     alignments_folder,
@@ -162,7 +170,7 @@ wildcard_constraints:
 
 include: "rules/download-references.smk"
 include: "rules/fastqc.smk"
-include: "rules/trim_single.smk"
+include: "rules/trimming.smk"
 include: "rules/star.smk"
 include: "rules/deseq2.smk"
 include: "rules/salmonTE.smk"
@@ -171,6 +179,7 @@ include: "rules/filter_bam.smk"
 include: "rules/picard_markdup.smk"
 include: "rules/make_bw.smk"
 include: "rules/coverage_tRNA.smk"
+include: "rules/multiqc.smk"
 
 
 rule all:

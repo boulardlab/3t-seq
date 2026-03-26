@@ -1,7 +1,7 @@
 channels:
+  - bioconda
   - conda-forge
   - r
-  - bioconda
 dependencies:
   - r-base=4.0.3
   - r-hexbin
@@ -17,9 +17,9 @@ dependencies:
   - r-knitr
   - r-rmarkdown
   - r-tidyverse
-  - bioconductor-deseq2
+  - bioconductor-deseq2=1.30.1
   - bioconductor-rtracklayer
-  - bioconductor-topgo
+  - bioconductor-topgo=2.42.0
   - bioconductor-vsn
   - bioconductor-apeglm
-  - bioconductor-reactomepa
+  - bioconductor-reactomepa=1.34.0

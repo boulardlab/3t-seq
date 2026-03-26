@@ -4,8 +4,8 @@ localrules:
 
 rule edit_condition_file:
     input:
-        data_folder.joinpath("salmonTE/quant/{serie}"),
-        get_sample_sheet,
+        condition_file=salmonTE_folder.joinpath("quant/{serie}/condition.csv"),
+        sample_sheet=get_sample_sheet,
     output:
         touch(data_folder.joinpath("salmonTE/quant/{serie}/edit_condition.done")),
     params:
@@ -43,7 +43,7 @@ rule salmonTE_quant:
     threads: 8
     resources:
         runtime=720,
-        mem_mb=16000,
+        mem_mb=16000
     script: "../scripts/salmonTE-quant.sh"
 
 

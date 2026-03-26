@@ -1,29 +1,26 @@
-rule starTE_random:
+rule starTE_shared_random:
+    """Deduplicated starTE alignment (random mode)."""
     input:
-        bam=get_star_input,
+        fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
+        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam")),
+        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out")),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
     params:
         libtype=lambda wildcards: (
-            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+            "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
         ),
-        alignments_folder=starTE_folder,
-    # shadow:
-    #     "full"
+        out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "random", wildcards.sample)) + ".",
     conda:
         "../env/alignment.yml"
-    log:
-        starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
     shell:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
-         sleep 10
          
          STAR \
             --outSAMtype BAM Unsorted \
@@ -48,11 +45,26 @@ rule starTE_random:
             --outTmpDir $TMP_FOLDER \
             --runThreadN {threads} \
             --genomeDir {input.star_index_folder} \
-            --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
-            --readFilesIn {input.bam} \
+            --outFileNamePrefix {params.out_prefix} \
+            --readFilesIn {input.fastq} \
             --limitBAMsortRAM {resources.mem_mb} \
             --outBAMcompression -1
+
+         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
+rule symlink_starTE_random:
+    input:
+        bam=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "random", ".Aligned.out.bam"),
+        log=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "random", ".Log.final.out"),
+    output:
+        bam=starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
+        log=starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.log} {output.log}
+        """
 
 
 rule featureCounts_random:
@@ -63,7 +75,7 @@ rule featureCounts_random:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
@@ -145,32 +157,29 @@ rule datavzrd_starTE_random:
         "v2.6.0/utils/datavzrd"
 
 
-rule starTE_multihit:
+rule starTE_shared_multihit:
+    """Deduplicated starTE alignment (multihit mode)."""
     input:
-        bam=get_star_input,
+        fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
         star_index_folder=references_folder.joinpath("STAR"),
+    output:
+        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam")),
+        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out")),
     threads: 8
     resources:
         runtime=lambda wildcards, attempt: 1440 * attempt,
         mem_mb=32000,
-    output:
-        starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
     params:
         libtype=lambda wildcards: (
-            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+            "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
         ),
-        alignments_folder=starTE_folder,
+        out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "multihit", wildcards.sample)) + ".",
     conda:
         "../env/alignment.yml"
-    # shadow:
-    #     "full"
-    log:
-        starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
     shell:
         """
          set -e 
          TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
-         sleep 10
                   
          STAR \
             --outSAMtype BAM Unsorted \
@@ -193,12 +202,27 @@ rule starTE_multihit:
             --runThreadN {threads} \
             --genomeDir {input.star_index_folder} \
             --readFilesCommand zcat \
-            --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/multihit/{wildcards.sample}. \
-            --readFilesIn {input.bam} \
+            --outFileNamePrefix {params.out_prefix} \
+            --readFilesIn {input.fastq} \
             --limitBAMsortRAM {resources.mem_mb} \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1
+
+         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
+rule symlink_starTE_multihit:
+    input:
+        bam=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "multihit", ".Aligned.out.bam"),
+        log=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "multihit", ".Log.final.out"),
+    output:
+        bam=starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
+        log=starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.log} {output.log}
+        """
 
 
 rule featureCounts_multihit:
@@ -209,7 +233,7 @@ rule featureCounts_multihit:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),

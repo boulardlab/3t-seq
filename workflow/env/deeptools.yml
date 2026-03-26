@@ -3,3 +3,5 @@ channels:
   - bioconda
 dependencies:
   - deeptools=3.5.1
+  - setuptools<81.0.0
+  - matplotlib<3.9
