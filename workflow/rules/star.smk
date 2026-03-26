@@ -82,7 +82,7 @@ rule star_shared:
          --readFilesCommand zcat \
          --outFileNamePrefix {params.out_prefix} \
          --readFilesIn {input.fastq} \
-         --limitBAMsortRAM {resources.mem_mb} \
+         --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
          --genomeLoad NoSharedMemory \
          --outSAMunmapped Within \
          --outReadsUnmapped FastX \

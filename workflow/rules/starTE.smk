@@ -50,7 +50,7 @@ rule starTE_shared_random:
             --genomeDir {input.star_index_folder} \
             --outFileNamePrefix {params.out_prefix} \
             --readFilesIn {input.fastq} \
-            --limitBAMsortRAM {resources.mem_mb} \
+            --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
             --outBAMcompression -1
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
@@ -212,7 +212,7 @@ rule starTE_shared_multihit:
             --readFilesCommand zcat \
             --outFileNamePrefix {params.out_prefix} \
             --readFilesIn {input.fastq} \
-            --limitBAMsortRAM {resources.mem_mb} \
+            --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1
 
