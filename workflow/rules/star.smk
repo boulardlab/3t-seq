@@ -127,15 +127,15 @@ rule symlink_star:
         ),
     shell:
         """
-        ln -sft {input[0]} {output[0]}
-        ln -sft {input[1]} {output[1]}
-        ln -sft {input[2]} {output[2]}
-        ln -sft {input[3]} {output[3]}
-        ln -sft {input[4]} {output[4]}
-        ln -sft {input[5]} {output[5]}
-        ln -sft {input[6]} {output[6]}
-        ln -sft {input[7]} {output[7]}
-        ln -sft {input[8]} {output[8]}
+        ln -sfr {input[0]} {output[0]}
+        ln -sfr {input[1]} {output[1]}
+        ln -sfr {input[2]} {output[2]}
+        ln -sfr {input[3]} {output[3]}
+        ln -sfr {input[4]} {output[4]}
+        ln -sfr {input[5]} {output[5]}
+        ln -sfr {input[6]} {output[6]}
+        ln -sfr {input[7]} {output[7]}
+        ln -sfr {input[8]} {output[8]}
         """
 
 
