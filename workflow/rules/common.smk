@@ -873,7 +873,5 @@ def validate_sample_sheets():
         raise WorkflowError(
             f"Validation failed: The following necessary input read files could not be found:{error_msg}"
         )
-
-
 # We don't call it here anymore because library_names_paired isn't populated until Snakefile line 110.
 # It is called from the Snakefile.
