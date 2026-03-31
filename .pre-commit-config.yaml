@@ -7,8 +7,8 @@ repos:
     hooks:
     -   id: snakemake-lint
         name: Snakemake Lint
-        # We run the validated lint command that uses the integration tests config
-        entry: snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --lint
+        # Use the pixi task for encapsulated execution
+        entry: pixi run lint
         language: system
         pass_filenames: false
         always_run: true
