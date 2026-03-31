@@ -1,0 +1,14 @@
+repos:
+-   repo: https://github.com/snakemake/snakefmt
+    rev: v0.11.4
+    hooks:
+    -   id: snakefmt
+-   repo: local
+    hooks:
+    -   id: snakemake-lint
+        name: Snakemake Lint
+        # We run the validated lint command that uses the integration tests config
+        entry: snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --lint
+        language: system
+        pass_filenames: false
+        always_run: true
