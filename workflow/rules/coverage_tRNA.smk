@@ -128,6 +128,7 @@ rule datavzrd_trna:
 
 # --- mim-tRNA-seq Rules --- #
 
+
 rule build_mimseq_index:
     input:
         genome_fasta=fasta_path,
@@ -140,7 +141,9 @@ rule build_mimseq_index:
         "../env/mim-trna-seq.yml"
     params:
         species="custom",
-        cluster_id=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("cluster_identity", 0.95),
+        cluster_id=lambda wildcards: config.get("tRNA_quantification", {})
+        .get("mimseq_params", {})
+        .get("cluster_identity", 0.95),
     threads: 4
     resources:
         runtime=120,
@@ -153,18 +156,25 @@ rule build_mimseq_index:
         mimseq --make-index --species {params.species} --genome {input.genome_fasta} --annotation {input.annotation} --out-dir {output.idx_dir} --threads {threads} --cluster-id {params.cluster_id} &> {log}
         """
 
+
 rule run_mimseq:
     input:
-        fastq=get_trimmed_fastq, # Depends on whether single or paired
+        fastq=get_trimmed_fastq,  # Depends on whether single or paired
         idx_dir=tRNA_annotation_dir.joinpath("mimseq_index"),
     output:
-        count_file=trna_coverage_folder.joinpath("mimseq_{serie}", "{sample}", "{sample}_cluster_counts.txt"),
+        count_file=trna_coverage_folder.joinpath(
+            "mimseq_{serie}", "{sample}", "{sample}_cluster_counts.txt"
+        ),
     conda:
         "../env/mim-trna-seq.yml"
     params:
         species="custom",
-        max_mismatches=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("max_mismatches", 0.1),
-        min_cov=lambda wildcards: config.get("tRNA_quantification", {}).get("mimseq_params", {}).get("min_cov", 10),
+        max_mismatches=lambda wildcards: config.get("tRNA_quantification", {})
+        .get("mimseq_params", {})
+        .get("max_mismatches", 0.1),
+        min_cov=lambda wildcards: config.get("tRNA_quantification", {})
+        .get("mimseq_params", {})
+        .get("min_cov", 10),
         out_dir=lambda wildcards, output: Path(output.count_file).parent,
     threads: 8
     resources:
@@ -180,6 +190,7 @@ rule run_mimseq:
         # but latest mimseq 1.3+ allows feeding standard FASTQs. We pass all FASTQs via {input.fastq} 
         mimseq --species {params.species} -i {input.idx_dir} -n {wildcards.sample} --max-mismatches {params.max_mismatches} --min-cov {params.min_cov} --threads {threads} --out-dir {params.out_dir} {input.fastq} &> {log}
         """
+
 
 rule format_mimseq_output:
     input:

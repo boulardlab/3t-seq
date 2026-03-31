@@ -31,6 +31,7 @@ rule fastqc_raw_se:
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
         """
 
+
 rule fastqc_raw_pe:
     wildcard_constraints:
         serie="|".join(

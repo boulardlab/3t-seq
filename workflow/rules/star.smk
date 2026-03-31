@@ -36,35 +36,44 @@ rule star_genome_preparation:
 rule star_shared:
     """Deduplicated STAR alignment."""
     input:
-        fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash])),
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash])
+        ),
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        protected(multiext(
-            str(star_folder.joinpath("_shared", "{align_hash}", "{sample}")),
-            ".Aligned.sortedByCoord.out.bam",
-            ".Aligned.toTranscriptome.out.bam",
-            ".ReadsPerGene.out.tab",
-            ".SJ.out.tab",
-            ".Signal.Unique.str1.out.wig",
-            ".Signal.Unique.str2.out.wig",
-            ".Signal.UniqueMultiple.str1.out.wig",
-            ".Signal.UniqueMultiple.str2.out.wig",
-            ".Log.final.out",
-        )),
+        protected(
+            multiext(
+                str(star_folder.joinpath("_shared", "{align_hash}", "{sample}")),
+                ".Aligned.sortedByCoord.out.bam",
+                ".Aligned.toTranscriptome.out.bam",
+                ".ReadsPerGene.out.tab",
+                ".SJ.out.tab",
+                ".Signal.Unique.str1.out.wig",
+                ".Signal.Unique.str2.out.wig",
+                ".Signal.UniqueMultiple.str1.out.wig",
+                ".Signal.UniqueMultiple.str2.out.wig",
+                ".Log.final.out",
+            )
+        ),
     log:
         log_folder.joinpath("star/{align_hash}/{sample}.log"),
     threads: 8
     resources:
-        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
         mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
-        out_prefix=lambda wildcards: str(star_folder.joinpath("_shared", wildcards.align_hash, wildcards.sample)) + ".",
+        out_prefix=lambda wildcards: str(
+            star_folder.joinpath("_shared", wildcards.align_hash, wildcards.sample)
+        )
+        + ".",
         tmp_folder=tmp_folder,
         params_others=lambda wildcards: get_params(
-            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash]), 
-            "star", 
-            default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
+            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash]),
+            "star",
+            default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40",
         ),
     conda:
         "../env/alignment.yml"
@@ -97,27 +106,70 @@ rule star_shared:
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
+
 rule symlink_star:
     """Links shared STAR results back to per-serie folders."""
     input:
-        bam=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Aligned.sortedByCoord.out.bam"),
-        transcriptome_bam=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Aligned.toTranscriptome.out.bam"),
-        gene_counts=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".ReadsPerGene.out.tab"),
-        sj=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".SJ.out.tab"),
-        wig1=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.Unique.str1.out.wig"),
-        wig2=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.Unique.str2.out.wig"),
-        wig1_mult=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.UniqueMultiple.str1.out.wig"),
-        wig2_mult=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.UniqueMultiple.str2.out.wig"),
-        log_final=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Log.final.out"),
+        bam=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Aligned.sortedByCoord.out.bam",
+        ),
+        transcriptome_bam=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Aligned.toTranscriptome.out.bam",
+        ),
+        gene_counts=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".ReadsPerGene.out.tab",
+        ),
+        sj=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".SJ.out.tab",
+        ),
+        wig1=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.Unique.str1.out.wig",
+        ),
+        wig2=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.Unique.str2.out.wig",
+        ),
+        wig1_mult=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.UniqueMultiple.str1.out.wig",
+        ),
+        wig2_mult=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.UniqueMultiple.str2.out.wig",
+        ),
+        log_final=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Log.final.out",
+        ),
     output:
         bam=star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
-        transcriptome_bam=star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
+        transcriptome_bam=star_folder.joinpath(
+            "{serie}/{sample}.Aligned.toTranscriptome.out.bam"
+        ),
         gene_counts=star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
         sj=star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
         wig1=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
         wig2=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
-        wig1_mult=star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
-        wig2_mult=star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
+        wig1_mult=star_folder.joinpath(
+            "{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"
+        ),
+        wig2_mult=star_folder.joinpath(
+            "{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"
+        ),
         log_final=star_folder.joinpath("{serie}/{sample}.Log.final.out"),
     log:
         log_folder.joinpath("symlink/star/{serie}/{sample}.log"),
@@ -189,5 +241,3 @@ rule index_bam:
         samtools index -@{threads} {input}
 
         """
-
-

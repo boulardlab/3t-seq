@@ -4,10 +4,13 @@ import json
 
 from snakemake.io import Wildcards
 
+
 class Struct:
     """A simple class to convert a dictionary into an object with attributes."""
+
     def __init__(self, **entries):
         self.__dict__.update(entries)
+
 
 filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
 filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)?(?P<gzipped>\.gz)?$"
@@ -131,13 +134,13 @@ def get_resolved_param(wildcards, key, nested_key=None, default=None):
     """
     # Determine the library name (serie)
     serie = getattr(wildcards, "serie", None)
-    
+
     # Fallback to hash-based lookup if serie is missing
     if serie is None:
         starte_hash = getattr(wildcards, "starte_hash", None)
         if starte_hash and starte_hash in HASH_TO_PARAMS["starTE"]:
             serie = HASH_TO_PARAMS["starTE"][starte_hash].get("serie")
-        
+
         if serie is None:
             align_hash = getattr(wildcards, "align_hash", None)
             if align_hash and align_hash in HASH_TO_PARAMS["alignment"]:
@@ -208,20 +211,28 @@ def get_raw_fasta(wildcards):
     if "fasta_path" in config["genome"]:
         return config["genome"]["fasta_path"]
     else:
-        return str(references_folder.joinpath(config["genome"]["label"], "raw_fasta.fa"))
+        return str(
+            references_folder.joinpath(config["genome"]["label"], "raw_fasta.fa")
+        )
 
 
 def get_raw_gtf(wildcards):
     if "gtf_path" in config["genome"]:
         return config["genome"]["gtf_path"]
     else:
-        return str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))
+        return str(
+            references_folder.joinpath(
+                config["genome"]["label"], "raw_annotation.gtf.gz"
+            )
+        )
 
 
 def get_mimseq_counts(wildcards):
     samples = get_samples_names(wildcards)
     return expand(
-        trna_coverage_folder.joinpath("mimseq_{{serie}}", "{sample}", "{sample}_cluster_counts.txt"),
+        trna_coverage_folder.joinpath(
+            "mimseq_{{serie}}", "{sample}", "{sample}_cluster_counts.txt"
+        ),
         sample=samples,
     )
 
@@ -237,7 +248,9 @@ def get_trimmomatic_adaptive_input(wildcards):
         # but have slightly different adaptive needs (though they shouldn't if the hash is correct).
         # Actually, samples with the same hash should have the same adaptive params if they are the same data.
         # But FastQC is sample-specific. So we use {sample} in the path.
-        return trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+        return trim_reads_folder.joinpath(
+            "_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json"
+        )
     return []
 
 
@@ -248,7 +261,9 @@ def get_trimmomatic_command(wildcards):
 
     # 1. Adaptive mode
     if isinstance(t_params, dict) and t_params.get("adaptive"):
-        adaptive_json = trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+        adaptive_json = trim_reads_folder.joinpath(
+            "_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json"
+        )
         with open(adaptive_json, "r") as f:
             data = json.load(f)
             return data["trimmomatic_params"]
@@ -275,14 +290,17 @@ def parse_filepath(filepath: PosixPath):
 SAMPLE_HASHES = {}
 HASH_TO_PARAMS = {"trim": {}, "alignment": {}, "starTE": {}, "markdup": {}}
 
+
 def get_sample_hash(serie, sample, step="alignment"):
     """Returns the pre-calculated hash for a given sample and step."""
     return SAMPLE_HASHES.get((serie, sample), {}).get(step, "unknown")
+
 
 def calculate_content_hash(data_dict):
     """Generates a stable hash from a dictionary of parameters/files."""
     encoded = json.dumps(data_dict, sort_keys=True).encode()
     return hashlib.sha256(encoded).hexdigest()[:16]
+
 
 def populate_sample_registry():
     """
@@ -290,7 +308,7 @@ def populate_sample_registry():
     for deduplication of trimming and alignment tasks.
     """
     global SAMPLE_HASHES, HASH_TO_PARAMS
-    
+
     genome_params = {
         "label": config["genome"].get("label"),
         "fasta": config["genome"].get("fasta_path"),
@@ -302,58 +320,52 @@ def populate_sample_registry():
         sheet_path = Path(lib["sample_sheet"])
         if not sheet_path.is_absolute():
             sheet_path = sheet_path.resolve()
-        
+
         if not sheet_path.exists():
             continue
-            
+
         df = pd.read_csv(sheet_path)
         is_paired = serie in library_names_paired
-        
+
         raw_trim_params = lib.get("trimmomatic", "default")
         if raw_trim_params == "adaptive":
             trim_params = {"adaptive": True}
         else:
             trim_params = raw_trim_params
-            
+
         star_params = lib.get("star", "default")
-        
+
         # New: Resolve starTE and strandedness for hashing
         # We use empty wildcards here since we only care about the 'serie' (lib name)
         w = Wildcards(fromdict={"serie": serie})
-        
+
         lib_strandedness = get_resolved_param(w, "strandedness", default=0)
         lib_starTE_random = get_resolved_param(w, "starTE_random", default={})
         lib_starTE_multihit = get_resolved_param(w, "starTE_multihit", default={})
 
         for _, row in df.iterrows():
             sample_name = row["name"]
-            
+
             # --- Trimming Hash ---
             if is_paired:
                 inputs = {
                     "f1": str(resolve_raw_read_path(serie, row.get("filename_1"))),
-                    "f2": str(resolve_raw_read_path(serie, row.get("filename_2")))
+                    "f2": str(resolve_raw_read_path(serie, row.get("filename_2"))),
                 }
             else:
-                inputs = {
-                    "f": str(resolve_raw_read_path(serie, row.get("filename")))
-                }
-            
-            trim_data = {
-                "inputs": inputs,
-                "params": trim_params,
-                "paired": is_paired
-            }
+                inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
+
+            trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
             trim_hash = calculate_content_hash(trim_data)
-            
+
             # --- Alignment Hash (STAR) ---
             align_data = {
                 "trim_hash": trim_hash,
                 "star_params": star_params,
-                "genome": genome_params
+                "genome": genome_params,
             }
             align_hash = calculate_content_hash(align_data)
-            
+
             # --- starTE Hash ---
             starte_data = {
                 "trim_hash": trim_hash,
@@ -361,22 +373,19 @@ def populate_sample_registry():
                 "strandedness": lib_strandedness,
                 "starTE_random": lib_starTE_random,
                 "starTE_multihit": lib_starTE_multihit,
-                "version": "v3_refined_modes"
+                "version": "v3_refined_modes",
             }
             starte_hash = calculate_content_hash(starte_data)
 
             # --- Markdup Hash ---
-            markdup_data = {
-                "align_hash": align_hash,
-                "params": "picard_v1_fixed"
-            }
+            markdup_data = {"align_hash": align_hash, "params": "picard_v1_fixed"}
             markdup_hash = calculate_content_hash(markdup_data)
 
             SAMPLE_HASHES[(serie, sample_name)] = {
                 "trim": trim_hash,
                 "alignment": align_hash,
                 "starTE": starte_hash,
-                "markdup": markdup_hash
+                "markdup": markdup_hash,
             }
 
             # --- Reverse Mappings ---
@@ -384,45 +393,52 @@ def populate_sample_registry():
                 HASH_TO_PARAMS["trim"][trim_hash] = {
                     "serie": serie,
                     "sample": sample_name,
-                    "paired": is_paired
+                    "paired": is_paired,
                 }
-            
+
             if align_hash not in HASH_TO_PARAMS["alignment"]:
                 HASH_TO_PARAMS["alignment"][align_hash] = {
                     "serie": serie,
                     "sample": sample_name,
-                    "trim_hash": trim_hash
+                    "trim_hash": trim_hash,
                 }
 
             if starte_hash not in HASH_TO_PARAMS["starTE"]:
                 HASH_TO_PARAMS["starTE"][starte_hash] = {
                     "serie": serie,
                     "sample": sample_name,
-                    "paired": is_paired
+                    "paired": is_paired,
                 }
-            
+
             if markdup_hash not in HASH_TO_PARAMS["markdup"]:
                 HASH_TO_PARAMS["markdup"][markdup_hash] = {
                     "serie": serie,
                     "sample": sample_name,
-                    "align_hash": align_hash
+                    "align_hash": align_hash,
                 }
+
 
 def get_shared_trim_path(trim_hash, sample, suffix=""):
     """Returns the path to a shared trimmed fastq."""
-    return trim_reads_folder.joinpath("_shared", trim_hash, f"{sample}{suffix}.fastq.gz")
+    return trim_reads_folder.joinpath(
+        "_shared", trim_hash, f"{sample}{suffix}.fastq.gz"
+    )
+
 
 def get_shared_star_path(align_hash, sample, suffix=""):
     """Returns the path to a shared alignment result."""
     return star_folder.joinpath("_shared", align_hash, f"{sample}{suffix}")
 
+
 def get_shared_starTE_path(starte_hash, sample, mode="random", suffix=""):
     """Returns the path to a shared starTE result."""
     return starTE_folder.joinpath("_shared", starte_hash, mode, f"{sample}{suffix}")
 
+
 def get_shared_markdup_path(markdup_hash, sample, suffix=""):
     """Returns the path to a shared markdup result."""
     return markdup_folder.joinpath("_shared", markdup_hash, f"{sample}{suffix}")
+
 
 def resolve_raw_read_path(serie: str, file_val: str) -> Path:
     """
@@ -461,39 +477,47 @@ def resolve_raw_read_path(serie: str, file_val: str) -> Path:
 def get_fastq_paired(wildcards):
     sample_sheet_path = get_sample_sheet_path(wildcards)
     sample_sheet = pd.read_csv(sample_sheet_path)
-    
+
     # Find the row for this sample
     row = sample_sheet[sample_sheet["name"] == wildcards.sample]
     if row.empty:
-        raise ValueError(f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}")
-        
+        raise ValueError(
+            f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}"
+        )
+
     row = row.iloc[0]
-    
+
     m1_path = resolve_raw_read_path(wildcards.serie, row.get("filename_1"))
     m2_path = resolve_raw_read_path(wildcards.serie, row.get("filename_2"))
-    
+
     if not m1_path or not m2_path:
-        raise ValueError(f"Missing 'filename_1' or 'filename_2' in sample sheet for paired-end sample {wildcards.sample}")
-        
+        raise ValueError(
+            f"Missing 'filename_1' or 'filename_2' in sample sheet for paired-end sample {wildcards.sample}"
+        )
+
     return {"m1": str(m1_path), "m2": str(m2_path)}
 
 
 def get_fastq(wildcards):
     sample_sheet_path = get_sample_sheet_path(wildcards)
     sample_sheet = pd.read_csv(sample_sheet_path)
-    
+
     # Find the row for this sample
     row = sample_sheet[sample_sheet["name"] == wildcards.sample]
     if row.empty:
-        raise ValueError(f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}")
-        
+        raise ValueError(
+            f"Sample {wildcards.sample} not found in sample sheet for serie {wildcards.serie}"
+        )
+
     row = row.iloc[0]
-    
+
     file_path = resolve_raw_read_path(wildcards.serie, row.get("filename"))
-    
+
     if not file_path:
-        raise ValueError(f"Missing 'filename' in sample sheet for single-end sample {wildcards.sample}")
-        
+        raise ValueError(
+            f"Missing 'filename' in sample sheet for single-end sample {wildcards.sample}"
+        )
+
     return str(file_path)
 
 
@@ -571,10 +595,10 @@ def get_markdup_fastqc(wildcards):
 def get_salmonTE_quant_input(wildcards):
     sample_sheet_path = get_sample_sheet_path(wildcards)
     sample_sheet = pd.read_csv(sample_sheet_path)
-    
+
     ret = []
     is_paired = wildcards.serie in library_names_paired
-    
+
     for _, row in sample_sheet.iterrows():
         if is_paired:
             m1_path = resolve_raw_read_path(wildcards.serie, row.get("filename_1"))
@@ -587,13 +611,15 @@ def get_salmonTE_quant_input(wildcards):
             file_path = resolve_raw_read_path(wildcards.serie, row.get("filename"))
             if file_path:
                 ret.append(file_path)
-                
+
     return ret
 
 
 def set_salmonTE_genome():
     # Allow explicit override if no label is present.
-    genome_label = config["genome"].get("salmonte_species", config["genome"].get("label", "custom"))[:2]
+    genome_label = config["genome"].get(
+        "salmonte_species", config["genome"].get("label", "custom")
+    )[:2]
     salmon_label = ""
     if genome_label == "mm":
         salmon_label = "mm"
@@ -604,7 +630,9 @@ def set_salmonTE_genome():
     elif genome_label == "dm":
         salmon_label = "dm"
     else:
-        raise ValueError(f'Unsupported genome label for salmonTE: {config["genome"].get("label", "custom")}. Provide `salmonte_species: mm/hg/dr/dm` in the config if using custom referenes.')
+        raise ValueError(
+            f'Unsupported genome label for salmonTE: {config["genome"].get("label", "custom")}. Provide `salmonte_species: mm/hg/dr/dm` in the config if using custom referenes.'
+        )
     return salmon_label
 
 
@@ -666,9 +694,7 @@ def get_multiqc_inputs(wildcards):
         sample=samples,
     )
     markdup_fastqc = expand(
-        fastqc_markdup_folder.joinpath(
-            wildcards.serie, "{sample}.markdup_fastqc.zip"
-        ),
+        fastqc_markdup_folder.joinpath(wildcards.serie, "{sample}.markdup_fastqc.zip"),
         sample=samples,
     )
 
@@ -766,7 +792,7 @@ def build_rule_all_inputs(wildcards):
     if not config["disable_tRNA_analysis"]:
         method = config.get("tRNA_quantification", {}).get("method", "standard")
         m_str = "mimseq" if method == "mim-tRNA-seq" else "standard"
-        
+
         ret += expand(
             trna_coverage_folder.joinpath("{serie}", f"tRNA_lfc_{m_str}.txt"),
             serie=library_names_paired + library_names_single,
@@ -775,7 +801,7 @@ def build_rule_all_inputs(wildcards):
             trna_coverage_folder.joinpath("{serie}", f"datavzrd_{m_str}"),
             serie=library_names_paired + library_names_single,
         )
-    
+
     # SalmonTE quantification
     if not config["disable_salmonTE_analysis"]:
         # SalmonTE quantification result
@@ -787,7 +813,7 @@ def build_rule_all_inputs(wildcards):
             data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
             pe_serie=library_names_paired,
         )
-        
+
     return ret
 
 
@@ -806,40 +832,48 @@ def validate_sample_sheets():
     """Validates that all specified raw reads files in sample sheets exist."""
     print("Validating sample sheets against filesystem...")
     missing_files = []
-    
+
     for lib in config.get("sequencing_libraries", []):
         serie = lib["name"]
         sheet_path = Path(lib["sample_sheet"])
         # If relative, it's relative to CWD
         if not sheet_path.is_absolute():
             sheet_path = sheet_path.resolve()
-        
+
         if not sheet_path.exists():
             missing_files.append(f"Sample sheet missing: {sheet_path}")
             continue
-            
+
         df = pd.read_csv(sheet_path)
-        
+
         is_paired = serie in library_names_paired
-        
+
         for _, row in df.iterrows():
             sample_name = row["name"]
             if is_paired:
                 m1 = resolve_raw_read_path(serie, row.get("filename_1"))
                 m2 = resolve_raw_read_path(serie, row.get("filename_2"))
                 if m1 is None or not Path(m1).exists():
-                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_1 ('{row.get('filename_1')}')")
+                    missing_files.append(
+                        f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_1 ('{row.get('filename_1')}')"
+                    )
                 if m2 is None or not Path(m2).exists():
-                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_2 ('{row.get('filename_2')}')")
+                    missing_files.append(
+                        f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename_2 ('{row.get('filename_2')}')"
+                    )
             else:
                 f = resolve_raw_read_path(serie, row.get("filename"))
                 if f is None or not Path(f).exists():
-                    missing_files.append(f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename ('{row.get('filename')}')")
-    
+                    missing_files.append(
+                        f"Serie '{serie}' / Sample '{sample_name}': Could not resolve filename ('{row.get('filename')}')"
+                    )
+
     if missing_files:
         error_msg = "\n" + "\n".join(missing_files)
-        raise WorkflowError(f"Validation failed: The following necessary input read files could not be found:{error_msg}")
+        raise WorkflowError(
+            f"Validation failed: The following necessary input read files could not be found:{error_msg}"
+        )
+
 
 # We don't call it here anymore because library_names_paired isn't populated until Snakefile line 110.
 # It is called from the Snakefile.
-

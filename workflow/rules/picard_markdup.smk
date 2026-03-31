@@ -4,13 +4,21 @@ rule picard_markdup_shared:
     """Deduplicated Picard MarkDuplicates."""
     input:
         lambda wildcards: get_shared_star_path(
-            HASH_TO_PARAMS["markdup"][wildcards.markdup_hash]["align_hash"], 
-            wildcards.sample, 
-            ".Aligned.sortedByCoord.out.bam"
+            HASH_TO_PARAMS["markdup"][wildcards.markdup_hash]["align_hash"],
+            wildcards.sample,
+            ".Aligned.sortedByCoord.out.bam",
         ),
     output:
-        bam=protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.bam")) ,
-        stats=protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.markdup.stats.txt")),
+        bam=protected(
+            markdup_folder.joinpath(
+                "_shared", "{markdup_hash}", "{sample}.markdup.bam"
+            )
+        ),
+        stats=protected(
+            markdup_folder.joinpath(
+                "_shared", "{markdup_hash}", "{sample}.markdup.stats.txt"
+            )
+        ),
     log:
         protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.log")),
     threads: 2
@@ -30,12 +38,25 @@ rule picard_markdup_shared:
         tee {log}
         """
 
+
 rule symlink_markdup:
     """Links shared markdup results back to per-serie folders."""
     input:
-        bam=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".markdup.bam"),
-        stats=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".markdup.stats.txt"),
-        log=lambda wildcards: get_shared_markdup_path(get_sample_hash(wildcards.serie, wildcards.sample, "markdup"), wildcards.sample, ".log"),
+        bam=lambda wildcards: get_shared_markdup_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "markdup"),
+            wildcards.sample,
+            ".markdup.bam",
+        ),
+        stats=lambda wildcards: get_shared_markdup_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "markdup"),
+            wildcards.sample,
+            ".markdup.stats.txt",
+        ),
+        log=lambda wildcards: get_shared_markdup_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "markdup"),
+            wildcards.sample,
+            ".log",
+        ),
     output:
         bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
         stats=markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
@@ -82,5 +103,3 @@ rule fastqc_markdup:
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.bam}
 
         """
-
-

@@ -43,8 +43,9 @@ rule salmonTE_quant:
     threads: 8
     resources:
         runtime=720,
-        mem_mb=16000
-    script: "../scripts/salmonTE-quant.sh"
+        mem_mb=16000,
+    script:
+        "../scripts/salmonTE-quant.sh"
 
 
 rule salmonTE_test:
@@ -69,4 +70,5 @@ rule salmonTE_test:
     resources:
         runtime=360,
         mem_mb=16000,
-    script: "../scripts/salmonTE-test.sh"
+    script:
+        "../scripts/salmonTE-test.sh"

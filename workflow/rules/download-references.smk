@@ -1,7 +1,10 @@
 if "label" in config["genome"]:
+
     rule refgenie_init:
         output:
-            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+            refgenie_cfg=str(
+                references_folder.joinpath("refgenie", "genome_config.yaml")
+            ),
         log:
             log_folder.joinpath("download/genome/refgenie_init.log"),
         conda:
@@ -17,18 +20,28 @@ if "label" in config["genome"]:
                 refgenie init -c $REFGENIE &> {log}
             fi
             """
-    
+
     rule refgenie_fetch_fasta:
         input:
-            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+            refgenie_cfg=str(
+                references_folder.joinpath("refgenie", "genome_config.yaml")
+            ),
         output:
-            fasta=temp(str(references_folder.joinpath(config["genome"]["label"], "raw_fasta.fa"))),
+            fasta=temp(
+                str(
+                    references_folder.joinpath(
+                        config["genome"]["label"], "raw_fasta.fa"
+                    )
+                )
+            ),
         params:
             genome_id=config["genome"]["label"],
         conda:
             "../env/refgenie.yml"
         log:
-            log_folder.joinpath("download/genome/{}_fasta.log".format(config["genome"]["label"])),
+            log_folder.joinpath(
+                "download/genome/{}_fasta.log".format(config["genome"]["label"])
+            ),
         threads: 1
         resources:
             runtime=60,
@@ -40,19 +53,29 @@ if "label" in config["genome"]:
             FASTA_REAL_PATH=$(refgenie seek {params.genome_id}/fasta)
             cp -L "$FASTA_REAL_PATH" "{output.fasta}"
             """
-    
+
     rule refgenie_fetch_gtf:
         input:
-            refgenie_cfg=str(references_folder.joinpath("refgenie", "genome_config.yaml")),
+            refgenie_cfg=str(
+                references_folder.joinpath("refgenie", "genome_config.yaml")
+            ),
         output:
-            gtf=temp(str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))),
+            gtf=temp(
+                str(
+                    references_folder.joinpath(
+                        config["genome"]["label"], "raw_annotation.gtf.gz"
+                    )
+                )
+            ),
         cache: True
         conda:
             "../env/refgenie.yml"
         params:
             genome_id=config["genome"]["label"],
         log:
-            log_folder.joinpath("download/genome/{}_gtf.log".format(config["genome"]["label"])),
+            log_folder.joinpath(
+                "download/genome/{}_gtf.log".format(config["genome"]["label"])
+            ),
         threads: 1
         resources:
             runtime=60,
@@ -68,11 +91,15 @@ if "label" in config["genome"]:
 
 rule format_fasta:
     input:
-        fasta=get_raw_fasta
+        fasta=get_raw_fasta,
     output:
         fasta=protected(str(fasta_path)),
     params:
-        selected_chrs=" ".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        selected_chrs=(
+            " ".join(config["genome"]["selected_chromosomes"])
+            if config["genome"]["selected_chromosomes"]
+            else ""
+        ),
     conda:
         "../env/samtools.yml"
     log:
@@ -84,15 +111,20 @@ rule format_fasta:
     script:
         "../scripts/format_fasta.sh"
 
+
 rule format_gtf:
     input:
-        gtf=get_raw_gtf
+        gtf=get_raw_gtf,
     output:
         gtf=protected(str(gtf_path)),
     conda:
         "../env/bash.yml"
     params:
-        selected_chrs=",".join(config["genome"]["selected_chromosomes"]) if config["genome"]["selected_chromosomes"] else "",
+        selected_chrs=(
+            ",".join(config["genome"]["selected_chromosomes"])
+            if config["genome"]["selected_chromosomes"]
+            else ""
+        ),
     log:
         log_folder.joinpath("download/genome/format_gtf.log"),
     threads: 1
@@ -103,12 +135,13 @@ rule format_gtf:
         "../scripts/format_gtf.sh"
 
 
-
 rule download_repeatmasker_annotation_file:
     output:
         protected(
             multiext(
-                str(rmsk_folder.joinpath(config["genome"].get("label", "custom"))), ".gtf", ".bed"
+                str(rmsk_folder.joinpath(config["genome"].get("label", "custom"))),
+                ".gtf",
+                ".bed",
             )
         ),
     cache: True
@@ -146,8 +179,12 @@ if config["genome"]["selected_chromosomes"]:
         output:
             temp(
                 multiext(
-                    str(gtrnadb_raw_dir.joinpath(config["genome"].get("label", "custom"))),
-                    *GTRNADB_EXTS
+                    str(
+                        gtrnadb_raw_dir.joinpath(
+                            config["genome"].get("label", "custom")
+                        )
+                    ),
+                    *GTRNADB_EXTS,
                 )
             ),
         cache: True
@@ -165,29 +202,38 @@ if config["genome"]["selected_chromosomes"]:
         input:
             multiext(
                 str(gtrnadb_raw_dir.joinpath(config["genome"].get("label", "custom"))),
-                *GTRNADB_EXTS
-            )
+                *GTRNADB_EXTS,
+            ),
         output:
             protected(
                 multiext(
-                    str(tRNA_annotation_dir.joinpath(config["genome"].get("label", "custom"))),
-                    *GTRNADB_EXTS
+                    str(
+                        tRNA_annotation_dir.joinpath(
+                            config["genome"].get("label", "custom")
+                        )
+                    ),
+                    *GTRNADB_EXTS,
                 )
-            )
+            ),
         params:
-            selected_chromosomes=config["genome"]["selected_chromosomes"]
+            selected_chromosomes=config["genome"]["selected_chromosomes"],
         log:
             log_folder.joinpath("download/genome/filter_gtrnadb.log"),
         script:
             "../scripts/filter_gtrnadb.py"
 
 else:
+
     rule download_gtRNAdb:
         output:
             protected(
                 multiext(
-                    str(tRNA_annotation_dir.joinpath(config["genome"].get("label", "custom"))),
-                    *GTRNADB_EXTS
+                    str(
+                        tRNA_annotation_dir.joinpath(
+                            config["genome"].get("label", "custom")
+                        )
+                    ),
+                    *GTRNADB_EXTS,
                 )
             ),
         cache: True

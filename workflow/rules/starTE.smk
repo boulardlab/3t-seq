@@ -1,25 +1,50 @@
 rule starTE_shared_random:
     """Deduplicated starTE alignment (random mode)."""
     input:
-        fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+        ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam")),
-        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out")),
+        bam=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam"
+            )
+        ),
+        log=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "random", "{sample}.Log.final.out"
+            )
+        ),
     log:
         log_folder.joinpath("starTE/random/{starte_hash}/{sample}.log"),
     threads: 8
     resources:
-        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
         mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
         libtype=lambda wildcards: (
-            "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
+            "SINGLE"
+            if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False
+            else "PAIRED"
         ),
-        out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "random", wildcards.sample)) + ".",
-        outFilterMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "outFilterMultimapNmax", default=5000),
-        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "winAnchorMultimapNmax", default=5000),
-        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_random", "alignTranscriptsPerWindowNmax", default=300),
+        out_prefix=lambda wildcards: str(
+            starTE_folder.joinpath(
+                "_shared", wildcards.starte_hash, "random", wildcards.sample
+            )
+        )
+        + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "outFilterMultimapNmax", default=5000
+        ),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "winAnchorMultimapNmax", default=5000
+        ),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "alignTranscriptsPerWindowNmax", default=300
+        ),
     conda:
         "../env/alignment.yml"
     shell:
@@ -58,10 +83,21 @@ rule starTE_shared_random:
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
+
 rule symlink_starTE_random:
     input:
-        bam=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "random", ".Aligned.out.bam"),
-        log=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "random", ".Log.final.out"),
+        bam=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "random",
+            ".Aligned.out.bam",
+        ),
+        log=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "random",
+            ".Log.final.out",
+        ),
     output:
         bam=starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
         log=starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
@@ -95,7 +131,9 @@ rule featureCounts_random:
         runtime=360,
         mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
     params:
-        strandedness=lambda wildcards: get_resolved_param(wildcards, "strandedness", default=0),
+        strandedness=lambda wildcards: get_resolved_param(
+            wildcards, "strandedness", default=0
+        ),
     shell:
         """
          set -e 
@@ -169,25 +207,50 @@ rule datavzrd_starTE_random:
 rule starTE_shared_multihit:
     """Deduplicated starTE alignment (multihit mode)."""
     input:
-        fastq=lambda wildcards: get_star_input(Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])),
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+        ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam")),
-        log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out")),
+        bam=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam"
+            )
+        ),
+        log=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out"
+            )
+        ),
     log:
         log_folder.joinpath("starTE/multihit/{starte_hash}/{sample}.log"),
     threads: 8
     resources:
-        runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
         mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
     params:
         libtype=lambda wildcards: (
-            "SINGLE" if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False else "PAIRED"
+            "SINGLE"
+            if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False
+            else "PAIRED"
         ),
-        out_prefix=lambda wildcards: str(starTE_folder.joinpath("_shared", wildcards.starte_hash, "multihit", wildcards.sample)) + ".",
-        outFilterMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "outFilterMultimapNmax", default=1),
-        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "winAnchorMultimapNmax", default=5000),
-        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax", default=3000),
+        out_prefix=lambda wildcards: str(
+            starTE_folder.joinpath(
+                "_shared", wildcards.starte_hash, "multihit", wildcards.sample
+            )
+        )
+        + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "outFilterMultimapNmax", default=1
+        ),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "winAnchorMultimapNmax", default=5000
+        ),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax", default=3000
+        ),
     conda:
         "../env/alignment.yml"
     shell:
@@ -225,10 +288,21 @@ rule starTE_shared_multihit:
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
 
+
 rule symlink_starTE_multihit:
     input:
-        bam=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "multihit", ".Aligned.out.bam"),
-        log=lambda wildcards: get_shared_starTE_path(get_sample_hash(wildcards.serie, wildcards.sample, "starTE"), wildcards.sample, "multihit", ".Log.final.out"),
+        bam=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "multihit",
+            ".Aligned.out.bam",
+        ),
+        log=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "multihit",
+            ".Log.final.out",
+        ),
     output:
         bam=starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
         log=starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
@@ -262,7 +336,9 @@ rule featureCounts_multihit:
         runtime=360,
         mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
     params:
-        strandedness=lambda wildcards: get_resolved_param(wildcards, "strandedness", default=0),
+        strandedness=lambda wildcards: get_resolved_param(
+            wildcards, "strandedness", default=0
+        ),
     shell:
         """
          set -e 
