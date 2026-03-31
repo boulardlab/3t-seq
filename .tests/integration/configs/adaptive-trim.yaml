@@ -1,20 +1,14 @@
-defaults:
-  strandedness: 0
-  starTE_random:
-    outFilterMultimapNmax: 5000
-    winAnchorMultimapNmax: 5000
-  starTE_multihit:
-    outFilterMultimapNmax: 1
-    winAnchorMultimapNmax: 5000
-
 sequencing_libraries:
   - name: GSE130735-subset
     protocol: pe
-    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
+    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE  
     sample_sheet: sample-sheet.csv
-    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:15:10 SLIDINGWINDOW:8:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
+    # Adaptive trimming mode
+    trimmomatic:
+      adaptive: true
+      extra_params: "LEADING:3 TRAILING:3"
     star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 10 --normalizeUsing None"   
+    bamCoverage: "--binSize 10 --normalizeUsing None"
     deseq2:
       test: Wald
       variable: genotype
@@ -29,12 +23,10 @@ globals:
   results_folder: results/
 
 genome:
-  # Using local paths instead of refgenie label
-  fasta_path: references/GRCm38.primary_assembly.genome.chr19.fa
-  gtf_path: references/MGI.chr19.gff3
-  salmonte_species: mm
-
+  label: mm10
   annotation_type: mgi
+  # Refgenie will automatically fetch mm10 assets.
+
   # URL to GtRNAdb files
   gtrnadb_url: https://gtrnadb.org/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
   

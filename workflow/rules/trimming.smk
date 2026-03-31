@@ -1,12 +1,68 @@
 ruleorder: trimmomatic_shared_pe > trimmomatic_shared_se
 ruleorder: symlink_trim_pe > symlink_trim_se
 
+def get_trimmomatic_adaptive_input(wildcards):
+    """Returns the adaptive params JSON if adaptive trimming is enabled."""
+    if wildcards.trim_hash not in HASH_TO_PARAMS["trim"]:
+        return []
+    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
+    t_params = params.get("params", {})
+    if isinstance(t_params, dict) and t_params.get("adaptive"):
+        # We use a path that includes the sample name to avoid collisions if multiple samples share a hash
+        # but have slightly different adaptive needs (though they shouldn't if the hash is correct).
+        # Actually, samples with the same hash should have the same adaptive params if they are the same data.
+        # But FastQC is sample-specific. So we use {sample} in the path.
+        return trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+    return []
+
+def get_trimmomatic_command(wildcards):
+    """Dynamic derivation of the trimmomatic command string."""
+    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
+    t_params = params.get("params", {})
+    
+    # 1. Adaptive mode
+    if isinstance(t_params, dict) and t_params.get("adaptive"):
+        adaptive_json = trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+        with open(adaptive_json, 'r') as f:
+            data = json.load(f)
+            return data["trimmomatic_params"]
+    
+    # 2. Fixed string mode (explicit)
+    if isinstance(t_params, str) and t_params != "default":
+        return t_params
+        
+    # 3. Default fallback
+    is_paired = params.get("paired", False)
+    suffix = "PE" if is_paired else "SE"
+    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
+
+rule derive_trim_params:
+    """Derives adaptive trimming parameters from FastQC results."""
+    input:
+        fastqc=lambda wildcards: get_fastqc_raw(Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]))["fastqc"]
+    output:
+        json=trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.adaptive_params.json")
+    params:
+        is_paired_flag=lambda wildcards: "--is-paired" if HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("paired", False) else "",
+        extra_params=lambda wildcards: HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("params", {}).get("extra_params", "") if isinstance(HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("params"), dict) else ""
+    conda:
+        "../env/qc.yml"
+    shell:
+        """
+        python workflow/scripts/derive_trim_params.py \
+            --fastqc {input.fastqc} \
+            {params.is_paired_flag} \
+            --extra-params "{params.extra_params}" \
+            --output {output.json}
+        """
+
 rule trimmomatic_shared_pe:
     """Deduplicated trimmomatic for paired-end reads."""
     input:
-        unpack(lambda wildcards: get_fastq_paired(
+        reads=unpack(lambda wildcards: get_fastq_paired(
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
         )),
+        adaptive=get_trimmomatic_adaptive_input
     output:
         paired1=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_1.fastq.gz")),
         paired2=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.fastq.gz")),
@@ -14,11 +70,7 @@ rule trimmomatic_shared_pe:
         unpaired2=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}_2.unpaired.fastq.gz")),
         summary=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt")),
     params:
-        lambda wildcards: get_params(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 
-            "trimmomatic", 
-            default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
-        ),
+        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards)
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: 240 * attempt,
@@ -35,7 +87,7 @@ rule trimmomatic_shared_pe:
         {input.m1} {input.m2} \
         {output.paired1} {output.unpaired1} \
         {output.paired2} {output.unpaired2} \
-        {params} |& tee {log}
+        {params.trimmomatic_cmd} |& tee {log}
         """
 
 rule symlink_trim_pe:
@@ -67,18 +119,15 @@ rule symlink_trim_pe:
 rule trimmomatic_shared_se:
     """Deduplicated trimmomatic for single-end reads."""
     input:
-        lambda wildcards: get_fastq(
+        reads=lambda wildcards: get_fastq(
             Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
         ),
+        adaptive=get_trimmomatic_adaptive_input
     output:
         fastq=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.fastq.gz")),
         summary=protected(trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.summary.txt")),
     params:
-        lambda wildcards: get_params(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash]), 
-            "trimmomatic", 
-            default="ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-SE.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
-        ),
+        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards)
     threads: 4
     resources:
         runtime=lambda wildcards, attempt: 180 * attempt,
@@ -92,9 +141,9 @@ rule trimmomatic_shared_se:
         trimmomatic SE \
         -threads {threads} -trimlog {log} \
         -summary {output.summary} \
-        {input} \
+        {input.reads} \
         {output.fastq} \
-        {params} |& tee {log}
+        {params.trimmomatic_cmd} |& tee {log}
         """
 
 rule symlink_trim_se:

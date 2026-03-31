@@ -52,8 +52,17 @@ properties:
           type: string
           description: "Path to the sample sheet CSV file."
         trimmomatic:
-          type: string
-          description: "Optional custom Trimmomatic parameters."
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                adaptive:
+                  type: boolean
+                  default: false
+                extra_params:
+                  type: string
+              additionalProperties: false
+          description: "Optional custom Trimmomatic parameters (fixed string or adaptive object)."
         star:
           type: string
           description: "Optional custom STAR aligner parameters for single-copy genes."

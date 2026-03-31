@@ -250,7 +250,12 @@ def populate_sample_registry():
         df = pd.read_csv(sheet_path)
         is_paired = serie in library_names_paired
         
-        trim_params = lib.get("trimmomatic", "default")
+        raw_trim_params = lib.get("trimmomatic", "default")
+        if raw_trim_params == "adaptive":
+            trim_params = {"adaptive": True}
+        else:
+            trim_params = raw_trim_params
+            
         star_params = lib.get("star", "default")
         
         # New: Resolve starTE and strandedness for hashing
