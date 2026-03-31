@@ -52,6 +52,8 @@ rule star_shared:
             ".Signal.UniqueMultiple.str2.out.wig",
             ".Log.final.out",
         )),
+    log:
+        log_folder.joinpath("star/{align_hash}/{sample}.log"),
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
@@ -98,44 +100,38 @@ rule star_shared:
 rule symlink_star:
     """Links shared STAR results back to per-serie folders."""
     input:
-        lambda wildcards: expand(
-            str(star_folder.joinpath("_shared", get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample)) + "{ext}",
-            ext=[
-                ".Aligned.sortedByCoord.out.bam",
-                ".Aligned.toTranscriptome.out.bam",
-                ".ReadsPerGene.out.tab",
-                ".SJ.out.tab",
-                ".Signal.Unique.str1.out.wig",
-                ".Signal.Unique.str2.out.wig",
-                ".Signal.UniqueMultiple.str1.out.wig",
-                ".Signal.UniqueMultiple.str2.out.wig",
-                ".Log.final.out",
-            ]
-        )
+        bam=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Aligned.sortedByCoord.out.bam"),
+        transcriptome_bam=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Aligned.toTranscriptome.out.bam"),
+        gene_counts=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".ReadsPerGene.out.tab"),
+        sj=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".SJ.out.tab"),
+        wig1=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.Unique.str1.out.wig"),
+        wig2=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.Unique.str2.out.wig"),
+        wig1_mult=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.UniqueMultiple.str1.out.wig"),
+        wig2_mult=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Signal.UniqueMultiple.str2.out.wig"),
+        log_final=lambda wildcards: get_shared_star_path(get_sample_hash(wildcards.serie, wildcards.sample, "alignment"), wildcards.sample, ".Log.final.out"),
     output:
-        multiext(
-            str(star_folder.joinpath("{serie}", "{sample}")),
-            ".Aligned.sortedByCoord.out.bam",
-            ".Aligned.toTranscriptome.out.bam",
-            ".ReadsPerGene.out.tab",
-            ".SJ.out.tab",
-            ".Signal.Unique.str1.out.wig",
-            ".Signal.Unique.str2.out.wig",
-            ".Signal.UniqueMultiple.str1.out.wig",
-            ".Signal.UniqueMultiple.str2.out.wig",
-            ".Log.final.out",
-        ),
+        bam=star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        transcriptome_bam=star_folder.joinpath("{serie}/{sample}.Aligned.toTranscriptome.out.bam"),
+        gene_counts=star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
+        sj=star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
+        wig1=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
+        wig2=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
+        wig1_mult=star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"),
+        wig2_mult=star_folder.joinpath("{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"),
+        log_final=star_folder.joinpath("{serie}/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/star/{serie}/{sample}.log"),
     shell:
         """
-        ln -sfr {input[0]} {output[0]}
-        ln -sfr {input[1]} {output[1]}
-        ln -sfr {input[2]} {output[2]}
-        ln -sfr {input[3]} {output[3]}
-        ln -sfr {input[4]} {output[4]}
-        ln -sfr {input[5]} {output[5]}
-        ln -sfr {input[6]} {output[6]}
-        ln -sfr {input[7]} {output[7]}
-        ln -sfr {input[8]} {output[8]}
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.transcriptome_bam} {output.transcriptome_bam}
+        ln -sfr {input.gene_counts} {output.gene_counts}
+        ln -sfr {input.sj} {output.sj}
+        ln -sfr {input.wig1} {output.wig1}
+        ln -sfr {input.wig2} {output.wig2}
+        ln -sfr {input.wig1_mult} {output.wig1_mult}
+        ln -sfr {input.wig2_mult} {output.wig2_mult}
+        ln -sfr {input.log_final} {output.log_final}
         """
 
 

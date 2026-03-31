@@ -1,4 +1,4 @@
-from pathlib import PosixPath
+from pathlib import Path, PosixPath
 import hashlib
 import json
 
@@ -202,6 +202,65 @@ def get_featurecounts_mem_mb(wildcards, input):
 def get_sample_sheet(wildcards):
     """Returns path to sample sheet for current serie"""
     return get_params(wildcards, "sample_sheet")
+
+
+def get_raw_fasta(wildcards):
+    if "fasta_path" in config["genome"]:
+        return config["genome"]["fasta_path"]
+    else:
+        return str(references_folder.joinpath(config["genome"]["label"], "raw_fasta.fa"))
+
+
+def get_raw_gtf(wildcards):
+    if "gtf_path" in config["genome"]:
+        return config["genome"]["gtf_path"]
+    else:
+        return str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))
+
+
+def get_mimseq_counts(wildcards):
+    samples = get_samples_names(wildcards)
+    return expand(
+        trna_coverage_folder.joinpath("mimseq_{{serie}}", "{sample}", "{sample}_cluster_counts.txt"),
+        sample=samples,
+    )
+
+
+def get_trimmomatic_adaptive_input(wildcards):
+    """Returns the adaptive params JSON if adaptive trimming is enabled."""
+    if wildcards.trim_hash not in HASH_TO_PARAMS["trim"]:
+        return []
+    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
+    t_params = params.get("params", {})
+    if isinstance(t_params, dict) and t_params.get("adaptive"):
+        # We use a path that includes the sample name to avoid collisions if multiple samples share a hash
+        # but have slightly different adaptive needs (though they shouldn't if the hash is correct).
+        # Actually, samples with the same hash should have the same adaptive params if they are the same data.
+        # But FastQC is sample-specific. So we use {sample} in the path.
+        return trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+    return []
+
+
+def get_trimmomatic_command(wildcards):
+    """Dynamic derivation of the trimmomatic command string."""
+    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
+    t_params = params.get("params", {})
+
+    # 1. Adaptive mode
+    if isinstance(t_params, dict) and t_params.get("adaptive"):
+        adaptive_json = trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
+        with open(adaptive_json, "r") as f:
+            data = json.load(f)
+            return data["trimmomatic_params"]
+
+    # 2. Fixed string mode (explicit)
+    if isinstance(t_params, str) and t_params != "default":
+        return t_params
+
+    # 3. Default fallback
+    is_paired = params.get("paired", False)
+    suffix = "PE" if is_paired else "SE"
+    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
 
 
 def parse_filepath(filepath: PosixPath):

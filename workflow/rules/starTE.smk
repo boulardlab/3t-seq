@@ -6,6 +6,8 @@ rule starTE_shared_random:
     output:
         bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam")),
         log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "random", "{sample}.Log.final.out")),
+    log:
+        log_folder.joinpath("starTE/random/{starte_hash}/{sample}.log"),
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
@@ -63,6 +65,8 @@ rule symlink_starTE_random:
     output:
         bam=starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
         log=starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/starTE/random/{serie}/{sample}.log"),
     shell:
         """
         ln -sfr {input.bam} {output.bam}
@@ -170,6 +174,8 @@ rule starTE_shared_multihit:
     output:
         bam=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam")),
         log=protected(starTE_folder.joinpath("_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out")),
+    log:
+        log_folder.joinpath("starTE/multihit/{starte_hash}/{sample}.log"),
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(wildcards, input.fastq, attempt),
@@ -226,6 +232,8 @@ rule symlink_starTE_multihit:
     output:
         bam=starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
         log=starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/starTE/multihit/{serie}/{sample}.log"),
     shell:
         """
         ln -sfr {input.bam} {output.bam}

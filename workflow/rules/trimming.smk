@@ -1,41 +1,6 @@
 ruleorder: trimmomatic_shared_pe > trimmomatic_shared_se
 ruleorder: symlink_trim_pe > symlink_trim_se
 
-def get_trimmomatic_adaptive_input(wildcards):
-    """Returns the adaptive params JSON if adaptive trimming is enabled."""
-    if wildcards.trim_hash not in HASH_TO_PARAMS["trim"]:
-        return []
-    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
-    t_params = params.get("params", {})
-    if isinstance(t_params, dict) and t_params.get("adaptive"):
-        # We use a path that includes the sample name to avoid collisions if multiple samples share a hash
-        # but have slightly different adaptive needs (though they shouldn't if the hash is correct).
-        # Actually, samples with the same hash should have the same adaptive params if they are the same data.
-        # But FastQC is sample-specific. So we use {sample} in the path.
-        return trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
-    return []
-
-def get_trimmomatic_command(wildcards):
-    """Dynamic derivation of the trimmomatic command string."""
-    params = HASH_TO_PARAMS["trim"][wildcards.trim_hash]
-    t_params = params.get("params", {})
-    
-    # 1. Adaptive mode
-    if isinstance(t_params, dict) and t_params.get("adaptive"):
-        adaptive_json = trim_reads_folder.joinpath("_shared", wildcards.trim_hash, f"{wildcards.sample}.adaptive_params.json")
-        with open(adaptive_json, 'r') as f:
-            data = json.load(f)
-            return data["trimmomatic_params"]
-    
-    # 2. Fixed string mode (explicit)
-    if isinstance(t_params, str) and t_params != "default":
-        return t_params
-        
-    # 3. Default fallback
-    is_paired = params.get("paired", False)
-    suffix = "PE" if is_paired else "SE"
-    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
-
 rule derive_trim_params:
     """Derives adaptive trimming parameters from FastQC results."""
     input:
@@ -47,6 +12,8 @@ rule derive_trim_params:
         extra_params=lambda wildcards: HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("params", {}).get("extra_params", "") if isinstance(HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("params"), dict) else ""
     conda:
         "../env/qc.yml"
+    log:
+        log_folder.joinpath("trim/derive_params/{trim_hash}/{sample}.log"),
     shell:
         """
         python workflow/scripts/derive_trim_params.py \
@@ -105,6 +72,8 @@ rule symlink_trim_pe:
         unpaired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.unpaired.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+    log:
+        log_folder.joinpath("symlink/trim/{serie}/{sample}.log"),
     shell:
         """
         ln -sfr {input.paired1} {output.paired1}
@@ -155,6 +124,8 @@ rule symlink_trim_se:
         fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
+    log:
+        log_folder.joinpath("symlink/trim/{serie}/{sample}.log"),
     shell:
         """
         ln -sfr {input.fastq} {output.fastq}

@@ -40,6 +40,8 @@ rule symlink_markdup:
         bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
         stats=markdup_folder.joinpath("{serie}/{sample}.markdup.stats.txt"),
         log=log_folder.joinpath("picard/{serie}/{sample}.log"),
+    log:
+        log_folder.joinpath("symlink/markdup/{serie}/{sample}.log"),
     shell:
         """
         ln -sfr {input.bam} {output.bam}

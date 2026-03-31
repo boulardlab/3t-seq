@@ -181,13 +181,6 @@ rule run_mimseq:
         mimseq --species {params.species} -i {input.idx_dir} -n {wildcards.sample} --max-mismatches {params.max_mismatches} --min-cov {params.min_cov} --threads {threads} --out-dir {params.out_dir} {input.fastq} &> {log}
         """
 
-def get_mimseq_counts(wildcards):
-    samples = get_samples_names(wildcards)
-    return expand(
-        trna_coverage_folder.joinpath("mimseq_{{serie}}", "{sample}", "{sample}_cluster_counts.txt"),
-        sample=samples,
-    )
-
 rule format_mimseq_output:
     input:
         mimseq_counts=get_mimseq_counts,

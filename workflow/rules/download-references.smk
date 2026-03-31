@@ -66,12 +66,6 @@ if "label" in config["genome"]:
             """
 
 
-def get_raw_fasta(wildcards):
-    if "fasta_path" in config["genome"]:
-        return config["genome"]["fasta_path"]
-    else:
-        return str(references_folder.joinpath(config["genome"]["label"], "raw_fasta.fa"))
-
 rule format_fasta:
     input:
         fasta=get_raw_fasta
@@ -89,12 +83,6 @@ rule format_fasta:
         mem_mb=4000,
     script:
         "../scripts/format_fasta.sh"
-
-def get_raw_gtf(wildcards):
-    if "gtf_path" in config["genome"]:
-        return config["genome"]["gtf_path"]
-    else:
-        return str(references_folder.joinpath(config["genome"]["label"], "raw_annotation.gtf.gz"))
 
 rule format_gtf:
     input:
@@ -165,7 +153,7 @@ if config["genome"]["selected_chromosomes"]:
         cache: True
         params:
             url=config["genome"]["gtrnadb_url"],
-            output_dir=str(gtrnadb_raw_dir),
+            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         log:
             log_folder.joinpath("download/genome/gtrnadb.log"),
         conda:
@@ -205,7 +193,7 @@ else:
         cache: True
         params:
             url=config["genome"]["gtrnadb_url"],
-            output_dir=str(tRNA_annotation_dir),
+            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         log:
             log_folder.joinpath("download/genome/gtrnadb.log"),
         conda:
