@@ -1,18 +1,18 @@
 FROM condaforge/mambaforge:latest
 LABEL io.github.snakemake.containerized="true"
-LABEL io.github.snakemake.conda_env_hash="9cee23af23e90e6e41eedaa595815bd36011ca925cd9323685a63749565c102d"
+LABEL io.github.snakemake.conda_env_hash="f8a0099052f5679eb0b261301d191c15142f86167861b4fd35d3c721ac49b920"
 
 # Step 1: Retrieve conda environments
 
 # Conda environment:
 #   source: ../../workflow/env/R.yml
-#   prefix: /conda-envs/77b8061a0f6d791781952ff9f600bdcb
+#   prefix: /conda-envs/cd9dc828862fe5d11c51081b76da4aa8
 #   channels:
 #     - bioconda
 #     - conda-forge
 #     - r
 #   dependencies:
-#     - r-base=4.0.3
+#     - r-base<4.1.0a0
 #     - r-hexbin
 #     - r-data.table
 #     - r-pheatmap
@@ -32,8 +32,8 @@ LABEL io.github.snakemake.conda_env_hash="9cee23af23e90e6e41eedaa595815bd36011ca
 #     - bioconductor-vsn
 #     - bioconductor-apeglm
 #     - bioconductor-reactomepa=1.34.0
-RUN mkdir -p /conda-envs/77b8061a0f6d791781952ff9f600bdcb
-COPY ../../workflow/env/R.yml /conda-envs/77b8061a0f6d791781952ff9f600bdcb/environment.yaml
+RUN mkdir -p /conda-envs/cd9dc828862fe5d11c51081b76da4aa8
+COPY ../../workflow/env/R.yml /conda-envs/cd9dc828862fe5d11c51081b76da4aa8/environment.yaml
 
 # Conda environment:
 #   source: ../../workflow/env/alignment.yml
@@ -192,7 +192,7 @@ ADD https://github.com/snakemake/snakemake-wrappers/raw/v2.6.0/utils/datavzrd/en
 
 # Step 2: Generate conda environments
 
-RUN mamba env create --prefix /conda-envs/77b8061a0f6d791781952ff9f600bdcb --file /conda-envs/77b8061a0f6d791781952ff9f600bdcb/environment.yaml && \
+RUN mamba env create --prefix /conda-envs/cd9dc828862fe5d11c51081b76da4aa8 --file /conda-envs/cd9dc828862fe5d11c51081b76da4aa8/environment.yaml && \
     mamba env create --prefix /conda-envs/8e96037ab9b9dd95318e6dde69e1b470 --file /conda-envs/8e96037ab9b9dd95318e6dde69e1b470/environment.yaml && \
     mamba env create --prefix /conda-envs/16e1dc5e3e5976d71e955eaf12ac9181 --file /conda-envs/16e1dc5e3e5976d71e955eaf12ac9181/environment.yaml && \
     mamba env create --prefix /conda-envs/7548059a7c044c6fa179ed2c582570cb --file /conda-envs/7548059a7c044c6fa179ed2c582570cb/environment.yaml && \

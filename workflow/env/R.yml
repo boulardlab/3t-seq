@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - r
 dependencies:
-  - r-base=4.0.3
+  - r-base<4.1.0a0
   - r-hexbin
   - r-data.table
   - r-pheatmap
