@@ -18,7 +18,7 @@ RUN conda install -y  \
     snakemake=7.28.3 \
     pandas \
     docopt \
-    r-base=4.2.3 \
+    r-base>4.4 \
     r-scales \
     r-writexls \
     r-tidyverse \
