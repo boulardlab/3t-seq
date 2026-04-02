@@ -34,7 +34,7 @@ Always prefer using `pixi run` to ensure the correct environment is used.
 - `pixi.toml`: Project-level dependency and task management.
 
 ## Development Guidelines for Agents
-1. **Use Pixi:** Always use `pixi run <task>` or prefix commands with `pixi run`.
+1. **Use Pixi:** Always use `pixi run <task>` or prefix commands with `pixi run`. For parameters run as `pixi run <task> <param1> <param2>`, for example `pixi run run-test remote-references laptop`.
 2. **Follow Formatting:** Run `pixi run format` before submitting changes to Snakemake files.
 3. **Lint Early:** Run `pixi run lint` to catch workflow errors before execution.
 4. **Testing:** Refer to [Plan-Testing-Strategy.md](file:///Users/francesco/scratch/3t-seq/main.worktrees/dev/worktree-2026-03-31T14-14-10/Plan-Testing-Strategy.md) for the long-term testing goals, including unit test generation.
