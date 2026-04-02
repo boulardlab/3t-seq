@@ -22,7 +22,8 @@ RUN conda install -y  \
     r-scales \
     r-writexls \
     r-tidyverse \
-    bioconductor-deseq2
+    bioconductor-deseq2 \
+    jq
     
 WORKDIR /opt
 COPY --from=0 /home/curl_user/SalmonTE-master ./SalmonTE
