@@ -30,7 +30,7 @@ rule coverage_trna:
         ),
         genome=star_folder.joinpath("{serie}", "{sample}.genome"),
         annotation=tRNA_annotation_dir.joinpath(
-            "{0}-tRNAs.bed".format(config["genome"].get("label", "custom"))
+            "{0}-tRNAs.bed".format(config.get("genome", {}).get("label", "custom"))
         ),
     output:
         trna_coverage_folder.joinpath("{serie}", "{sample}.bed"),
@@ -133,7 +133,7 @@ rule build_mimseq_index:
     input:
         genome_fasta=fasta_path,
         annotation=tRNA_annotation_dir.joinpath(
-            "{0}-tRNAs.bed".format(config["genome"].get("label", "custom"))
+            "{0}-tRNAs.bed".format(config.get("genome", {}).get("label", "custom"))
         ),
     output:
         idx_dir=directory(tRNA_annotation_dir.joinpath("mimseq_index")),
