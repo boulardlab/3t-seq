@@ -2,6 +2,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - samtools=1.16.1
+  - samtools=1.21
   - ucsc-gtftogenepred=447
   - ucsc-genepredtobed=447
