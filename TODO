@@ -1,2 +1,3 @@
 [x] Remove reads_folder
-Consolidate multiqc rules into a single one
+[x] Consolidate multiqc rules into a single one
+[x] Add wildcard constraints to symlink rules

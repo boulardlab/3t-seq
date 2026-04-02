@@ -133,7 +133,7 @@ rule build_mimseq_index:
     input:
         genome_fasta=fasta_path,
         annotation=tRNA_annotation_dir.joinpath(
-            "{0}-tRNAs.bed".format(config["genome"]["label"])
+            "{0}-tRNAs.bed".format(config["genome"].get("label", "custom"))
         ),
     output:
         idx_dir=directory(tRNA_annotation_dir.joinpath("mimseq_index")),

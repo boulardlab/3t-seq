@@ -1,0 +1,5 @@
+software-deployment-method: 
+  - conda
+  - apptainer
+show-failed-logs: True
+cores: 8

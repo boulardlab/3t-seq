@@ -168,6 +168,10 @@ wildcard_constraints:
     pe_serie="|".join(library_names_paired),
     method="multihit|random|mimseq|standard",
     mate=r"_[MR][12](?:_sequence)?",
+    trim_hash="[a-f0-9]{16}",
+    align_hash="[a-f0-9]{16}",
+    starte_hash="[a-f0-9]{16}",
+    markdup_hash="[a-f0-9]{16}",
 
 
 include: "rules/download-references.smk"

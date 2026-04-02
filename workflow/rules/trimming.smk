@@ -44,11 +44,12 @@ rule derive_trim_params:
 rule trimmomatic_shared_pe:
     """Deduplicated trimmomatic for paired-end reads."""
     input:
-        reads=unpack(
-            lambda wildcards: get_fastq_paired(
-                Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
-            )
-        ),
+        m1=lambda wildcards: get_fastq_paired(
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+        )["m1"],
+        m2=lambda wildcards: get_fastq_paired(
+            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+        )["m2"],
         adaptive=get_trimmomatic_adaptive_input,
     output:
         paired1=protected(
@@ -95,6 +96,10 @@ rule trimmomatic_shared_pe:
 
 
 rule symlink_trim_pe:
+    wildcard_constraints:
+        serie=(
+            "|".join(library_names_paired) if len(library_names_paired) > 0 else "none"
+        ),
     input:
         paired1=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
@@ -184,6 +189,10 @@ rule trimmomatic_shared_se:
 
 
 rule symlink_trim_se:
+    wildcard_constraints:
+        serie=(
+            "|".join(library_names_single) if len(library_names_single) > 0 else "none"
+        ),
     input:
         fastq=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
