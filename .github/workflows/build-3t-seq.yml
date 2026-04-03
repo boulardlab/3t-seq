@@ -1,10 +1,10 @@
-name: Build and Push Docker Image
+name: Build 3t-seq
 
 on:
   push:
     paths:
       - 'Dockerfile'
-      - '.github/workflows/docker-publish.yml'
+      - '.github/workflows/build-3t-seq.yml'
   workflow_dispatch:
 
 jobs:
@@ -38,9 +38,11 @@ jobs:
           images: ghcr.io/boulardlab/3t-seq
           tags: |
             type=ref,event=branch
+            type=ref,event=branch,suffix=-{{sha}}
             type=ref,event=pr
             type=semver,pattern={{version}}
-            type=sha
+            type=sha,format=long
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6

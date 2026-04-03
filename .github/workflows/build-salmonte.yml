@@ -1,10 +1,10 @@
-name: Build and Push SalmonTE Docker Image
+name: Build SalmonTE
 
 on:
   push:
     paths:
       - 'assets/docker/salmonTE/Dockerfile'
-      - '.github/workflows/salmonte-docker.yml'
+      - '.github/workflows/build-salmonte.yml'
   workflow_dispatch:
 
 jobs:
@@ -38,9 +38,11 @@ jobs:
           images: ghcr.io/boulardlab/3t-seq/salmonte
           tags: |
             type=ref,event=branch
+            type=ref,event=branch,suffix=-{{sha}}
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=sha,format=long
+            type=raw,value=latest
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
