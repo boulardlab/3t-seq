@@ -5,3 +5,4 @@ dependencies:
   - pandas=2.2.1
   - openssl=3.3.0
   - setuptools<81.0.0
+  - python>=3.9,<3.13

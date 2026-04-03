@@ -3,6 +3,9 @@ channels:
   - bioconda
   - conda-forge
 dependencies:
-  - refgenie=0.12.1
+  - refgenie=0.13.0
+  - refgenconf>=0.12.1
+  - yacman=0.9.5
+  - python>=3.9,<3.13
   - setuptools<81
   - samtools=1.21
