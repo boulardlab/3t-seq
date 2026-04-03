@@ -2,6 +2,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
+  - openjdk=17
   - python=3.11 # fix multiqc imp import error
   - fastqc=0.11.9
   - multiqc=1.14
