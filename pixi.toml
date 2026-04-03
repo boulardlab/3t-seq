@@ -22,6 +22,7 @@ apptainer = ">=1.2.5"
 [tasks]
 lint = { cmd = "snakemake --directory .tests/integration --conda-frontend conda --workflow-profile .tests/integration/profiles/{{ profile }} --configfile .tests/integration/configs/{{ config }}.yaml --snakefile workflow/Snakefile --lint", args = [{ arg = "config", default = "remote-references", choices = ["remote-references", "local-references", "adaptive-trim"] }, { arg = "profile", default = "laptop", choices = ["laptop", "hpc"] }] }
 containerize = "snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --containerize | tail -n+2 > Dockerfile"
+build-conda-envs = "snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --conda-create-envs-only --use-conda --conda-frontend conda"
 format = "snakefmt workflow"
 hooks = "pre-commit run --all-files"
 dry-run = { cmd = "snakemake --directory .tests/integration --conda-frontend conda --workflow-profile .tests/integration/profiles/{{ profile }} --configfile .tests/integration/configs/{{ config }}.yaml --snakefile workflow/Snakefile -n", args = [{ arg = "config", default = "remote-references", choices = ["remote-references", "local-references", "adaptive-trim"] }, { arg = "profile", default = "laptop", choices = ["laptop", "hpc"] }] }

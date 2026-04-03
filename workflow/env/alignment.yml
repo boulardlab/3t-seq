@@ -1,5 +1,6 @@
 channels:
   - bioconda
+  - conda-forge
 dependencies:
   - star=2.7.11b
   - subread=2.1.1

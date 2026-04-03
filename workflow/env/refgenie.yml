@@ -5,4 +5,4 @@ channels:
 dependencies:
   - refgenie=0.12.1
   - setuptools<81
-  - samtools=1.16.1
+  - samtools=1.21

@@ -20,6 +20,5 @@ dependencies:
   - bioconductor-deseq2=1.50.2
   - bioconductor-rtracklayer
   - bioconductor-topgo=2.62.0
-  - bioconductor-vsn
   - bioconductor-apeglm
   - bioconductor-reactomepa=1.54.0

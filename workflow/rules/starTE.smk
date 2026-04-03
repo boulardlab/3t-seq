@@ -201,7 +201,7 @@ rule datavzrd_starTE_random:
     log:
         log_folder.joinpath("starTE/random/{serie}/datavzrd.log"),
     wrapper:
-        "v2.6.0/utils/datavzrd"
+        "v9.4.1/utils/datavzrd"
 
 
 rule starTE_shared_multihit:

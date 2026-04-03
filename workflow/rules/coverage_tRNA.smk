@@ -123,7 +123,7 @@ rule datavzrd_trna:
     log:
         log_folder.joinpath("bedtools-trna/datavzrd-{serie}-{method}.log"),
     wrapper:
-        "v2.6.0/utils/datavzrd"
+        "v9.4.1/utils/datavzrd"
 
 
 # --- mim-tRNA-seq Rules --- #

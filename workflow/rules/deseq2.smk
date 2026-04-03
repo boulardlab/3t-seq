@@ -82,4 +82,4 @@ rule datavzrd_single_copy_genes:
     log:
         log_folder.joinpath("{serie}/datavzrd.log"),
     wrapper:
-        "v2.6.0/utils/datavzrd"
+        "v9.4.1/utils/datavzrd"
