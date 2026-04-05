@@ -1,6 +1,6 @@
 [workspace]
 name = "3t-seq"
-version = "0.1.0"
+version = "2.0.0"
 description = "3t-seq: a Snakemake pipeline for total RNA-seq analysis"
 authors = ["Francesco Tabaro"]
 channels = ["conda-forge", "bioconda"]
@@ -19,11 +19,145 @@ pytest = ">=8.1.1"
 [target.linux-64.dependencies]
 apptainer = ">=1.2.5"
 
+[target.osx-arm64.activation]
+scripts = ["scripts/macos-coreutils-setup.sh"]
+env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
+
 [tasks]
-lint = { cmd = "snakemake --directory .tests/integration --conda-frontend conda --workflow-profile .tests/integration/profiles/{{ profile }} --configfile .tests/integration/configs/{{ config }}.yaml --snakefile workflow/Snakefile --lint", args = [{ arg = "config", default = "remote-references", choices = ["remote-references", "local-references", "adaptive-trim"] }, { arg = "profile", default = "laptop", choices = ["laptop", "hpc"] }] }
-containerize = "snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --containerize | tail -n+2 > Dockerfile"
-build-conda-envs = "snakemake --directory .tests/integration --configfile .tests/integration/configs/remote-references.yaml --snakefile workflow/Snakefile --conda-create-envs-only --use-conda --conda-frontend conda"
 format = "snakefmt workflow"
 hooks = "pre-commit run --all-files"
-dry-run = { cmd = "snakemake --directory .tests/integration --conda-frontend conda --workflow-profile .tests/integration/profiles/{{ profile }} --configfile .tests/integration/configs/{{ config }}.yaml --snakefile workflow/Snakefile -n", args = [{ arg = "config", default = "remote-references", choices = ["remote-references", "local-references", "adaptive-trim"] }, { arg = "profile", default = "laptop", choices = ["laptop", "hpc"] }] }
-test = { cmd = "snakemake --directory .tests/integration --conda-frontend conda --workflow-profile .tests/integration/profiles/{{ profile }} --configfile .tests/integration/configs/{{ config }}.yaml --snakefile workflow/Snakefile", args = [{ arg = "config", default = "remote-references", choices = ["remote-references", "local-references", "adaptive-trim"] }, { arg = "profile", default = "laptop", choices = ["laptop", "hpc"] }] }
+
+################################################################################
+# Linting
+################################################################################
+
+[tasks.lint]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--lint",
+]
+
+[[tasks.lint.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.lint.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc"]
+
+################################################################################
+# Containerize
+################################################################################
+
+[tasks.containerize]
+cmd = [
+    "snakemake",
+    "--quiet", "all",
+    "--directory", ".tests/integration",
+    "--configfile", ".tests/integration/configs/remote-references.yaml",
+    "--profile", ".tests/integration/profiles/laptop",
+    "--snakefile", "workflow/Snakefile",
+    "--containerize", 
+    "|", 
+    "tail", 
+    "-n", 
+    "+2", 
+    ">", 
+    "Dockerfile"
+]
+
+################################################################################
+# Build conda envs
+################################################################################
+
+[tasks.build-conda-envs]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--configfile", ".tests/integration/configs/remote-references.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--conda-create-envs-only",
+    "--use-conda",
+    "--conda-frontend", "conda",
+]
+
+################################################################################
+# Dry-run
+################################################################################
+
+[tasks.dry-run]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "-n",
+]
+
+[[tasks.dry-run.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.dry-run.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc"]
+
+################################################################################
+# Test
+################################################################################
+
+[tasks.test]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+]
+
+[[tasks.test.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.test.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc"]
+
+################################################################################
+# Test report
+################################################################################
+
+[tasks.test-report]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--report", "report.zip",
+]
+
+[[tasks.test-report.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.test-report.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc"]
