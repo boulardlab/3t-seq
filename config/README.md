@@ -7,94 +7,17 @@ See below for an example config file with explanation of each option and descrip
 ```yaml
 # config/config.yaml
 
-# Global default parameters for all sequencing libraries.
-# These can be overridden at the library level.
-defaults:
-  strandedness: 0 # 0: unstranded, 1: stranded, 2: reversely stranded
-  starTE_random:
-    outFilterMultimapNmax: 5000
-    winAnchorMultimapNmax: 5000
-  starTE_multihit:
-    outFilterMultimapNmax: 1
-    winAnchorMultimapNmax: 5000
-
 # A list of sequencing libraries to process.
 # Each item in the list represents a distinct sequencing run or library batch, 
 # defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
-# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness) are optional per-library 
-# and will fall back to sensible defaults if omitted.
+# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness, deseq2) are optional per-library 
+# and will fall back to pipeline defaults defined in the schema if omitted.
 sequencing_libraries:
   - name: GSE13073
     sample_sheet: sample-sheet.csv
-    # Optional: overrides default parameters for trimmomatic
-    trimmomatic: >-
-      "ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
-       SLIDINGWINDOW:20:22
-       MAXINFO:20:0.6
-       LEADING:22
-       TRAILING:20
-       MINLEN:75"
-    # Optional: overrides default parameters for star
-    star: >-
-      "--seedSearchStartLmax 30
-       --outFilterMismatchNoverReadLmax 0.04
-       --winAnchorMultimapNmax 40"
-    # Optional: overrides for starTE modes
-    starTE_random:
-      outFilterMultimapNmax: 10
-    # Optional: library-level strandedness override (0, 1, or 2)
-    strandedness: 1
-    # Optional: overrides default parameters for bamCoverage
-    bamCoverage: "--binSize 50 --normalizeUsing None"
-
-#   - name: ...
-#     sample_sheet: ...
-
-# Disable all functionalities related to TE analysis
-disable_TE_analysis: false
-
-# Disable tRNA analysis
-disable_tRNA_analysis: false
-
-globals:
-  # path to results folder
-  results_folder: results/
-
-# genome informations
-genome:
-  # To use built-in reference genomes automatically downloaded via Refgenie,
-  # specify a supported label (e.g., mm10, hg38). 
-  # This is MUTUALLY EXCLUSIVE with providing fasta_path and gtf_path below.
-  # When using a label, 'annotation_type' is optional and defaults to 'ensembl'.
-  label: mm10
-
-  # OR, to use your own local reference files, provide absolute paths AND annotation_type.
-  # If specifying these, do NOT provide a 'label' above.
-  # fasta_path: /path/to/my/local/genome.fa
-  
-  # URL or path to genome annotation file
-  # gtf_path: /path/to/my/local/annotation.gtf
-
-  # Annotation type is required when using custom references
-  # can be ensembl, mgi, gencode
-  # annotation_type: ensembl
-
-  # URL to gtRNAdb zip file
-  gtrnadb_url: <GtRNADb bundle URL>
-
-# Differential expression analysis parameters
-deseq2:
-  # wd
-  working_directory: ../../..  
-  
-  # DESeq2 test name, can be Wald or LRT
-  test: Wald
-  
-  # name of the column from sample sheet with experimental variable
-  variable: genotype
-
-  # base level from variable column
-  reference_level: wt
+    # Optional library-level overrides:
+    deseq2:
+      variable: cell_type     # This overrides the global default 'genotype' for this library
 ```
 
 ## How 3t-seq resolves reads paths

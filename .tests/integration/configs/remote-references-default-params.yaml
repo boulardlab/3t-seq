@@ -1,0 +1,19 @@
+sequencing_libraries:
+  - name: GSE130735-subset
+    protocol: pe
+    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE  
+    sample_sheet: sample-sheet.csv  
+
+disable_TE_analysis: false
+disable_salmonTE_analysis: false
+disable_tRNA_analysis: false
+
+globals:
+  results_folder: results/
+
+genome:
+  label: mm10
+  
+  # for testing purpose, focus on chr19 only
+  selected_chromosomes:
+    - chr19

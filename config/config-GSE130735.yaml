@@ -27,6 +27,3 @@ genome:
 
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz
-
-deseq2:
-  working_directory: .

@@ -1,11 +1,3 @@
-defaults:
-  strandedness: 0
-  starTE_random:
-    outFilterMultimapNmax: 5000
-    winAnchorMultimapNmax: 5000
-  starTE_multihit:
-    outFilterMultimapNmax: 1
-    winAnchorMultimapNmax: 5000
 
 sequencing_libraries:
   - name: OLFR466_TRIM66_SmartSeq
@@ -37,10 +29,3 @@ genome:
   # URL to GtRNAdb files
   gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Hsapi38/hg38-tRNAs.tar.gz
   #gtrnadb_bed: ../../../data/references/tRNA/mm10-tRNAs.bed
-
-deseq2:
-  working_directory: ../../..
-  #notebook_path: ../../../src/Rmd/deseq2_viz.rmd
-  test: Wald
-  reference_level: wt
-  variable: genotype
