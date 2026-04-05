@@ -34,18 +34,18 @@ if "label" in config["genome"]:
                     )
                 )
             ),
-        params:
-            genome_id=config["genome"]["label"],
-        conda:
-            "../env/refgenie.yml"
         log:
             log_folder.joinpath(
                 "download/genome/{}_fasta.log".format(config["genome"]["label"])
             ),
+        conda:
+            "../env/refgenie.yml"
         threads: 1
         resources:
             runtime=60,
             mem_mb=4000,
+        params:
+            genome_id=config["genome"]["label"],
         shell:
             """
             export REFGENIE={input.refgenie_cfg}
@@ -67,19 +67,19 @@ if "label" in config["genome"]:
                     )
                 )
             ),
-        cache: True
-        conda:
-            "../env/refgenie.yml"
-        params:
-            genome_id=config["genome"]["label"],
         log:
             log_folder.joinpath(
                 "download/genome/{}_gtf.log".format(config["genome"]["label"])
             ),
+        cache: True
+        conda:
+            "../env/refgenie.yml"
         threads: 1
         resources:
             runtime=60,
             mem_mb=4000,
+        params:
+            genome_id=config["genome"]["label"],
         shell:
             """
             export REFGENIE={input.refgenie_cfg}
@@ -94,20 +94,20 @@ rule format_fasta:
         fasta=get_raw_fasta,
     output:
         fasta=protected(str(fasta_path)),
+    log:
+        log_folder.joinpath("download/genome/format_fasta.log"),
+    conda:
+        "../env/samtools.yml"
+    threads: 1
+    resources:
+        runtime=60,
+        mem_mb=4000,
     params:
         selected_chrs=(
             " ".join(config["genome"]["selected_chromosomes"])
             if config["genome"]["selected_chromosomes"]
             else ""
         ),
-    conda:
-        "../env/samtools.yml"
-    log:
-        log_folder.joinpath("download/genome/format_fasta.log"),
-    threads: 1
-    resources:
-        runtime=60,
-        mem_mb=4000,
     script:
         "../scripts/format_fasta.sh"
 
@@ -117,20 +117,20 @@ rule format_gtf:
         gtf=get_raw_gtf,
     output:
         gtf=protected(str(gtf_path)),
+    log:
+        log_folder.joinpath("download/genome/format_gtf.log"),
     conda:
         "../env/bash.yml"
+    threads: 1
+    resources:
+        runtime=60,
+        mem_mb=4000,
     params:
         selected_chrs=(
             ",".join(config["genome"]["selected_chromosomes"])
             if config["genome"]["selected_chromosomes"]
             else ""
         ),
-    log:
-        log_folder.joinpath("download/genome/format_gtf.log"),
-    threads: 1
-    resources:
-        runtime=60,
-        mem_mb=4000,
     script:
         "../scripts/format_gtf.sh"
 
@@ -139,23 +139,23 @@ rule download_repeatmasker_annotation_file:
     output:
         protected(
             multiext(
-                str(rmsk_folder.joinpath(config["genome"].get("label", "custom"))),
+                str(rmsk_folder.joinpath(config["genome"]["label"])),
                 ".gtf",
                 ".bed",
             )
         ),
-    cache: True
-    params:
-        genome_id=config["genome"].get("label", "custom"),
-        selected_chromosome=config["genome"]["selected_chromosomes"],
-    conda:
-        "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
     log:
         log_folder.joinpath("download/genome/rmsk.log"),
+    cache: True
+    conda:
+        "../env/pandas.yml"  # use a Python env, the script does not really use Pandas
     threads: 1
     resources:
         runtime=20,
         mem_mb=4000,
+    params:
+        genome_id=config["genome"]["label"],
+        selected_chromosome=config["genome"]["selected_chromosomes"],
     script:
         "../scripts/get_rmsk.py"
 
@@ -179,46 +179,38 @@ if config["genome"]["selected_chromosomes"]:
         output:
             temp(
                 multiext(
-                    str(
-                        gtrnadb_raw_dir.joinpath(
-                            config["genome"].get("label", "custom")
-                        )
-                    ),
+                    str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
                     *GTRNADB_EXTS,
                 )
             ),
-        cache: True
-        params:
-            url=config["genome"]["gtrnadb_url"],
-            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         log:
             log_folder.joinpath("download/genome/gtrnadb.log"),
+        cache: True
         conda:
             "../env/wget.yml"
+        params:
+            url=get_gtrnadb_url,
+            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         script:
             "../scripts/download-gtrnadb.sh"
 
     rule filter_gtRNAdb:
         input:
             multiext(
-                str(gtrnadb_raw_dir.joinpath(config["genome"].get("label", "custom"))),
+                str(gtrnadb_raw_dir.joinpath(config["genome"]["label"])),
                 *GTRNADB_EXTS,
             ),
         output:
             protected(
                 multiext(
-                    str(
-                        tRNA_annotation_dir.joinpath(
-                            config["genome"].get("label", "custom")
-                        )
-                    ),
+                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
                     *GTRNADB_EXTS,
                 )
             ),
-        params:
-            selected_chromosomes=config["genome"]["selected_chromosomes"],
         log:
             log_folder.joinpath("download/genome/filter_gtrnadb.log"),
+        params:
+            selected_chromosomes=config["genome"]["selected_chromosomes"],
         script:
             "../scripts/filter_gtrnadb.py"
 
@@ -228,21 +220,17 @@ else:
         output:
             protected(
                 multiext(
-                    str(
-                        tRNA_annotation_dir.joinpath(
-                            config["genome"].get("label", "custom")
-                        )
-                    ),
+                    str(tRNA_annotation_dir.joinpath(config["genome"]["label"])),
                     *GTRNADB_EXTS,
                 )
             ),
-        cache: True
-        params:
-            url=config["genome"]["gtrnadb_url"],
-            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         log:
             log_folder.joinpath("download/genome/gtrnadb.log"),
+        cache: True
         conda:
             "../env/wget.yml"
+        params:
+            url=get_gtrnadb_url,
+            output_dir=lambda wildcards, output: str(Path(output[0]).parent),
         script:
             "../scripts/download-gtrnadb.sh"

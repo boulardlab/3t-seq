@@ -8,10 +8,10 @@ rule mk_genome_tsv:
         star_folder.joinpath("{serie}", "{sample}.Aligned.sortedByCoord.out.bam"),
     output:
         star_folder.joinpath("{serie}", "{sample}.genome"),
-    conda:
-        "../env/samtools.yml"
     log:
         log_folder.joinpath("mk_genome_tsv/{serie}/{sample}.log"),
+    conda:
+        "../env/samtools.yml"
     threads: 1
     resources:
         runtime=10,
@@ -34,10 +34,10 @@ rule coverage_trna:
         ),
     output:
         trna_coverage_folder.joinpath("{serie}", "{sample}.bed"),
-    conda:
-        "../env/bedtools.yml"
     log:
         log_folder.joinpath("bedtools-trna/{serie}/{sample}.log"),
+    conda:
+        "../env/bedtools.yml"
     threads: 1
     resources:
         runtime=120,
@@ -51,10 +51,10 @@ rule build_trna_coverage_matrix:
         unpack(get_trna_coverage),
     output:
         trna_coverage_folder.joinpath("{serie}", "tRNA_matrix_standard.txt"),
-    conda:
-        "../env/R.yml"
     log:
         log_folder.joinpath("bedtools-trna/build_trna_coverage_matrix-{serie}.log"),
+    conda:
+        "../env/R.yml"
     threads: 1
     resources:
         runtime=20,
@@ -69,18 +69,18 @@ rule deseq2_tRNA:
         sample_sheet=get_sample_sheet,
     output:
         dds=trna_coverage_folder.joinpath("{serie}", "tRNA_dds_{method}.rds"),
-        deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt"),
-    params:
-        variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
+        deg_table=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.csv"),
+    log:
+        log_folder.joinpath("R/{serie}/deseq2-trna-{method}.log"),
     conda:
         "../env/R.yml"
     threads: 4
     resources:
         runtime=40,
         mem_mb=20000,
-    log:
-        log_folder.joinpath("R/{serie}/deseq2-trna-{method}.log"),
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     script:
         "../scripts/deseq2_trna_v1.R"
 
@@ -92,18 +92,18 @@ localrules:
 
 rule yte_trna:
     input:
-        datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt")],
+        datasets=[trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.csv")],
     output:
         trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}.yaml"),
+    log:
+        log_folder.joinpath("bedtools-trna/yte-{serie}-{method}.log"),
+    conda:
+        "../env/yte.yml"
+    threads: 1
     params:
         template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="tRNA expression",
         view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
-    conda:
-        "../env/yte.yml"
-    log:
-        log_folder.joinpath("bedtools-trna/yte-{serie}-{method}.log"),
-    threads: 1
     script:
         "../scripts/yte.py"
 
@@ -111,7 +111,7 @@ rule yte_trna:
 rule datavzrd_trna:
     input:
         config=trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}.yaml"),
-        dataset=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.txt"),
+        dataset=trna_coverage_folder.joinpath("{serie}", "tRNA_lfc_{method}.csv"),
     output:
         report(
             directory(trna_coverage_folder.joinpath("{serie}", "datavzrd_{method}")),
@@ -137,19 +137,19 @@ rule build_mimseq_index:
         ),
     output:
         idx_dir=directory(tRNA_annotation_dir.joinpath("mimseq_index")),
+    log:
+        log_folder.joinpath("mimseq/build_index.log"),
     conda:
         "../env/mim-trna-seq.yml"
+    threads: 4
+    resources:
+        runtime=120,
+        mem_mb=16000,
     params:
         species="custom",
         cluster_id=lambda wildcards: config.get("tRNA_quantification", {})
         .get("mimseq_params", {})
         .get("cluster_identity", 0.95),
-    threads: 4
-    resources:
-        runtime=120,
-        mem_mb=16000,
-    log:
-        log_folder.joinpath("mimseq/build_index.log"),
     shell:
         """
         set -e
@@ -165,8 +165,14 @@ rule run_mimseq:
         count_file=trna_coverage_folder.joinpath(
             "mimseq_{serie}", "{sample}", "{sample}_cluster_counts.txt"
         ),
+    log:
+        log_folder.joinpath("mimseq/{serie}/{sample}.log"),
     conda:
         "../env/mim-trna-seq.yml"
+    threads: 8
+    resources:
+        runtime=240,
+        mem_mb=32000,
     params:
         species="custom",
         max_mismatches=lambda wildcards: config.get("tRNA_quantification", {})
@@ -176,12 +182,6 @@ rule run_mimseq:
         .get("mimseq_params", {})
         .get("min_cov", 10),
         out_dir=lambda wildcards, output: Path(output.count_file).parent,
-    threads: 8
-    resources:
-        runtime=240,
-        mem_mb=32000,
-    log:
-        log_folder.joinpath("mimseq/{serie}/{sample}.log"),
     shell:
         """
         set -e
@@ -198,13 +198,13 @@ rule format_mimseq_output:
         sample_sheet=get_sample_sheet,
     output:
         trna_coverage_folder.joinpath("{serie}", "tRNA_matrix_mimseq.txt"),
+    log:
+        log_folder.joinpath("R/{serie}/format_mimseq.log"),
     conda:
         "../env/R.yml"
     threads: 1
     resources:
         runtime=20,
         mem_mb=8000,
-    log:
-        log_folder.joinpath("R/{serie}/format_mimseq.log"),
     script:
         "../scripts/format_mimseq_matrix.R"

@@ -15,30 +15,55 @@ properties:
     errorMessage: "Invalid globals configuration. Paths like qc_folder, log_folder, references_folder, tmp_folder, and analysis_folder are now automatically derived from results_folder and should be removed from the config file."
   defaults:
     type: object
+    default: {}
     description: "Global default parameters for all sequencing libraries."
     properties:
       strandedness:
         type: integer
         enum: [0, 1, 2]
+        default: 0
         description: "Library strandedness (0: unstranded, 1: stranded, 2: reversely stranded)."
       starTE_random:
         type: object
+        default: {}
         properties:
           outFilterMultimapNmax:
             type: integer
+            default: 5000
           winAnchorMultimapNmax:
             type: integer
+            default: 5000
           alignTranscriptsPerWindowNmax:
             type: integer
+            default: 300
       starTE_multihit:
         type: object
+        default: {}
         properties:
           outFilterMultimapNmax:
             type: integer
+            default: 1
           winAnchorMultimapNmax:
             type: integer
+            default: 5000
           alignTranscriptsPerWindowNmax:
             type: integer
+            default: 3000
+      deseq2:
+        type: object
+        default: {}
+        description: "Default DESeq2 parameters."
+        properties:
+          test:
+            type: string
+            enum: ["Wald", "LRT"]
+            default: "Wald"
+          variable:
+            type: string
+            default: "genotype"
+          reference_level:
+            type: string
+        additionalProperties: false
   sequencing_libraries:
     type: array
     description: "List of sequencing libraries to process."
@@ -79,6 +104,18 @@ properties:
         bamCoverage:
           type: string
           description: "Optional custom bamCoverage parameters."
+        deseq2:
+          type: object
+          description: "Optional library-level DESeq2 overrides."
+          properties:
+            test:
+              type: string
+              enum: ["Wald", "LRT"]
+            variable:
+              type: string
+            reference_level:
+              type: string
+          additionalProperties: false
       required:
         - name
         - sample_sheet
@@ -88,50 +125,68 @@ properties:
     properties:
       label:
         type: string
-        description: "Standard genome label (e.g. mm10, hg38) to automatically fetch references."
-      salmonte_species:
-        type: string
-        description: "Fallback species identifier for SalmonTE (e.g. mm, hs, dr, dm) when using custom references without a top-level label."
+        enum: ["mm10", "mm39"]
+        description: "Genome label. Required."
       fasta_path:
         type: string
         description: "Local path to explicit genome fasta."
       gtf_path:
         type: string
         description: "Local path to explicit genome GTF annotation."
-      gtrnadb_url:
-        type: string
-        description: "URL or path to GtRNAdb annotations."
       annotation_type:
         type: string
+        enum: ["mgi", "gencode", "ensembl"]
+        default: "ensembl"
+        description: "Type of genome annotation. Required if custom fasta/gtf are provided."
       selected_chromosomes:
-        type: array
+        type: ["array", "null"]
         items:
           type: string
-    anyOf:
-      - required: [label]
-      - required: [fasta_path, gtf_path, annotation_type]
-    errorMessage: "You must provide either 'label' (for built-in genomes) OR both 'fasta_path' and 'gtf_path' with 'annotation_type' (for custom genomes)."
+        default: null
+        description: "List of chromosomes to process. If not provided, all chromosomes will be processed."
+    required:
+      - label
+    dependencies:
+      fasta_path: ["gtf_path", "annotation_type"]
+      gtf_path: ["fasta_path", "annotation_type"]
+    errorMessage: "You must provide a 'label' (e.g. mm10, mm39). If you provide 'fasta_path' or 'gtf_path', you must provide both plus 'annotation_type' to override the default references."
   disable_TE_analysis:
     type: boolean
+    default: false
+    description: "Disable TE analysis."
   disable_salmonTE_analysis:
     type: boolean
+    default: false
+    description: "Disable SalmonTE analysis."
   disable_tRNA_analysis:
     type: boolean
+    default: false
+    description: "Disable tRNA analysis."
   tRNA_quantification:
     type: object
     properties:
       method:
         type: string
         enum: ["standard", "mim-tRNA-seq"]
+        default: "standard"
+        description: "Method for tRNA quantification."
       mimseq_params:
         type: object
         properties:
           max_mismatches:
             type: number
+            default: 2
+            description: "Maximum number of mismatches allowed."
           cluster_identity:
             type: number
+            default: 0.8
+            description: "Cluster identity threshold."
           min_cov:
             type: integer
+            default: 10
+            description: "Minimum coverage required for a tRNA to be quantified."
+    required:
+      - method
 required:
   - globals
   - sequencing_libraries

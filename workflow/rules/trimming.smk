@@ -12,6 +12,10 @@ rule derive_trim_params:
         json=trim_reads_folder.joinpath(
             "_shared", "{trim_hash}", "{sample}.adaptive_params.json"
         ),
+    log:
+        log_folder.joinpath("trim/derive_params/{trim_hash}/{sample}.log"),
+    conda:
+        "../env/qc.yml"
     params:
         is_paired_flag=lambda wildcards: (
             "--is-paired"
@@ -27,10 +31,6 @@ rule derive_trim_params:
             )
             else ""
         ),
-    conda:
-        "../env/qc.yml"
-    log:
-        log_folder.joinpath("trim/derive_params/{trim_hash}/{sample}.log"),
     shell:
         """
         python workflow/scripts/derive_trim_params.py \
@@ -73,16 +73,16 @@ rule trimmomatic_shared_pe:
                 "_shared", "{trim_hash}", "{sample}.summary.txt"
             )
         ),
-    params:
-        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
-    threads: 4
-    resources:
-        runtime=lambda wildcards, attempt: 240 * attempt,
-        mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
         trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
+    threads: 4
+    resources:
+        runtime=lambda wildcards, attempt: 240 * attempt,
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+    params:
+        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
         """
         trimmomatic PE \
@@ -96,10 +96,6 @@ rule trimmomatic_shared_pe:
 
 
 rule symlink_trim_pe:
-    wildcard_constraints:
-        serie=(
-            "|".join(library_names_paired) if len(library_names_paired) > 0 else "none"
-        ),
     input:
         paired1=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
@@ -140,6 +136,10 @@ rule symlink_trim_pe:
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     log:
         log_folder.joinpath("symlink/trim/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie=(
+            "|".join(library_names_paired) if len(library_names_paired) > 0 else "none"
+        ),
     shell:
         """
         ln -sfr {input.paired1} {output.paired1}
@@ -167,16 +167,16 @@ rule trimmomatic_shared_se:
                 "_shared", "{trim_hash}", "{sample}.summary.txt"
             )
         ),
-    params:
-        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
-    threads: 4
-    resources:
-        runtime=lambda wildcards, attempt: 180 * attempt,
-        mem_mb=lambda wildcards, attempt: 4000 * attempt,
     log:
         trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
+    threads: 4
+    resources:
+        runtime=lambda wildcards, attempt: 180 * attempt,
+        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+    params:
+        trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
         """
         trimmomatic SE \
@@ -189,10 +189,6 @@ rule trimmomatic_shared_se:
 
 
 rule symlink_trim_se:
-    wildcard_constraints:
-        serie=(
-            "|".join(library_names_single) if len(library_names_single) > 0 else "none"
-        ),
     input:
         fastq=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
@@ -212,6 +208,10 @@ rule symlink_trim_se:
         stats=trim_reads_folder.joinpath("{serie}", "{sample}.stats.txt"),
     log:
         log_folder.joinpath("symlink/trim/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie=(
+            "|".join(library_names_single) if len(library_names_single) > 0 else "none"
+        ),
     shell:
         """
         ln -sfr {input.fastq} {output.fastq}
@@ -221,8 +221,6 @@ rule symlink_trim_se:
 
 
 rule fastqc_trim:
-    wildcard_constraints:
-        serie="|".join(library_names_single),
     input:
         get_trimmed_fastq,
     output:
@@ -233,16 +231,18 @@ rule fastqc_trim:
             subcategory="Trimmed reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=fastqc_trim_folder,
+    log:
+        log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie="|".join(library_names_single),
+    conda:
+        "../env/qc.yml"
     threads: 4
     resources:
         runtime=90,
         mem_mb=4000,
-    conda:
-        "../env/qc.yml"
-    log:
-        log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
+    params:
+        fastqc_folder=fastqc_trim_folder,
     shell:
         """
         set -e 
@@ -251,8 +251,6 @@ rule fastqc_trim:
 
 
 rule fastqc_trim_pe:
-    wildcard_constraints:
-        serie="|".join(library_names_paired),
     input:
         [
             trim_reads_folder.joinpath("{serie}/{sample}_1.fastq.gz"),
@@ -273,16 +271,18 @@ rule fastqc_trim_pe:
             subcategory="Trimmed reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
         ),
-    params:
-        fastqc_folder=fastqc_trim_folder,
+    log:
+        log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie="|".join(library_names_paired),
+    conda:
+        "../env/qc.yml"
     threads: 4
     resources:
         runtime=90,
         mem_mb=4000,
-    conda:
-        "../env/qc.yml"
-    log:
-        log_folder.joinpath("fastqc_trim/{serie}/{sample}.log"),
+    params:
+        fastqc_folder=fastqc_trim_folder,
     shell:
         """
         set -e 

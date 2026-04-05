@@ -1,7 +1,10 @@
-from pathlib import Path, PosixPath
 import hashlib
 import json
+import yaml
+import copy
 
+from pathlib import Path, PosixPath
+from jsonschema import Draft7Validator, validators
 from snakemake.io import Wildcards
 
 
@@ -14,6 +17,38 @@ class Struct:
 
 filepath_pattern = r"(?P<path>.*/)?(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?P<genecore_suffix>_sequence)?(?P<extension>\.f(?:ast)?q)(?P<gzipped>\.gz)?"
 filename_pattern = r"(?P<sample>.+?)(?P<mate>_[MRr]?[12])?(?:_sequence)?(?P<extension>\.f(?:ast)?q)?(?P<gzipped>\.gz)?$"
+
+
+def apply_schema_defaults(config, schema_path):
+    """
+    Parses a JSON schema file and populates the config dictionary with
+    missing values that have a 'default' defined in the schema.
+    Uses the official jsonschema extension pattern to handle nested defaults correctly.
+    """
+
+    with open(schema_path, "r") as f:
+        schema = yaml.safe_load(f)
+
+    def extend_with_default(validator_class):
+        validate_properties = validator_class.VALIDATORS["properties"]
+
+        def set_defaults(validator, properties, instance, schema):
+            for property, subschema in properties.items():
+                if "default" in subschema:
+                    if property not in instance or instance[property] is None:
+                        instance[property] = copy.deepcopy(subschema["default"])
+
+            for error in validate_properties(validator, properties, instance, schema):
+                yield error
+
+        return validators.extend(
+            validator_class,
+            {"properties": set_defaults},
+        )
+
+    # Use specialized validator to populate defaults recursively
+    DefaultValidatingDraft7Validator = extend_with_default(Draft7Validator)
+    DefaultValidatingDraft7Validator(schema).validate(config)
 
 
 def giga_to_byte(g):
@@ -165,7 +200,16 @@ def get_resolved_param(wildcards, key, nested_key=None, default=None):
     if val is not None:
         return val
 
-    return default
+    # 3. Provided default fallback (last resort)
+    if default is not None:
+        return default
+
+    # 4. Failure
+    param_name = f"{key}.{nested_key}" if nested_key else key
+    raise ValueError(
+        f"Parameter '{param_name}' could not be resolved for library '{serie}'. "
+        "Please define it in your config under 'defaults' or within the 'sequencing_libraries' entry."
+    )
 
 
 def get_input_size_gb(input_files):
@@ -200,6 +244,22 @@ def get_featurecounts_mem_mb(wildcards, input):
     input_size_gb = get_input_size_gb(input)
     # Base 4GB + 2GB per GB of input BAM (approximate)
     return int(max(4000, input_size_gb * 2000))
+
+
+GTRNADB_URLS = {
+    "mm10": "http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz",
+    "mm39": "http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc39/mm39-tRNAs.tar.gz",
+}
+
+
+def get_gtrnadb_url(wildcards):
+    label = config["genome"]["label"]
+    if label in GTRNADB_URLS:
+        return GTRNADB_URLS[label]
+    raise ValueError(
+        f"Unsupported genome label for GtRNAdb: {label}. "
+        f"Supported labels are: {', '.join(GTRNADB_URLS.keys())}"
+    )
 
 
 def get_sample_sheet(wildcards):
@@ -275,7 +335,7 @@ def get_trimmomatic_command(wildcards):
     # 3. Default fallback
     is_paired = params.get("paired", False)
     suffix = "PE" if is_paired else "SE"
-    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 SLIDINGWINDOW:20:22 MAXINFO:4:20 LEADING:3 TRAILING:3 MINLEN:36"
+    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
 
 
 def parse_filepath(filepath: PosixPath):
@@ -540,36 +600,15 @@ def get_trna_coverage(wildcards):
 
 
 def get_deseq2_test(wildcards):
-    deseq2_params = get_params(wildcards, "deseq2")
-    if not "test" in deseq2_params:
-        deseq2_params["test"] = "Wald"
-    test = deseq2_params["test"]
-    if not test in ["Wald", "LRT"]:
-        raise ValueError(
-            "Invalid test: {0}. Test name must be either Wald or LRT. Check your config.".format(
-                test
-            )
-        )
-    return deseq2_params["test"]
+    return get_resolved_param(wildcards, "deseq2", "test")
 
 
 def get_deseq2_variable(wildcards):
-    deseq2_params = get_params(wildcards, "deseq2")
-    if not "variable" in deseq2_params:
-        deseq2_params["variable"] = "genotype"
-    # var = deseq2_params["variable"]
-    # if not var in sample_sheet.columns.values.tolist():
-    #     raise ValueError(
-    #         "{0} was not detected in sample sheet columns. Please check your config.".format(
-    #             var
-    #         )
-    #     )
-    return deseq2_params["variable"]
+    return get_resolved_param(wildcards, "deseq2", "variable")
 
 
 def get_deseq2_reference_level(wildcards):
-    deseq2_params = get_params(wildcards, "deseq2")
-    return deseq2_params["reference_level"]
+    return get_resolved_param(wildcards, "deseq2", "reference_level")
 
 
 def get_markdup_bam(wildcards):
@@ -616,10 +655,7 @@ def get_salmonTE_quant_input(wildcards):
 
 
 def set_salmonTE_genome():
-    # Allow explicit override if no label is present.
-    genome_label = config["genome"].get(
-        "salmonte_species", config["genome"].get("label", "custom")
-    )[:2]
+    genome_label = config["genome"]["label"][:2]
     salmon_label = ""
     if genome_label == "mm":
         salmon_label = "mm"
@@ -631,7 +667,8 @@ def set_salmonTE_genome():
         salmon_label = "dm"
     else:
         raise ValueError(
-            f'Unsupported genome label for salmonTE: {config["genome"].get("label", "custom")}. Provide `salmonte_species: mm/hg/dr/dm` in the config if using custom referenes.'
+            f"Unsupported genome label for salmonTE: {config['genome']['label']}. "
+            f"Please use a label starting with mm, hg, dr, or dm."
         )
     return salmon_label
 
@@ -794,7 +831,7 @@ def build_rule_all_inputs(wildcards):
         m_str = "mimseq" if method == "mim-tRNA-seq" else "standard"
 
         ret += expand(
-            trna_coverage_folder.joinpath("{serie}", f"tRNA_lfc_{m_str}.txt"),
+            trna_coverage_folder.joinpath("{serie}", f"tRNA_lfc_{m_str}.csv"),
             serie=library_names_paired + library_names_single,
         )
         ret += expand(

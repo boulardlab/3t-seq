@@ -4,6 +4,8 @@ rule star_genome_preparation:
         genome_annotation_file=gtf_path,
     output:
         directory(references_folder.joinpath("STAR")),
+    log:
+        log_folder.joinpath("star/genome_preparation.log"),
     cache: True
     conda:
         "../env/alignment.yml"
@@ -11,14 +13,14 @@ rule star_genome_preparation:
     resources:
         runtime=120,
         mem_mb=256000,
-    log:
-        log_folder.joinpath("star/genome_preparation.log"),
     shell:
         """
         set -e 
+
+        TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
         
         STAR --runMode genomeGenerate \
-        --outTmpDir $(mktemp -d -u) \
+        --outTmpDir $TMP_FOLDER \
         --runThreadN {threads} \
         --genomeDir {output} \
         --genomeFastaFiles {input.genome_fasta_file} \
@@ -58,6 +60,8 @@ rule star_shared:
         ),
     log:
         log_folder.joinpath("star/{align_hash}/{sample}.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
@@ -75,12 +79,10 @@ rule star_shared:
             "star",
             default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40",
         ),
-    conda:
-        "../env/alignment.yml"
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
 
          STAR --quantMode TranscriptomeSAM GeneCounts \
          --outTmpDir $TMP_FOLDER \
@@ -202,16 +204,16 @@ rule fastqc_star:
             subcategory="Aligned reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=fastqc_star_folder,
+    log:
+        log_folder.joinpath("fastqc_star/{serie}/{sample}.log"),
+    conda:
+        "../env/qc.yml"
     threads: 2
     resources:
         runtime=20,
         mem_mb=4000,
-    conda:
-        "../env/qc.yml"
-    log:
-        log_folder.joinpath("fastqc_star/{serie}/{sample}.log"),
+    params:
+        fastqc_folder=fastqc_star_folder,
     shell:
         """
 
@@ -227,14 +229,14 @@ rule index_bam:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
-    threads: 4
-    resources:
-        runtime=30,
-        mem_mb=8000,
     log:
         log_folder.joinpath("index-bam/{serie}/{sample}.log"),
     conda:
         "../env/samtools.yml"
+    threads: 4
+    resources:
+        runtime=30,
+        mem_mb=8000,
     shell:
         """
 

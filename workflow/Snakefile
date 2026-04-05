@@ -20,10 +20,9 @@ min_version("7.21.0")
 ################
 
 
-configfile: "config/config.yaml"
-
-
-validate(config, schema="schemas/config.schema.yaml")
+# Load and validate config
+schema_path = Path(workflow.basedir) / "schemas" / "config.schema.yaml"
+validate(config, schema=str(schema_path))
 
 
 #############################
@@ -34,94 +33,74 @@ validate(config, schema="schemas/config.schema.yaml")
 include: "rules/common.smk"
 
 
+apply_schema_defaults(config, str(schema_path))
+
+
 ###########################
 ## DEFINE PIPELINE CONTAINER
 ###########################
 
 
-containerized: "docker://ghcr.io/boulardlab/3t-seq:feature-ui-simplifications"
+containerized: "docker://ghcr.io/boulardlab/3t-seq:latest"
 
 
 #######################
 ## DEFINE VARIABLES
 #######################
 
-
-date = datetime.now()
-timestamp = date.strftime("%Y-%m-%d")
-
+# Date and basic folders
+timestamp = datetime.now().strftime("%Y-%m-%d")
 data_folder = Path(config["globals"]["results_folder"])
+log_folder = data_folder / "log" / timestamp
+tmp_folder = data_folder / "tmp"
 
-log_folder = data_folder.joinpath("log", timestamp)
-qc_folder = data_folder.joinpath("qc")
-references_folder = data_folder.joinpath("references")
-tmp_folder = data_folder.joinpath("tmp")
-analysis_folder = data_folder.joinpath("analysis")
+# Quality Control
+qc_folder = data_folder / "qc"
+fastqc_raw_folder = qc_folder / "fastqc-raw"
+fastqc_trim_folder = qc_folder / "fastqc-trimmed"
+fastqc_markdup_folder = qc_folder / "fastqc-markdup"
+fastqc_star_folder = qc_folder / "star"
+multiqc_folder = qc_folder / "multiqc"
 
-trim_reads_folder = data_folder.joinpath("trim")
-rdata_folder = analysis_folder.joinpath("rdata")
-pictures_folder = analysis_folder.joinpath("pictures")
-tables_folder = analysis_folder.joinpath("tables")
-notebooks_folder = analysis_folder.joinpath("notebooks")
+# Alignments and Analysis
+alignments_folder = data_folder / "alignments"
+star_folder = alignments_folder / "star"
+markdup_folder = alignments_folder / "star_markdup"
+starTE_folder = alignments_folder / "starTE"
+salmonTE_folder = data_folder / "salmonTE"
+trna_coverage_folder = data_folder / "tRNA_coverage"
+trim_reads_folder = data_folder / "trim"
 
-fastqc_raw_folder = qc_folder.joinpath("fastqc-raw")
-fastqc_trim_folder = qc_folder.joinpath("fastqc-trimmed")
-fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
-fastqc_star_folder = qc_folder.joinpath("star")
+analysis_folder = data_folder / "analysis"
+rdata_folder = analysis_folder / "rdata"
+pictures_folder = analysis_folder / "pictures"
+tables_folder = analysis_folder / "tables"
+notebooks_folder = analysis_folder / "notebooks"
 
-multiqc_folder = qc_folder.joinpath("multiqc")
+# References
+references_folder = data_folder / "references"
+rmsk_folder = references_folder / "rmsk"
+tRNA_annotation_dir = references_folder / "gtrnadb"
 
+genome_cfg = config["genome"]
+genome_label = genome_cfg["label"]
 
-alignments_folder = data_folder.joinpath("alignments")
-star_folder = alignments_folder.joinpath("star")
-markdup_folder = alignments_folder.joinpath("star_markdup")
-starTE_folder = alignments_folder.joinpath("starTE")
-salmonTE_folder = data_folder.joinpath("salmonTE")
-trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
-deseq2_working_directory = Path(config["deseq2"]["working_directory"])
-# deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
-
-
-if "fasta_path" in config["genome"]:
-    ## Generate paths for sequence data from links
-    fasta_path = references_folder.joinpath(
-        get_filename(config["genome"]["fasta_path"], decompress=True)
-    )
+if "fasta_path" in genome_cfg:
+    fasta_path = references_folder / get_filename(genome_cfg["fasta_path"], decompress=True)
 else:
-    fasta_path = references_folder.joinpath(config["genome"]["label"], "fasta.fa")
+    fasta_path = references_folder / genome_label / "fasta.fa"
 
-if "gtf_path" in config["genome"]:
-    gtf_path = references_folder.joinpath(
-        get_filename(config["genome"]["gtf_path"], decompress=True)
-    )
+if "gtf_path" in genome_cfg:
+    gtf_path = references_folder / get_filename(genome_cfg["gtf_path"], decompress=True)
 else:
-    gtf_path = references_folder.joinpath(config["genome"]["label"], "annotation.gtf")
+    gtf_path = references_folder / genome_label / "annotation.gtf"
 
-rmsk_folder = references_folder.joinpath("rmsk")
-tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
-
-## Get samples
+# Sequencing Libraries
 libraries = config["sequencing_libraries"]
+library_names_paired = [lib["name"] for lib in libraries if lib.get("protocol") == "pe"]
+library_names_single = [lib["name"] for lib in libraries if lib.get("protocol") != "pe"]
 
-library_names_single = []
-library_names_paired = []
-
-for library in libraries:
-    libname = library["name"]
-    protocol = library["protocol"]
-    if protocol == "pe":
-        library_names_paired.append(libname)
-    else:
-        library_names_single.append(libname)
-
-# Download all chromosomes if no specific chromosome was specified
-if not "selected_chromosomes" in config["genome"]:
-    config["genome"]["selected_chromosomes"] = None
-
-# Default annotation_type to "ensembl" when using refgenie (label)
-if "label" in config["genome"] and "annotation_type" not in config["genome"]:
-    config["genome"]["annotation_type"] = "ensembl"
-
+# Defaults and validation
 validate_sample_sheets()
 populate_sample_registry()
 

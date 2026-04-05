@@ -2,7 +2,16 @@
 
 set -e
 
+if [[ -n "$TEMPDIR" ]]; then
+    TMPDIR="$TEMPDIR"
+elif [[ -n "$TMP" ]]; then
+    TMPDIR="$TMP"
+elif [[ -z "$TMPDIR" ]]; then
+    TMPDIR="/tmp"
+fi
+
 T=$(mktemp -d -p $TMPDIR)
+
 
 I=""
 for F in ${snakemake_input}; do

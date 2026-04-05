@@ -21,12 +21,12 @@ rule picard_markdup_shared:
         ),
     log:
         protected(markdup_folder.joinpath("_shared", "{markdup_hash}", "{sample}.log")),
+    conda:
+        "../env/picard.yml"
     threads: 2
     resources:
         runtime=360,
         mem_mb=16000,
-    conda:
-        "../env/picard.yml"
     shell:
         """
         set -e 
@@ -82,19 +82,16 @@ rule fastqc_markdup:
             subcategory="Deduplicated alignments",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=fastqc_markdup_folder,
+    log:
+        log_folder.joinpath("fastqc_markdup/{serie}/{sample}.log"),
+    conda:
+        "../env/qc.yml"
     threads: 4
     resources:
         runtime=20,
         mem_mb=4000,
-    conda:
-        # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
-    conda:
-        "../env/qc.yml"
-    log:
-        log_folder.joinpath("fastqc_markdup/{serie}/{sample}.log"),
+    params:
+        fastqc_folder=fastqc_markdup_folder,
     shell:
         """
 

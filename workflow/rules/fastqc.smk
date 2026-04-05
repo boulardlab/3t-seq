@@ -1,10 +1,6 @@
 
 
 rule fastqc_raw_se:
-    wildcard_constraints:
-        serie="|".join(
-            library_names_single if len(library_names_single) > 0 else ["none"]
-        ),
     input:
         get_fastq,
     output:
@@ -15,16 +11,20 @@ rule fastqc_raw_se:
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
-    threads: 4
-    conda:
-        "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie="|".join(
+            library_names_single if len(library_names_single) > 0 else ["none"]
+        ),
+    conda:
+        "../env/qc.yml"
+    threads: 4
     resources:
         runtime=60,
         mem_mb=4000,
+    params:
+        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
         set -e 
@@ -33,10 +33,6 @@ rule fastqc_raw_se:
 
 
 rule fastqc_raw_pe:
-    wildcard_constraints:
-        serie="|".join(
-            library_names_paired if len(library_names_paired) > 0 else ["none"]
-        ),
     input:
         unpack(get_fastq_paired),
     output:
@@ -54,16 +50,20 @@ rule fastqc_raw_pe:
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
         ),
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
-    threads: 4
-    conda:
-        "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}_pe.log"),
+    wildcard_constraints:
+        serie="|".join(
+            library_names_paired if len(library_names_paired) > 0 else ["none"]
+        ),
+    conda:
+        "../env/qc.yml"
+    threads: 4
     resources:
         runtime=120,
         mem_mb=4000,
+    params:
+        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
         set -e 

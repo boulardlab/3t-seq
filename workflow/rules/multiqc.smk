@@ -8,10 +8,6 @@ rule multiqc:
             category="MultiQC",
             labels={"serie": "{serie}"},
         ),
-    params:
-        config=workflow.source_path("../config/multiqc_config.yaml"),
-        outdir=lambda wc: multiqc_folder / wc.serie,
-        title=lambda wc: wc.serie,
     log:
         log_folder.joinpath("multiqc", "multiqc-{serie}.log"),
     conda:
@@ -19,6 +15,10 @@ rule multiqc:
     resources:
         runtime=30,
         mem_mb=2048,
+    params:
+        config=workflow.source_path("../config/multiqc_config.yaml"),
+        outdir=lambda wc: multiqc_folder / wc.serie,
+        title=lambda wc: wc.serie,
     shell:
         """
         set -e

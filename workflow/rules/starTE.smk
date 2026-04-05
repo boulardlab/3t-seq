@@ -18,6 +18,8 @@ rule starTE_shared_random:
         ),
     log:
         log_folder.joinpath("starTE/random/{starte_hash}/{sample}.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
@@ -37,20 +39,18 @@ rule starTE_shared_random:
         )
         + ".",
         outFilterMultimapNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_random", "outFilterMultimapNmax", default=5000
+            wildcards, "starTE_random", "outFilterMultimapNmax"
         ),
         winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_random", "winAnchorMultimapNmax", default=5000
+            wildcards, "starTE_random", "winAnchorMultimapNmax"
         ),
         alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_random", "alignTranscriptsPerWindowNmax", default=300
+            wildcards, "starTE_random", "alignTranscriptsPerWindowNmax"
         ),
-    conda:
-        "../env/alignment.yml"
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
          
          STAR \
             --outSAMtype BAM Unsorted \
@@ -122,10 +122,10 @@ rule featureCounts_random:
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
-    conda:
-        "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/random.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 4
     resources:
         runtime=360,
@@ -137,7 +137,7 @@ rule featureCounts_random:
     shell:
         """
          set -e 
-         featureCounts -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts -p -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
         """
 
 
@@ -147,18 +147,18 @@ rule deseq2_starTE_random:
         sample_sheet=get_sample_sheet,
     output:
         dds=starTE_folder.joinpath("{serie}", "DESeq2", "dds_random.rds"),
-        deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt"),
-    params:
-        variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
+        deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv"),
+    log:
+        log_folder.joinpath("R/{serie}/deseq2-starTE-random.log"),
     conda:
         "../env/R.yml"
     threads: 4
     resources:
         runtime=40,
         mem_mb=20000,
-    log:
-        log_folder.joinpath("R/{serie}/deseq2-starTE-random.log"),
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     script:
         "../scripts/deseq2_starTE_random_v1.R"
 
@@ -170,18 +170,18 @@ localrules:
 
 rule yte_starTE_random:
     input:
-        datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")],
+        datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv")],
     output:
         starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
+    log:
+        log_folder.joinpath("starTE/random/{serie}/yte.log"),
+    conda:
+        "../env/yte.yml"
+    threads: 1
     params:
         template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="starTE-random DESeq2",
         view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
-    conda:
-        "../env/yte.yml"
-    log:
-        log_folder.joinpath("starTE/random/{serie}/yte.log"),
-    threads: 1
     script:
         "../scripts/yte.py"
 
@@ -189,7 +189,7 @@ rule yte_starTE_random:
 rule datavzrd_starTE_random:
     input:
         config=starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
-        dataset=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt"),
+        dataset=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv"),
     output:
         report(
             directory(starTE_folder.joinpath("{serie}", "random", "datavzrd")),
@@ -224,6 +224,8 @@ rule starTE_shared_multihit:
         ),
     log:
         log_folder.joinpath("starTE/multihit/{starte_hash}/{sample}.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 8
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
@@ -243,20 +245,18 @@ rule starTE_shared_multihit:
         )
         + ".",
         outFilterMultimapNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_multihit", "outFilterMultimapNmax", default=1
+            wildcards, "starTE_multihit", "outFilterMultimapNmax"
         ),
         winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_multihit", "winAnchorMultimapNmax", default=5000
+            wildcards, "starTE_multihit", "winAnchorMultimapNmax"
         ),
         alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
-            wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax", default=3000
+            wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax"
         ),
-    conda:
-        "../env/alignment.yml"
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
                   
          STAR \
             --outSAMtype BAM Unsorted \
@@ -327,10 +327,10 @@ rule featureCounts_multihit:
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),
-    conda:
-        "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/multihit.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 4
     resources:
         runtime=360,
@@ -342,5 +342,5 @@ rule featureCounts_multihit:
     shell:
         """
          set -e 
-         featureCounts -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts -p -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
          """

@@ -3,14 +3,14 @@ rule subset_gtf:
         gtf_path,
     output:
         rdata_folder.joinpath("deseq2/ann.rds"),
+    log:
+        log_folder.joinpath("R/subset_gtf.log"),
     conda:
         "../env/R.yml"
     threads: 1
     resources:
         runtime=60,
         mem_mb=20000,
-    log:
-        log_folder.joinpath("R/subset_gtf.log"),
     script:
         "../scripts/subset_gtf_v1.R"
 
@@ -22,20 +22,20 @@ rule deseq2:
         deg_table=tables_folder.joinpath("deseq2/{serie}/results.csv"),
         deg_table_shrink=tables_folder.joinpath("deseq2/{serie}/results.shrink.csv"),
         dds=rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
+    log:
+        log_folder.joinpath("R/{serie}/deseq2.log"),
+    conda:
+        "../env/R.yml"
+    threads: 4
+    resources:
+        runtime=40,
+        mem_mb=20000,
     params:
         # quantile_threshold=0.25,
         annotation_type=config["genome"]["annotation_type"],
         test=lambda wildcards: get_deseq2_test(wildcards),
         variable=lambda wildcards: get_deseq2_variable(wildcards),
         reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
-    threads: 4
-    resources:
-        runtime=40,
-        mem_mb=20000,
-    conda:
-        "../env/R.yml"
-    log:
-        log_folder.joinpath("R/{serie}/deseq2.log"),
     script:
         "../scripts/deseq2_v1.R"
 
@@ -53,15 +53,15 @@ rule yte_single_copy_genes:
         ],
     output:
         analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd.yaml"),
+    log:
+        log_folder.joinpath("{serie}/yte.log"),
+    conda:
+        "../env/yte.yml"
+    threads: 1
     params:
         template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="Single copy genes DESeq2",
         view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
-    conda:
-        "../env/yte.yml"
-    log:
-        log_folder.joinpath("{serie}/yte.log"),
-    threads: 1
     script:
         "../scripts/yte.py"
 
