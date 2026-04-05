@@ -1,9 +1,9 @@
 # Agent Instructions for 3t-seq
 
-This document provides context and guidelines for AI agents working on the 3t-seq repository.
+This document provides comprehensive context and guidelines for AI agents working on the 3t-seq repository. Adherence to these guidelines is mandatory for all coding, modification, or testing tasks.
 
 ## Project Overview
-**3t-seq** is a Snakemake workflow for integrated analysis of single-copy genes, transposable elements (TEs), and tRNAs from total RNA-seq data.
+**3t-seq** is a Snakemake workflow for integrated analysis of single-copy genes, transposable elements (TEs), and tRNAs from total RNA-seq data. The core objective is to ensure reproducible and high-quality bioinformatics analysis.
 
 ## Tech Stack
 - **Workflow Engine:** Snakemake (v8.9.0)
@@ -12,15 +12,22 @@ This document provides context and guidelines for AI agents working on the 3t-se
 - **Containerization:** Apptainer/Singularity (configured via Snakemake profiles)
 
 ## Key Workflows & Commands
-Always prefer using `pixi run` to ensure the correct environment is used.
+
+Always prefer using `pixi run <task>` to ensure the correct environment and dependencies are used. The project uses a parameterized task system.
 
 | Task | Command | Description |
-|------|---------|-------------|
-| **Linting** | `pixi run lint` | Runs `snakemake --lint` on the integration test config. |
+| :--- | :--- | :--- |
+| **Linting** | `pixi run lint <config> <profile>` | Runs `snakemake --lint`. Defaults: `remote-references`, `laptop`. |
 | **Formatting** | `pixi run format` | Formats Snakemake files using `snakefmt`. |
-| **Dry Run** | `pixi run run-test` | Performs a Snakemake dry-run using the integration test dataset. |
-| **Hooks** | `pixi run hooks` | Runs `pre-commit` hooks on all files. |
-| **Full Test** | `snakemake --directory .tests/integration ...` | Runs the actual integration test (see README for details). |
+| **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). |
+| **Test** | `pixi run test <config> <profile>` | Executes the integration test. |
+| **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report. |
+| **Containers** | `pixi run containerize` | Generates the `Dockerfile` for the workflow. |
+| **Pre-build** | `pixi run build-conda-envs` | Pre-creates all Conda environments. |
+
+**Available Arguments (Positional):**
+- `config`: `remote-references`, `local-references`, `adaptive-trim`
+- `profile`: `laptop`, `hpc`
 
 ## Repository Structure
 - `workflow/`: Contains the core logic.
@@ -34,12 +41,52 @@ Always prefer using `pixi run` to ensure the correct environment is used.
 - `pixi.toml`: Project-level dependency and task management.
 
 ## Development Guidelines for Agents
-1. **Use Pixi:** Always use `pixi run <task>` or prefix commands with `pixi run`. For parameters run as `pixi run <task> <param1> <param2>`, for example `pixi run run-test remote-references laptop`.
-2. **Follow Formatting:** Run `pixi run format` before submitting changes to Snakemake files.
-3. **Lint Early:** Run `pixi run lint` to catch workflow errors before execution.
-4. **Testing:** Refer to [Plan-Testing-Strategy.md](file:///Users/francesco/scratch/3t-seq/main.worktrees/dev/worktree-2026-03-31T14-14-10/Plan-Testing-Strategy.md) for the long-term testing goals, including unit test generation.
-5. **Pathing:** When referencing files in the repo, use relative paths from the root.
+
+### 1. Execution Flow
+- **Environment First:** Always prefix commands with `pixi run` unless explicitly modifying a Snakefile or Bash script that does not rely on a specific environment setup.
+- **Formatting Prerequisite:** Before any code change, run `pixi run format` to ensure code style consistency.
+- **Validation:** Run `pixi run lint` before attempting to commit any changes that modify workflow logic or core scripts.
+
+### 2. Code Style Guidelines (Python/R/Bash)
+- **Python:**
+    - **Typing:** Use comprehensive type hinting for all function signatures and complex data structures.
+    - **Naming:** Follow snake_case for functions and variables, PascalCase for classes. Modules should be descriptive.
+    - **Imports:** Use absolute imports where possible. Group imports logically (standard library, third-party, local).
+    - **Error Handling:** Use specific exceptions rather than generic ones. Handle I/O errors explicitly. Log errors using the standard logging mechanism defined in `scripts/`.
+    - **Efficiency:** Prioritize time/space complexity for data processing pipelines.
+- **R:**
+    - **Style:** Follow standard R style conventions for vectorization and function definitions.
+    - **Dependencies:** Explicitly define R dependencies in `envs/` or relevant Snakefile sections.
+- **Bash:**
+    - **Quoting:** Always quote file paths and arguments containing spaces.
+    - **Scripting:** Scripts must be idempotent where possible. Use clear, descriptive variable names.
+- **General:**
+    - **Security:** Never handle secrets or keys directly in code. Use environment variables or secure configuration files.
+    - **Documentation:** Functions and modules must have clear docstrings explaining parameters, return values, and potential exceptions.
+
+### 3. Standardized Patterns & Best Practices
+
+#### Configuration Management
+- **Single Source of Truth:** Always define default values in `workflow/schemas/config.schema.yaml`.
+- **Enforcement:** Use `apply_schema_defaults(config, "workflow/schemas/config.schema.yaml")` in `workflow/rules/common.smk` to ensure these defaults are correctly populated at runtime.
+- **Resolution:** Use `get_resolved_param()` for parameters that can be defined at both the 'library' and 'global default' levels.
+
+#### File Naming & Formats
+- **Tabular Data:** Use `.csv` instead of `.txt` for output tables (e.g., DESeq2 results). This ensures tools like `datavzrd` and `pandas` can automatically detect the format without manual intervention.
+- **Consistency:** Ensure file extensions match the content (e.g., `.fastq.gz` for compressed reads).
+
+#### Cross-Platform Compatibility
+- **macOS Coreutils:** On macOS, the environment is shimmed to use GNU coreutils (e.g., `gln` as `ln`). This is handled automatically by the Pixi activation script (`scripts/macos-coreutils-setup.sh`). Do not manually override system binaries.
+- **Temporary Directories:** Respect the `$TMPDIR` environment variable. Use centralized logic for temporary directory assignment to ensure compatibility with HPC nodes and local machines.
+
+#### Containerization & CI
+- **Multi-arch Support:** Docker builds must support both `linux/amd64` and `linux/arm64`. Verify that all dependencies in `workflow/envs/*.yaml` are solvable for both architectures.
+- **SHA Tagging:** Images pushed to GHCR should be tagged with the commit SHA in addition to the branch/tag name.
+
+### 5. Agent Specific Rules
+- **Cursor Rules:** [Check for .cursor/rules/ or .cursorrules for specific agent instructions.]
+- **Copilot Rules:** [Check for .github/copilot-instructions.md for specific Copilot guidelines.]
 
 ## Common Gotchas
-- **Slurm/HPC:** The pipeline is designed to run on HPCs. Be mindful of resource allocations (`threads`, `mem_mb`) in rules.
+- **Slurm/HPC:** Be mindful of resource allocations (`threads`, `mem_mb`) in rules, as the pipeline is designed for HPC execution.
 - **Profiles:** Users typically run the pipeline with `--profile profile/default`.
