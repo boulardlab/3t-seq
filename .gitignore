@@ -24,7 +24,6 @@ report.zip
 snakemake_run
 snakemake_test
 TODO
-**/.pixi/
 scripts/
 **/report*
 site/
