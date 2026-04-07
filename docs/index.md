@@ -74,7 +74,7 @@ graph TD
 
 ## Navigation
 
-- [Getting Started](getting-started.md): Installation and your first run.
-- [Configuration](configuration.md): Detailed guide on how to set up your analysis.
-- [Usage](usage.md): Commands and workflows.
-- [Deduplication](deduplication.md): Understanding the deduplication strategy.
+- [Getting Started](getting-started/index.md): Installation and your first run.
+- [Configuration](configuration/index.md): Detailed guide on how to set up your analysis.
+- [Usage](usage/index.md): Commands and workflows.
+- [Deduplication](algorithms/deduplication.md): Understanding the deduplication strategy.

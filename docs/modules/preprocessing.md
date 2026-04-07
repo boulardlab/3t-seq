@@ -25,7 +25,7 @@ The pipeline automatically executes [FastQC](https://www.bioinformatics.babraham
 
 ### Adaptive Trimming
 
-By default, 3t-seq uses its [Adaptive Trimming](../adaptive-trimming.md) algorithm. This dynamically selects the best adapter file and quality thresholds based on the specific library's properties.
+By default, 3t-seq uses its [Adaptive Trimming](../algorithms/adaptive-trimming.md) algorithm. This dynamically selects the best adapter file and quality thresholds based on the specific library's properties.
 
 ### Manual Configuration
 
@@ -43,7 +43,7 @@ sequencing_libraries:
 
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
-| `trimmomatic.adaptive` | `false` | Enable/disable [Adaptive Trimming](../adaptive-trimming.md). |
+| `trimmomatic.adaptive` | `false` | Enable/disable [Adaptive Trimming](../algorithms/adaptive-trimming.md). |
 | `trimmomatic.extra_params` | - | Fixed Trimmomatic modules (e.g., `CROP:100`). |
 
 ---

@@ -28,7 +28,7 @@ pixi run test remote-references laptop
 This will run the pipeline on a small subset of data included in the repository.
 
 !!! tip "Looking for a deeper guide?"
-    Check out our new [Step-by-Step Tutorial](tutorial/quickstart.md) for a comprehensive guide on creating custom configurations, managing sample sheets, and scaling execution to HPC clusters via Slurm.
+    Check out our new [Step-by-Step Tutorial](../tutorial/quickstart.md) for a comprehensive guide on creating custom configurations, managing sample sheets, and scaling execution to HPC clusters via Slurm.
 
 ---
 
