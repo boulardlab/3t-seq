@@ -1,14 +1,80 @@
+# See https://pre-commit.com/hooks.html for more hooks
 repos:
--   repo: https://github.com/snakemake/snakefmt
+  - repo: https://github.com/snakemake/snakefmt
     rev: v0.11.4
     hooks:
-    -   id: snakefmt
--   repo: local
+      - id: snakefmt
+        files: \.(smk|Snakefile)$
+
+  - repo: local
     hooks:
-    -   id: snakemake-lint
+      - id: snakemake-lint
         name: Snakemake Lint
-        # Use the pixi task for encapsulated execution
         entry: pixi run lint
         language: system
         pass_filenames: false
         always_run: true
+        # Target only workflow-related files to avoid documentation overlap
+        files: ^workflow/|Snakefile$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+        files: ^(docs/|mkdocs\.yml)
+      - id: end-of-file-fixer
+        files: ^(docs/|mkdocs\.yml)
+      - id: fix-byte-order-marker
+        files: ^(docs/|mkdocs\.yml)
+      - id: check-yaml
+        # Allows use of !reference and !!tags in mkdocs.yaml
+        args: ["--unsafe"]
+        files: ^(docs/|mkdocs\.yml)
+      - id: check-json
+        files: ^(docs/|mkdocs\.yml)
+      - id: pretty-format-json
+        args: ["--autofix"]
+        files: ^(docs/|mkdocs\.yml)
+      - id: check-symlinks
+        files: ^(docs/|mkdocs\.yml)
+      - id: check-added-large-files
+        files: ^(docs/|mkdocs\.yml)
+
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.21.2
+    hooks:
+      - id: pyupgrade
+        files: ^(docs/|mkdocs\.yml)
+
+  - repo: https://github.com/google/yamlfmt
+    rev: v0.21.0
+    hooks:
+      - id: yamlfmt
+        # Specifically targets YAML files in the documentation
+        files: ^(docs/.*\.ya?ml|mkdocs\.yml)
+
+  - repo: https://github.com/jackdewinter/pymarkdown
+    rev: v0.9.29
+    hooks:
+      - id: pymarkdown
+        files: ^docs/.*\.md$
+        args:
+          # Disabled:
+          #   MD013 - Line length
+          #   MD033 - Inline HTML
+          #   MD041 - First line in file should be a top level header
+          #   MD046 - Code block style - admonitions trigger this error
+          - --disable-rules=md013,md033,md041,md046
+          # The $#4 syntax is how one should specify integers in command-line for pymarkdown
+          # See https://application-properties.readthedocs.io/en/latest/command-line/#configuration-item-types
+          - --set
+          - "plugins.md007.indent=$#4"
+          - --set
+          - "plugins.md007.start_indented=$!True"
+          # Enable special handling of front-matter
+          - --set
+          - "extensions.front-matter.enabled=$!True"
+          - --set
+          - "extensions.front-matter.allow_blank_lines=$!False"
+          - scan

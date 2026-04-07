@@ -1,0 +1,35 @@
+name: Docs
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'pixi.toml'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.39.5
+          cache: true
+
+      - name: Build and Deploy Docs
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: |
+          pixi run mkdocs gh-deploy --force --clean --verbose

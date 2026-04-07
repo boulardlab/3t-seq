@@ -15,6 +15,11 @@ pyyaml = "*"
 mamba = "*"
 conda = "*"
 pytest = ">=8.1.1"
+mkdocs = "<2"
+mkdocs-material = "*"
+mkdocstrings-python = "*"
+mkdocs-glightbox = "*"
+mkdocs-git-revision-date-localized-plugin = "*"
 
 [target.linux-64.dependencies]
 apptainer = ">=1.2.5"
@@ -26,6 +31,8 @@ env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
 [tasks]
 format = "snakefmt workflow"
 hooks = "pre-commit run --all-files"
+docs-serve = { cmd = "mkdocs serve", env = { NO_MKDOCS_2_WARNING = "1" } }
+docs-build = { cmd = "mkdocs build", env = { NO_MKDOCS_2_WARNING = "1" } }
 
 ################################################################################
 # Linting
