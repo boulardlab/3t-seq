@@ -32,6 +32,7 @@ theme:
 markdown_extensions:
   - abbr
   - attr_list
+  - def_list
   - admonition
   - footnotes
   - pymdownx.arithmatex:
@@ -75,8 +76,11 @@ nav:
   - Home: index.md
   - Getting Started: getting-started/index.md
   - Tutorial:
-      - YAML Syntax: tutorial/yaml-syntax.md
-      - Quickstart: tutorial/quickstart.md
+      - 1. Quickstart: tutorial/quickstart.md
+      - 2. Preparing Data & Samples: tutorial/setup.md
+      - 3. Advanced Profiles: tutorial/profiles.md
+      - 4. Running & Reporting: tutorial/running.md
+      - 5. YAML Syntax Primer: tutorial/yaml-syntax.md
   - Configuration: configuration/index.md
   - Usage: usage/index.md
   - Analysis Modules:
