@@ -6,33 +6,47 @@ authors = ["Francesco Tabaro"]
 channels = ["conda-forge", "bioconda"]
 platforms = ["osx-arm64", "linux-64"]
 
-[dependencies]
+[feature.snakemake.dependencies]
 snakemake = "==8.9.0"
-snakefmt = ">=0.11.4"
-pre-commit = ">=4.5.1"
 pandas = "*"
 pyyaml = "*"
 mamba = "*"
 conda = "*"
+
+[feature.dev.dependencies]
+snakefmt = ">=0.11.4"
+pre-commit = ">=4.5.1"
 pytest = ">=8.1.1"
+
+[feature.docs.dependencies]
 mkdocs = "<2"
 mkdocs-material = "*"
 mkdocstrings-python = "*"
 mkdocs-glightbox = "*"
 mkdocs-git-revision-date-localized-plugin = "*"
+lychee = ">=0.23.0,<0.24"
 
-[target.linux-64.dependencies]
+[environments]
+default = ["snakemake"]
+dev = ["snakemake", "dev"]
+docs = ["snakemake", "dev", "docs"]
+
+[feature.snakemake.target.linux-64.dependencies]
 apptainer = ">=1.2.5"
 
 [target.osx-arm64.activation]
 scripts = ["scripts/macos-coreutils-setup.sh"]
 env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
 
-[tasks]
+[feature.dev.tasks]
 format = "snakefmt workflow"
 hooks = "pre-commit run --all-files"
+
+[feature.docs.tasks]
 docs-serve = { cmd = "mkdocs serve", env = { NO_MKDOCS_2_WARNING = "1" } }
 docs-build = { cmd = "mkdocs build --strict", env = { NO_MKDOCS_2_WARNING = "1" } }
+
+[tasks]
 
 ################################################################################
 # Linting

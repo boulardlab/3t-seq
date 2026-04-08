@@ -78,3 +78,10 @@ repos:
           - --set
           - "extensions.front-matter.allow_blank_lines=$!False"
           - scan
+
+  - repo: https://github.com/lycheeverse/lychee
+    rev: v0.15.1
+    hooks:
+      - id: lychee
+        files: ^docs/.*\.md$
+        args: ["--no-progress", "--exclude", "localhost"]

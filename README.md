@@ -2,62 +2,60 @@
 
 ## Overview
 
-This is a Snakemake workflow for the integrated analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
+This is a Snakemake workflow for the end-to-end analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
 
 <p align="center">
 <img src="docs/figures/3t-wf.png" width="500">
 </p>
 
+## Quickstart
+
+The easiest way to run 3t-seq and access its documentation is using [Pixi](https://pixi.sh).
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/boulardlab/3t-seq.git
+   cd 3t-seq
+   ```
+
+2. **Serve the documentation**:
+   ```bash
+   pixi run docs-serve
+   ```
+   This will start a local server at `http://127.0.0.1:8000` with the complete manual.
+
+3. **Verify installation**:
+   ```bash
+   pixi run -e dev test
+   ```
+   This runs a small integration test to ensure everything is set up correctly.
+
 ## Requirements
 
-
-- [Conda](https://conda.io/)
-- [Snakemake](https://snakemake.readthedocs.io/en/stable/)
-- [Apptainer](https://apptainer.org/docs/user/latest/)
+- [Pixi](https://pixi.sh/) (Recommended for automated environment management)
+- [Apptainer](https://apptainer.org/docs/user/latest/) or [Docker](https://www.docker.com/) (For containerized tool execution)
 
 ## Usage
 
-### 1. Download the latest version of the pipeline
+### 1. Configure samples and parameters
 
-For example, to download version 1.0.0:
+Edit the `config.yaml` file. The [`config/` folder](config/) contains a README with common patterns, and the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
 
+### 2. Execute the pipeline
+
+Run the default pipeline using:
 ```bash
-curl -LJO "https://github.com/boulardlab/3t-seq/archive/v1.0.0.zip"
-unzip "3t-seq-1.0.0.zip"
+pixi run snakemake --profile profile/default
 ```
 
-### 2. Create a conda environment
+*Note: 3t-seq uses predefined environments (`default`, `dev`, `docs`). The `pixi run` command automatically handles all dependencies.*
 
+### 3. Generate 3t-seq HTML report
+
+After successful execution, generate an interactive HTML report:
 ```bash
-conda create -n snakemake-latest -c bioconda -c conda-forge snakemake singularity
-conda activate snakemake-latest
+pixi run snakemake --profile profile/default --report report.zip
 ```
-
-### 3. Configure samples and parameters
-
-Edit the `config.yaml` file to specify your sample information and analysis parameters. The [`config/` folder](config/) contains a detailed description of this file.
-
-### 4. Execute the pipeline
-
-In the `3et-seq` folder:
-
-```bash
-snakemake --profile profile/default
-```
-
-### 5. View results
-
-After the pipeline completes, you can find the results in the `results/` directory.
-
-### 6. Generate 3t-seq HTML report
-
-After successful execution, an interactive HTML report collecting execution statistics, FastQC and MultiQC reports, DESeq2 results, MA plot and Volcano plots for single copy gene, retrotransposons and tRNAs can be generated as follow:
-
-```bash
-snakemake --profile profile/default --report report.zip
-```
-
-A `report.zip` archive will be generated in the current working directory. The archive will contain the HTML file. This file can be shared and does not need internet connection to be opened.
 
 ## Configuration
 
@@ -104,32 +102,17 @@ The pipeline will generate an ouput folder tree like so
 
 ## Run tests
 
-The `.tests/integration/` folder contains a small test dataset and example configuration file needed to run the 3t-seq pipeline on it. 
-
-Provided a working Snakemake installation is available, the example dataset can be run as follow:
+The repository includes an integration test suite. You can run it using the pre-defined Pixi tasks:
 
 ```bash
-snakemake \
-  --directory .tests/integration \
-  --configfile .tests/integration/config.yaml \
-  --profile .tests/integration/profile \
-  --snakefile workflow/Snakefile
+# Run the integration test
+pixi run -e dev test
+
+# Generate a report for the test run
+pixi run -e dev test-report
 ```
 
-Results will then be available in `.tests/integration/results`.
-
-An example 3t-seq HTML report could be generated with the following command:
-
-```bash
-snakemake \
-  --directory .tests/integration \
-  --configfile .tests/integration/config.yaml \
-  --profile .tests/integration/profile \
-  --snakefile workflow/Snakefile \
-  --report report.zip
-```
-
-The `report.zip` file will be generated in `.tests/integration/report.zip`. 
+For more advanced testing options, see the [Testing Documentation](docs/getting-started/index.md#running-tests).
 
 ## References
 

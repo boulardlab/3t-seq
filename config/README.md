@@ -1,6 +1,12 @@
-# Configuration instructions
+See below for an example config file with explanation of each option and description of common use-cases. For a complete, exhaustive guide on all available parameters, please refer to the [Full Configuration Documentation](../docs/configuration/index.md).
 
-See below for an example config file with explanation of each option and description of common use-cases.
+## Configuration Validation
+
+3t-seq includes a built-in schema validator to ensure your `config.yaml` is correctly formatted before running the full pipeline. You can run the validator using:
+
+```bash
+pixi run lint
+```
 
 ## A complete example
 
