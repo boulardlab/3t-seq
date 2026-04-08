@@ -16,7 +16,10 @@ else
     cp "$INPUT_GTF" "${OUTPUT_GTF}.tmp"
 fi
 
+# Check if chromosomes have 'chr' prefix
+set +o pipefail
 HAS_CHR=$(head -n 1000 "${OUTPUT_GTF}.tmp" | grep -v '^#' | head -n1 | grep -q '^chr' && echo "yes" || echo "no")
+set -o pipefail
 
 # Subset chromosomes if requested
 if [ -n "$SELECTED_CHRS" ]; then

@@ -16,7 +16,10 @@ else
     cp "$INPUT_FASTA" "${OUTPUT_FASTA}.tmp"
 fi
 
+# Check if chromosomes have 'chr' prefix
+set +o pipefail
 HAS_CHR=$(head -n 1000 "${OUTPUT_FASTA}.tmp" | awk '/^>/ {if ($0 ~ /^>chr/) {print "yes"; exit} else {print "no"; exit}}' || echo "no")
+set -o pipefail
 
 # Subset chromosomes if requested
 if [ -n "$SELECTED_CHRS" ]; then
