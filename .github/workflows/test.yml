@@ -37,9 +37,10 @@ jobs:
         with:
           pixi-version: v0.66.0
           cache: true
+          environments: dev
 
       - name: Run Integration Tests
         run: |
           ROOT=$(realpath .)
-          pixi run test --config adaptive-trim --profile laptop \
+          pixi run -e dev test adaptive-trim laptop \
           --singularity-args="--bind $ROOT --bind $HOME"

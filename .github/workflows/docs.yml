@@ -34,12 +34,13 @@ jobs:
         with:
           pixi-version: v0.66.0
           cache: true
+          environments: docs
 
       - name: Build Docs
         env:
           NO_MKDOCS_2_WARNING: "1"
         run: |
-          pixi run mkdocs build --clean --strict
+          pixi run -e docs mkdocs build --clean --strict
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
