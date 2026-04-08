@@ -21,14 +21,14 @@ graph LR
 
 ### starTE Analysis
 
-[starTE](https://github.com/mhammell-lab/tetoolkit) uses STAR for alignment and a specialized counting algorithm for multi-mapping reads.
+starTE uses STAR for alignment and a specialized counting algorithm for multi-mapping reads.
 
 - **Random Match**: Randomly assigns multi-mapping reads to a single locus.
 - **Multi-mapping Allocation**: Uses **fractional counting** to distribute multi-mapping reads equally across all valid alignment loci (each locus receives \(1/n\) of a count for a read mapping to \(n\) locations).
 
 ### SalmonTE Analysis
 
-[SalmonTE](https://github.com/Goldberg-Research/SalmonTE) is a fast and accurate quantification method for TE transcripts.
+[SalmonTE](https://github.com/hyunhwan-bcm/SalmonTE) is a fast and accurate quantification method for TE transcripts.
 
 - Uses quasi-mapping to quickly assign reads to a curated database of TE consensus sequences.
 - Highly efficient for large datasets.

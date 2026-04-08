@@ -17,7 +17,7 @@ graph LR
 
 ## tRNA Quantification
 
-The pipeline implements the [mim-tRNA-seq](https://github.com/v-andreev/mim-tRNA-seq) strategy for quantifying tRNA abundance.
+The pipeline implements the [mim-tRNA-seq](https://github.com/nedialkova-lab/mim-tRNAseq) strategy for quantifying tRNA abundance.
 
 ### Features
 

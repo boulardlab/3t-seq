@@ -79,9 +79,12 @@ repos:
           - "extensions.front-matter.allow_blank_lines=$!False"
           - scan
 
-  - repo: https://github.com/lycheeverse/lychee
-    rev: v0.15.1
+  - repo: local
     hooks:
       - id: lychee
+        name: Lychee
+        entry: pixi run -e dev lychee
+        language: system
+        pass_filenames: false
         files: ^docs/.*\.md$
-        args: ["--no-progress", "--exclude", "localhost"]
+        args: ["--no-progress", "--exclude", "localhost", "docs/"]

@@ -11,9 +11,18 @@ This document provides comprehensive context and guidelines for AI agents workin
 - **Languages:** Python, R, Bash
 - **Containerization:** Apptainer/Singularity (configured via Snakemake profiles)
 
-## Key Workflows & Commands
+## Always prefer using `pixi run <task>` to ensure the correct environment and dependencies are used. The project uses a parameterized task system and multiple environments.
 
-Always prefer using `pixi run <task>` to ensure the correct environment and dependencies are used. The project uses a parameterized task system.
+### Pixi Environments
+- **`default`**: The base environment containing Snakemake and core dependencies. Used for production runs.
+- **`dev`**: Extends `default` with development tools (`snakefmt`, `pre-commit`, `pytest`). Use this for linting and formatting.
+- **`docs`**: Extends `dev` with documentation tools (`mkdocs`, plugins). Use this for building and serving the manual.
+
+To specify an environment, use the `-e` (or `--environment`) flag:
+```bash
+pixi run -e dev format
+pixi run -e docs docs-serve
+```
 
 | Task | Command | Description |
 | :--- | :--- | :--- |
@@ -46,6 +55,7 @@ Always prefer using `pixi run <task>` to ensure the correct environment and depe
 - **Environment First:** Always prefix commands with `pixi run` unless explicitly modifying a Snakefile or Bash script that does not rely on a specific environment setup.
 - **Formatting Prerequisite:** Before any code change, run `pixi run format` to ensure code style consistency.
 - **Validation:** Run `pixi run lint` before attempting to commit any changes that modify workflow logic or core scripts.
+- **Documentation:** Keep documentation in sync with feature changes. Any agent modifying source code MUST check the `docs/` directory and update relevant parts. Validate changes with `pixi run -e docs docs-build`.
 
 ### 2. Code Style Guidelines (Python/R/Bash)
 - **Python:**

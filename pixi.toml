@@ -17,6 +17,7 @@ conda = "*"
 snakefmt = ">=0.11.4"
 pre-commit = ">=4.5.1"
 pytest = ">=8.1.1"
+lychee = ">=0.23.0,<0.24"
 
 [feature.docs.dependencies]
 mkdocs = "<2"
@@ -24,7 +25,6 @@ mkdocs-material = "*"
 mkdocstrings-python = "*"
 mkdocs-glightbox = "*"
 mkdocs-git-revision-date-localized-plugin = "*"
-lychee = ">=0.23.0,<0.24"
 
 [environments]
 default = ["snakemake"]
