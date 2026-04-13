@@ -6,7 +6,19 @@ This tutorial provides a step-by-step guide to running the **3t-seq pipeline** f
 
 ## 1. Environment Setup
 
-The pipeline requires **Pixi** for environment management. If you haven't installed it yet, follow the instructions on [pixi.sh](https://pixi.sh).
+3t-seq uses **Pixi** for automated environment management.
+
+### a. Install Pixi
+
+If you haven't installed Pixi yet, run the following command (for Linux/macOS):
+
+```bash
+curl -fsSL https://pixi.sh/install.sh | bash
+```
+
+Or follow the instructions on [pixi.sh](https://pixi.sh).
+
+### b. Clone and Initialize
 
 1. Clone the repository:
 
@@ -15,7 +27,19 @@ The pipeline requires **Pixi** for environment management. If you haven't instal
    cd 3t-seq
    ```
 
-2. Install dependencies:
+2. Initialize Git LFS and pull test data:
+
+   ```bash
+   pixi run -e dev setup
+   ```
+
+   !!! tip "EMBL Cluster Users"
+       On the EMBL cluster, you can load Git LFS with: `module load git-lfs`.
+
+   !!! important
+       Testing the pipeline requires Large File Storage (LFS) assets. The command above ensures that `git-lfs` is installed in your local environment and all binary assets (FASTQ, FASTA, etc.) are downloaded.
+
+3. Install all dependencies:
 
    ```bash
    pixi install

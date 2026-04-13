@@ -62,7 +62,7 @@ rule star_shared:
         log_folder.joinpath("star/{align_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    threads: 8
+    threads: 32
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
             wildcards, input.fastq, attempt

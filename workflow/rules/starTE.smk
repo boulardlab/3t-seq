@@ -20,7 +20,7 @@ rule starTE_shared_random:
         log_folder.joinpath("starTE/random/{starte_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    threads: 8
+    threads: 32
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
             wildcards, input.fastq, attempt
@@ -226,7 +226,7 @@ rule starTE_shared_multihit:
         log_folder.joinpath("starTE/multihit/{starte_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    threads: 8
+    threads: 32
     resources:
         runtime=lambda wildcards, input, attempt: get_star_runtime(
             wildcards, input.fastq, attempt

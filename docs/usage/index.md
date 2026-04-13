@@ -10,7 +10,15 @@ To execute the pipeline, use the `pixi run test` command or call `snakemake` dir
 
 We have predefined several tasks to help you manage the pipeline:
 
+- **Environment Setup**:
+  Initializes Git LFS and pulls large data files needed for integration tests and some analysis steps.
+
+  ```bash
+  pixi run setup
+  ```
+
 - **Linting (Spell-checking)**:
+
   Linting checks your configuration files for typos or formatting errors before you run anything, preventing the pipeline from crashing hours later.
 
   ```bash

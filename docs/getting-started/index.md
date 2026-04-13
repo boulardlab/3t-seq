@@ -3,6 +3,10 @@
 ## Prerequisites
 
 - **Pixi**: We use [Pixi](https://pixi.sh) for environment and dependency management. Think of Pixi as a toolkit manager. Instead of you manually installing 50 different bioinformatics programs (and hoping they don't conflict with each other or your computer), Pixi creates an isolated, perfectly organized "toolbox" just for this pipeline.
+- **Git LFS**: We use [Git Large File Storage (LFS)](https://git-lfs.com) to manage large data files (like reference genomes and test FASTQs) without bloating the repository history.
+    - **Installation**: On most systems, you can install it via your package manager (e.g., `brew install git-lfs` on macOS, or `sudo apt install git-lfs` on Ubuntu).
+    - **EMBL Cluster**: If you are working on the EMBL cluster, you can simply load the module: `module load git-lfs`.
+    - **Initialization**: After installing, run `git lfs install` once on your machine to set it up globally.
 
 ## Installation
 

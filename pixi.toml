@@ -18,6 +18,7 @@ snakefmt = ">=0.11.4"
 pre-commit = ">=4.5.1"
 pytest = ">=8.1.1"
 lychee = ">=0.23.0,<0.24"
+git-lfs = "*"
 
 [feature.docs.dependencies]
 mkdocs = "<2"
@@ -41,6 +42,7 @@ env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
 [feature.dev.tasks]
 format = "snakefmt workflow"
 hooks = "pre-commit run --all-files"
+setup = "git lfs install && git lfs pull"
 
 [feature.docs.tasks]
 docs-serve = { cmd = "mkdocs serve", env = { NO_MKDOCS_2_WARNING = "1" } }
@@ -139,6 +141,7 @@ choices = ["laptop", "hpc"]
 ################################################################################
 
 [tasks.test]
+depends-on = ["setup"]
 cmd = [
     "snakemake",
     "--directory", ".tests/integration",
@@ -150,7 +153,7 @@ cmd = [
 
 [[tasks.test.args]]
 arg = "config"
-default = "remote-references"
+default = "local-references"
 choices = ["remote-references", "local-references", "adaptive-trim"]
 
 [[tasks.test.args]]
@@ -163,6 +166,7 @@ choices = ["laptop", "hpc"]
 ################################################################################
 
 [tasks.test-report]
+depends-on = ["test"]
 cmd = [
     "snakemake",
     "--directory", ".tests/integration",
@@ -175,7 +179,7 @@ cmd = [
 
 [[tasks.test-report.args]]
 arg = "config"
-default = "remote-references"
+default = "local-references"
 choices = ["remote-references", "local-references", "adaptive-trim"]
 
 [[tasks.test-report.args]]
