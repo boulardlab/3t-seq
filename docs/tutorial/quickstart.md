@@ -21,6 +21,17 @@ pixi run -e dev setup   # pull LFS test data
 pixi install            # install all tools
 ```
 
+!!! tip "Using the `dev` branch"
+      When cloning the repository, the `main` branch is checked out by default.
+      Many of the feature described here are available only in the `dev` branch.
+
+      To switch to the `dev` branch, use:
+
+    ```bash
+    cd 3t-seq
+    git checkout origin/dev
+    ```
+
 ---
 
 ## 2. The Test Data
