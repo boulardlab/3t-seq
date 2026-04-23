@@ -1,77 +1,189 @@
-# Preparing Data & Samples
+# Preparing Your Own Data
 
-To run the pipeline on your own data, you need to organize your raw files and create a **Sample Sheet** CSV. This file maps your raw sequencing files to sample names and biological conditions.
-
----
-
-## 1. Organizing Your Raw Files
-
-The pipeline can work with FASTQ files anywhere on your system, but we recommend placing them in a `data/` or `reads/` directory within your project root.
-
-- **Fastq files** should be gzipped (`.fastq.gz` or `.fq.gz`).
-- **Paired-end** files typically use `_R1` / `_R2` or `_1` / `_2` suffixes.
+This page explains how to create the two files you need to run 3t-seq on your own data:
+a **sample sheet** (CSV) and a **config file** (YAML). Both are demonstrated using the
+bundled GSE130735 test as a concrete reference point.
 
 ---
 
-## 2. Creating a Sample Sheet
+## 1. The Sample Sheet
 
-Each sequencing library requires a corresponding CSV sample sheet. This file is the primary way the pipeline discovers your data.
+The sample sheet is a CSV file that tells the pipeline where your FASTQ files are and
+what metadata each sample carries.
 
-### Column Reference
+### Fixed column names
 
-The following columns are grounded in the pipeline's internal logic:
+The pipeline looks for these exact column names:
 
-| Column | Required | Description |
+| Column | Required when | Description |
 | :--- | :--- | :--- |
-| `name` | **Yes** | A unique biological identifier for the sample (e.g., `WT_Rep1`). |
-| `filename` | **SE** | The path to the raw sequence file for **Single-End** reads. |
-| `filename_1` | **PE** | The path to the first mate for **Paired-End** reads. |
-| `filename_2` | **PE** | The path to the second mate for **Paired-End** reads. |
-| `condition` | No* | Metadata for **DESeq2** (e.g., `WT`, `KO`). You can add any number of additional metadata columns. |
+| `name` | Always | Unique sample identifier. Used to name output files. |
+| `filename` | Single-end only | Path to the FASTQ file. |
+| `filename_1` | Paired-end only | Path to the R1 / mate 1 FASTQ file. |
+| `filename_2` | Paired-end only | Path to the R2 / mate 2 FASTQ file. |
 
-!!! note
-    *While additional columns like `condition` are not strictly required for alignment, they are essential for downstream Differential Expression (DE) analysis.
+These four names are reserved — do not use them for metadata.
+
+### Metadata columns
+
+Every other column is a **metadata column** and you choose the names freely.
+You can add as many as you like (`genotype`, `treatment`, `sex`, `batch`, `timepoint`, …).
+
+The pipeline carries all metadata columns through to DESeq2, but **only the column named in
+`deseq2.variable` in your config is used to build the differential expression contrast**.
+All other metadata columns are informational; they appear in DESeq2's `colData` but are
+not used in the model unless you add them explicitly.
+
+!!! note "Schema default"
+    The default value of `deseq2.variable` in the schema is `genotype`. If you do not set
+    `deseq2.variable` explicitly, your sample sheet must have a column named `genotype`.
+
+### Path resolution
+
+- **Absolute paths** are used as-is.
+- **Relative paths** are resolved relative to the Snakemake working directory (the value
+  of `--directory`, or the current directory if not set).
+- The `.fastq.gz` / `.fq.gz` extension is optional — the pipeline tests common extensions
+  automatically if the exact path is not found.
 
 ### Examples
 
-#### Single-End (SE) Sample Sheet
+#### Single-end
 
 ```csv
-name,filename,condition
-Control_Rep1,reads/ctrl1.fq.gz,control
-Control_Rep2,reads/ctrl2.fq.gz,control
-Treated_Rep1,reads/treat1.fq.gz,treated
+name,filename,genotype
+WT_Rep1,reads/wt_rep1.fq.gz,WT
+WT_Rep2,reads/wt_rep2.fq.gz,WT
+KO_Rep1,reads/ko_rep1.fq.gz,KO
+KO_Rep2,reads/ko_rep2.fq.gz,KO
 ```
 
-#### Paired-End (PE) Sample Sheet
+#### Paired-end (the GSE130735 test)
 
 ```csv
-name,filename_1,filename_2,treatment
-Sample_A,data/sA_R1.fastq.gz,data/sA_R2.fastq.gz,Basal
-Sample_B,data/sB_R1.fastq.gz,data/sB_R2.fastq.gz,Basal
-Sample_C,data/sC_R1.fastq.gz,data/sC_R2.fastq.gz,TGFb
+name,filename_1,filename_2,genotype
+SRX5795112_SRR9016958,GSE130735-subset/SRX5795112_SRR9016958_1.fq.gz,GSE130735-subset/SRX5795112_SRR9016958_2.fq.gz,WT
+SRX5795113_SRR9016959,GSE130735-subset/SRX5795113_SRR9016959_1.fq.gz,GSE130735-subset/SRX5795113_SRR9016959_2.fq.gz,WT
+SRX5795117_SRR9016963,GSE130735-subset/SRX5795117_SRR9016963_1.fq.gz,GSE130735-subset/SRX5795117_SRR9016963_2.fq.gz,KO
+SRX5795118_SRR9016964,GSE130735-subset/SRX5795118_SRR9016964_1.fq.gz,GSE130735-subset/SRX5795118_SRR9016964_2.fq.gz,KO
 ```
+
+#### Multiple metadata columns
+
+You can record additional information without affecting the analysis:
+
+```csv
+name,filename_1,filename_2,genotype,sex,batch
+s01,/data/s01_R1.fq.gz,/data/s01_R2.fq.gz,WT,M,b1
+s02,/data/s02_R1.fq.gz,/data/s02_R2.fq.gz,WT,F,b1
+s03,/data/s03_R1.fq.gz,/data/s03_R2.fq.gz,KO,M,b2
+s04,/data/s04_R1.fq.gz,/data/s04_R2.fq.gz,KO,F,b2
+```
+
+With this sample sheet and `deseq2.variable: genotype` in the config, the contrast is
+WT vs KO. The `sex` and `batch` columns are available in the DESeq2 object's `colData`
+but are not included in the model.
 
 ---
 
-## 3. Library Preparation Reference
+## 2. The Config File
 
-In your configuration, you will link these sample sheets to a library name and specify the protocol (`se` or `pe`).
+The config file (`config.yaml`) controls every aspect of the run. The minimum viable
+config has three sections:
 
 ```yaml
-sequencing_libraries:
-  - name: "MyExperiment"
-    protocol: "pe" # Must match your sample sheet columns!
-    sample_sheet: "my_samples.csv"
+globals:
+  results_folder: results/my_analysis/
+
+genome:
+  label: mm10
+
+comparisons:
+  - name: my_experiment
+    protocol: pe
+    sample_sheet: samples.csv
+    deseq2:
+      variable: genotype
+      reference_level: WT
+```
+
+### The `comparisons` list
+
+Each entry in `comparisons` represents one independent analysis: one sample sheet, one
+set of alignment parameters, and one DESeq2 contrast.
+
+| Key | Required | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `name` | Yes | — | Label for this comparison. Used to name output subdirectories. |
+| `protocol` | Yes | — | `pe` (paired-end) or `se` (single-end). Must match the sample sheet columns. |
+| `sample_sheet` | Yes | — | Path to the CSV file. |
+| `deseq2.test` | No | `Wald` | Statistical test: `Wald` or `LRT`. |
+| `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
+| `deseq2.reference_level` | No | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. Strongly recommended. |
+| `strandedness` | No | `0` | `0` unstranded, `1` forward-stranded, `2` reverse-stranded. |
+| `trimmomatic` | No | TruSeq3 defaults | Fixed string or `{adaptive: true}` for automatic parameter derivation. |
+| `star` | No | `""` | Extra flags passed to STAR. |
+| `bamCoverage` | No | `""` | Extra flags for deeptools bamCoverage. |
+
+### The `genome` section
+
+| Key | Required | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `label` | Yes | — | `mm10` or `mm39`. Downloads references automatically via Refgenie. |
+| `fasta_path` | No | derived from `label` | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
+| `gtf_path` | No | derived from `label` | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
+| `annotation_type` | No | `ensembl` | `ensembl`, `gencode`, or `mgi`. Required when using custom FASTA/GTF. |
+| `selected_chromosomes` | No | all | Restrict to a subset of chromosomes (useful for pilot runs). |
+
+### Using your own reference files
+
+Remove `label` and provide explicit paths:
+
+```yaml
+genome:
+  fasta_path: /data/refs/custom.fa
+  gtf_path: /data/refs/custom.gtf
+  annotation_type: ensembl
 ```
 
 !!! warning
-    If you specify `protocol: "pe"`, the pipeline expects `filename_1` and `filename_2` in the sample sheet. If you specify `protocol: "se"`, it expects `filename`.
+    `label` and `fasta_path`/`gtf_path` are mutually exclusive. The config validator
+    will raise an error if you mix them.
+
+---
+
+## 3. Putting It Together
+
+A complete config for a typical WT vs KO experiment:
+
+```yaml
+globals:
+  results_folder: results/wt_vs_ko/
+
+genome:
+  label: mm10
+
+comparisons:
+  - name: lung_WT_vs_KO
+    protocol: pe
+    sample_sheet: samples/lung.csv
+    deseq2:
+      variable: genotype
+      reference_level: WT
+```
+
+Run it:
+
+```bash
+pixi run snakemake \
+    --profile profiles/laptop \
+    --configfile config/my_config.yaml
+```
 
 ---
 
 ## Next Steps
 
-Once your data is prepared, learn how to use **Profiles** to encapsulate all your run settings:
-
-- [**Advanced Profiles**](profiles.md): Logic of the `--profile` flag and encapsulation.
+- [**Advanced Profiles**](profiles.md): encapsulate resource settings and executor choice.
+- [**Running & Reporting**](running.md): HPC execution and HTML report generation.
+- [**Configuration Reference**](../configuration/index.md): exhaustive list of all parameters.

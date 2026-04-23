@@ -1,4 +1,4 @@
-sequencing_libraries:
+comparisons:
   - name: GSE130735
     protocol: pe
     # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE

@@ -1,147 +1,208 @@
 # Configuration Reference
 
-This page describes all parameters in the `config.yaml` file. The pipeline uses [Snakemake's schema validation](https://snakemake.readthedocs.io/en/stable/snakefiles/configuration.html#validation) to ensure your configuration is correct before starting.
+This page is an exhaustive reference for every parameter in `config.yaml`.
+The pipeline validates your config against a [JSON Schema](../../workflow/schemas/config.schema.yaml)
+before any jobs run — so typos and missing required fields are caught early.
+
+Run the validator manually at any time with:
+
+```bash
+pixi run lint local-references laptop
+```
 
 ---
 
-## 1. Core Configuration
-
-The most commonly modified settings for any 3t-seq run. Use this annotated YAML as a guide for your basic setup.
+## Minimal working config
 
 ```yaml
 globals:
-  results_folder: "results/my_analysis/" # (1)
+  results_folder: results/my_analysis/
 
 genome:
-  label: "mm10" # (2)
+  label: mm10
 
-sequencing_libraries:
-  - name: "GSE123456" # (3)
-    protocol: "pe" # (4)
-    sample_sheet: "samples.csv" # (5)
-
-defaults: # (6)
-  strandedness: 0
+comparisons:
+  - name: my_experiment
+    protocol: pe
+    sample_sheet: samples.csv
 ```
 
-1. **results_folder**: **Required**. Root directory where all BAMs, counts, and logs will be saved. Always use a unique name for each experiment.
-2. **label**: **Required**. Genome version (e.g., `mm10`, `mm39`). This triggers automated downloads of all necessary references.
-3. **name**: **Required**. Unique identifier for the library or series (e.g., GEO accession).
-4. **protocol**: Sequencing geometry (`se` for single-end, `pe` for paired-end).
-5. **sample_sheet**: Path to the CSV mapping raw files to biological sample names.
-6. **defaults**: Global parameters that apply to all libraries unless overridden individually.
+This processes a paired-end dataset using mm10 references downloaded automatically,
+with all defaults applied.
 
 ---
 
-## 2. Library & Alignment Settings
+## `globals`
 
-Use these tabs to configure specialized alignment logic and library-specific overrides.
+| Key | Required | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `results_folder` | **Yes** | — | Root directory where all outputs (BAMs, counts, logs) are written. Use a unique path per experiment. |
 
-=== "Reference genome"
-    Advanced control for custom genome and which chromosomes to process.
+---
+
+## `genome`
+
+Controls which reference genome is used.
+
+=== "Automatic (Refgenie)"
+
+    Provide a `label` and omit `fasta_path` / `gtf_path`. References are fetched automatically.
 
     ```yaml
     genome:
-      label: "mm10"
-      fasta_path: "refs/genome.fa"
-      selected_chromosomes: ["chr1", "chr2"]
+      label: mm10
     ```
 
-    `fasta_path`
-    : **Type**: `string` | **Default**: Derived from `label`
-    : Local path to a custom genome FASTA file. Required if using a non-standard reference.
+    Supported labels: `mm10`, `mm39`.
 
-    `gtf_path`
-    : **Type**: `string` | **Default**: Derived from `label`
-    : Local path to a custom genome GTF annotation.
+    | Key | Required | Default | Description |
+    | :--- | :--- | :--- | :--- |
+    | `label` | **Yes** | — | Genome version. |
+    | `annotation_type` | No | `ensembl` | GTF format: `ensembl`, `gencode`, or `mgi`. |
+    | `selected_chromosomes` | No | all | Restrict analysis to a chromosome list. Useful for pilot runs. |
 
-    `annotation_type`
-    : **Type**: `string` | **Default**: `ensembl`
-    : Format of your GTF (`ensembl`, `gencode`, or `mgi`).
+=== "Custom local files"
 
-    `selected_chromosomes`
-    : **Type**: `array` | **Default**: `null` (All)
-    : Optional list of chromosomes (e.g., `["chr1", "chr2"]`). Useful for focusing analysis or speeding up pilot runs.
-
-=== "Sequencing libraries"
-    Custom parameters for each library in your experiment. You can customize trimming, alignment, bigwig, and other parameters for each library.
+    Remove `label` and provide explicit paths. All three keys are required together.
 
     ```yaml
-    sequencing_libraries:
-      - name: "GSE123"
-        protocol: "pe"
-        trimmomatic:
-          adaptive: true
-        star: "--seedSearchStartLmax 30"
+    genome:
+      fasta_path: /data/refs/my_genome.fa
+      gtf_path: /data/refs/my_genome.gtf
+      annotation_type: ensembl
     ```
 
-    `trimmomatic`
-    : **Type**: `object/string` | **Default**: Standard flags
-    : Custom trimming parameters. Set to `adaptive: true` to enable automated parameter derivation based on FastQC results.
+    | Key | Required | Default | Description |
+    | :--- | :--- | :--- | :--- |
+    | `fasta_path` | **Yes** (with gtf) | — | Absolute path to genome FASTA. |
+    | `gtf_path` | **Yes** (with fasta) | — | Absolute path to gene annotation GTF. |
+    | `annotation_type` | **Yes** (with fasta) | — | `ensembl`, `gencode`, or `mgi`. |
+    | `selected_chromosomes` | No | all | Restrict to a chromosome subset. |
 
-    `star`
-    : **Type**: `string` | **Default**: `""`
-    : Extra CLI flags to pass directly to the STAR aligner for primary genome mapping.
-
-    `bamCoverage`
-    : **Type**: `string` | **Default**: `""`
-    : Custom flags for `deeptools bamCoverage` (e.g., `--normalizeUsing CPM`).
-
-=== "Global defaults"
-    Shared settings for statistical comparisons.
-
-    ```yaml
-    defaults:
-      strandedness: 2
-      deseq2:
-        test: "Wald"
-        variable: "condition"
-    ```
-
-    `deseq2`
-    : **Type**: `object` | **Required**: for DE
-    : Configuration for group comparisons (Wald/LRT tests and reference levels).
-
-    `strandedness`
-    : **Type**: `integer` | **Default**: `0` (Unstranded)
-    : Library preparation geometry. **`1`**: Forward, **`2`**: Reversely stranded.
+    !!! warning
+        `label` and `fasta_path`/`gtf_path` are mutually exclusive. The validator will
+        reject a config that mixes them.
 
 ---
 
-## 3. Expert Parameters & Module Flags
+## `comparisons`
 
-Advanced settings for internal modules. These are hidden by default to prioritize scannability.
+A list of independent analyses. Each entry specifies a sample sheet and its own alignment
+and differential expression settings. You can have multiple comparisons in one config —
+the pipeline runs them in parallel.
 
-!!! abstract "Specialized Analysis Modules (Flags)"
-    ```yaml
-    disable_TE_analysis: true
-    disable_tRNA_analysis: false
-    ```
-    Set these to `true` to skip specific parts of the pipeline and reduce computation time.
+```yaml
+comparisons:
+  - name: experiment_A
+    protocol: pe
+    sample_sheet: samples_A.csv
+    deseq2:
+      variable: genotype
+      reference_level: WT
+  - name: experiment_B
+    protocol: se
+    sample_sheet: samples_B.csv
+    strandedness: 2
+    deseq2:
+      variable: treatment
+      reference_level: control
+```
 
-    - `disable_TE_analysis`: Skips STAR-TE and SalmonTE quantification.
-    - `disable_salmonTE_analysis`: Skips secondary SalmonTE processing.
-    - `disable_tRNA_analysis`: Skips specialized tRNA mapping.
+### Required keys per comparison
 
-???+ info "STAR-TE Internal Modes"
+| Key | Required | Description |
+| :--- | :--- | :--- |
+| `name` | **Yes** | Label for this comparison. Used to name output subdirectories. |
+| `protocol` | **Yes** | `pe` (paired-end) or `se` (single-end). Must match the sample sheet columns. |
+| `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). |
+
+### DESeq2 settings
+
+These can be set per-comparison, or as global defaults under `defaults.deseq2`.
+A per-comparison value always takes precedence over the global default.
+
+| Key | Default | Description |
+| :--- | :--- | :--- |
+| `deseq2.test` | `Wald` | Statistical test: `Wald` or `LRT`. |
+| `deseq2.variable` | `genotype` | Sample-sheet column used to define contrast groups. Must match an existing column name. |
+| `deseq2.reference_level` | *(none)* | The baseline level of `variable` (fold-change denominator). Strongly recommended — without it DESeq2 picks an arbitrary reference. |
+
+### Alignment overrides
+
+| Key | Default | Description |
+| :--- | :--- | :--- |
+| `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. |
+| `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{adaptive: true}` for automatic parameter derivation. |
+| `star` | `""` | Extra CLI flags passed to the STAR aligner. |
+| `bamCoverage` | `""` | Extra flags for `deeptools bamCoverage`. |
+
+---
+
+## `defaults`
+
+Global fallbacks applied to every comparison when no per-comparison override is set.
+Useful to avoid repeating the same setting in each comparison.
+
+```yaml
+defaults:
+  strandedness: 2
+  deseq2:
+    test: Wald
+    variable: genotype
+    reference_level: WT
+```
+
+| Key | Default | Description |
+| :--- | :--- | :--- |
+| `strandedness` | `0` | Applied to all comparisons that don't set their own `strandedness`. |
+| `deseq2.test` | `Wald` | Default test type. |
+| `deseq2.variable` | `genotype` | Default contrast variable. |
+| `deseq2.reference_level` | *(none)* | Default reference level. |
+
+---
+
+## Module flags
+
+Disable optional analysis modules to save computation time.
+
+```yaml
+disable_TE_analysis: false        # set true to skip STAR-TE and SalmonTE
+disable_salmonTE_analysis: false  # set true to skip SalmonTE only
+disable_tRNA_analysis: false      # set true to skip tRNA quantification
+```
+
+---
+
+## Expert parameters
+
+These settings are rarely needed. Refer to the [Analysis Modules](../modules/te-analysis.md)
+documentation for context.
+
+??? info "STAR-TE multi-mapping modes"
+
     ```yaml
     defaults:
       starTE_random:
-        outFilterMultimapNmax: 5000
+        outFilterMultimapNmax: 5000    # default
+        winAnchorMultimapNmax: 5000    # default
+        alignTranscriptsPerWindowNmax: 300  # default
+      starTE_multihit:
+        outFilterMultimapNmax: 1       # default
+        winAnchorMultimapNmax: 5000    # default
+        alignTranscriptsPerWindowNmax: 3000 # default
     ```
-    Fine-grained control over multi-mapping read assignment (multi-hits) in TEs.
 
-    - `starTE_random`: Settings for multimap assignment (e.g., `outFilterMultimapNmax: 5000`).
-    - `starTE_multihit`: Settings for fractional counting mode.
+    Per-comparison overrides use the same keys under the comparison entry.
 
-???+ info "tRNA Expert Settings"
+??? info "tRNA quantification"
+
     ```yaml
     tRNA_quantification:
-      method: "mim-tRNA-seq"
+      method: standard          # or "mim-tRNA-seq"
       mimseq_params:
-        max_mismatches: 2
+        max_mismatches: 2       # default
+        cluster_identity: 0.8   # default
+        min_cov: 10             # default
     ```
-    Configuration for specialized tRNA sequencing protocols.
 
-    - `method`: `standard` or `mim-tRNA-seq` (for clinical-grade tRNA kits).
-    - `mimseq_params`: Sub-parameters like `max_mismatches` and `min_cov` for the mim-tRNA-seq logic.
+    Use `mim-tRNA-seq` only if your libraries were prepared with the mim-tRNA-seq protocol.

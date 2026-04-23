@@ -9,31 +9,40 @@ This is a Snakemake workflow for the end-to-end analysis of single copy genes, t
 </p>
 
 ## Quickstart
+3t-seq uses [Pixi](https://pixi.sh) to manage its dependencies automatically.
 
-The easiest way to run 3t-seq and access its documentation is using [Pixi](https://pixi.sh).
-
-1. **Clone the repository**:
+### 1. Prerequisites
+- **Install Pixi**: If you haven't already, install Pixi by following the instructions on [pixi.sh](https://pixi.sh).
+- **Clone the repository**:
    ```bash
    git clone https://github.com/boulardlab/3t-seq.git
    cd 3t-seq
    ```
 
-2. **Serve the documentation**:
-   ```bash
-   pixi run docs-serve
-   ```
-   This will start a local server at `http://127.0.0.1:8000` with the complete manual.
+!!! tip "Using the Development Branch"
+    If you want the latest features or are contributing to the project, you can clone the `dev` branch directly:
+    ```bash
+    git clone -b dev https://github.com/boulardlab/3t-seq.git
+    ```
 
-3. **Verify installation**:
-   ```bash
-   pixi run -e dev test
-   ```
-   This runs a small integration test to ensure everything is set up correctly.
+
+### 2. Setup & Verification
+Before running the pipeline or tests, ensure that Git LFS (Large File Storage) data is pulled:
+```bash
+pixi run -e dev setup
+```
+This command will install Git LFS in the local environment and pull the necessary test data.
+
+### 3. Running the Pipeline
+To verify your installation immediately with a small integration test:
+```bash
+pixi run -e dev test
+```
 
 ## Requirements
 
 - [Pixi](https://pixi.sh/) (Recommended for automated environment management)
-- [Apptainer](https://apptainer.org/docs/user/latest/) or [Docker](https://www.docker.com/) (For containerized tool execution)
+- [Apptainer](https://apptainer.org/docs/user/latest/) (For containerized tool execution)
 
 ## Usage
 

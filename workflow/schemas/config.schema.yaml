@@ -64,9 +64,9 @@ properties:
           reference_level:
             type: string
         additionalProperties: false
-  sequencing_libraries:
+  comparisons:
     type: array
-    description: "List of sequencing libraries to process."
+    description: "List of comparisons to process. Each comparison groups a set of samples (via a sample sheet) with its alignment and differential expression settings."
     items:
       type: object
       properties:
@@ -189,5 +189,5 @@ properties:
       - method
 required:
   - globals
-  - sequencing_libraries
+  - comparisons
   - genome

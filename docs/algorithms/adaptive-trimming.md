@@ -40,7 +40,7 @@ The derived parameters are saved as a JSON metadata file and passed to Trimmomat
 While the system is designed to be fully automated, you can still provide fixed parameters in your `config.yaml`:
 
 ```yaml
-sequencing_libraries:
+comparisons:
   - name: MySample
     trimmomatic:
       adaptive: true

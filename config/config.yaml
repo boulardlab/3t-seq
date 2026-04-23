@@ -1,5 +1,5 @@
 
-sequencing_libraries:
+comparisons:
   - name: OLFR466_TRIM66_SmartSeq
     protocol: pe
     sample_sheet: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/input_data_3t_seq_pipeline/olfr446_mOSN_smartSeq_t3Pipeline_input_sampleSheet.tsv

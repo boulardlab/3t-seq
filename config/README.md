@@ -18,7 +18,7 @@ pixi run lint
 # defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
 # Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness, deseq2) are optional per-library 
 # and will fall back to pipeline defaults defined in the schema if omitted.
-sequencing_libraries:
+comparisons:
   - name: GSE13073
     sample_sheet: sample-sheet.csv
     # Optional library-level overrides:

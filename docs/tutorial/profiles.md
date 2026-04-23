@@ -24,6 +24,7 @@ We provide two primary profiles as starting points:
 ### The `laptop` Profile
 
 Designed for small-scale pilot runs or local debugging.
+
 - **Resource Limits**: Pins `--cores` to a safe number (e.g., 4 or 8) so your machine remains responsive.
 - **Isolation**: Automatically handles **bind mounts** for containers, allowing them to write results to your local folder.
 - **Usage**:
@@ -35,6 +36,7 @@ Designed for small-scale pilot runs or local debugging.
 ### The `hpc` (Slurm) Profile
 
 Designed for scaling up to hundreds of samples on a High-Performance Computing cluster.
+
 - **Orchestration**: Communicates with the **Slurm scheduler** to submit jobs with appropriate resources.
 - **Concurrency**: Allows many jobs to run in parallel (e.g., `--jobs 100`).
 - **Resilience**: Configured with automatic re-tries for intermittent cluster failures.

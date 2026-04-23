@@ -20,6 +20,15 @@ min_version("7.21.0")
 ################
 
 
+# Backwards compat: the key was renamed from sequencing_libraries to comparisons in v1.x.
+# Accept the old name with a deprecation warning and alias it before validation.
+if "sequencing_libraries" in config and "comparisons" not in config:
+    logger.warning(
+        "CONFIG DEPRECATION: The 'sequencing_libraries' key has been renamed to 'comparisons'. "
+        "Please update your config file — 'sequencing_libraries' will be removed in a future release."
+    )
+    config["comparisons"] = config.pop("sequencing_libraries")
+
 # Load and validate config
 schema_path = Path(workflow.basedir) / "schemas" / "config.schema.yaml"
 validate(config, schema=str(schema_path))
@@ -95,8 +104,8 @@ if "gtf_path" in genome_cfg:
 else:
     gtf_path = references_folder / genome_label / "annotation.gtf"
 
-# Sequencing Libraries
-libraries = config["sequencing_libraries"]
+# Comparisons
+libraries = config["comparisons"]
 library_names_paired = [lib["name"] for lib in libraries if lib.get("protocol") == "pe"]
 library_names_single = [lib["name"] for lib in libraries if lib.get("protocol") != "pe"]
 

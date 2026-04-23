@@ -2,57 +2,111 @@
 
 ## Prerequisites
 
-- **Pixi**: We use [Pixi](https://pixi.sh) for environment and dependency management. Think of Pixi as a toolkit manager. Instead of you manually installing 50 different bioinformatics programs (and hoping they don't conflict with each other or your computer), Pixi creates an isolated, perfectly organized "toolbox" just for this pipeline.
-- **Git LFS**: We use [Git Large File Storage (LFS)](https://git-lfs.com) to manage large data files (like reference genomes and test FASTQs) without bloating the repository history.
-    - **Installation**: On most systems, you can install it via your package manager (e.g., `brew install git-lfs` on macOS, or `sudo apt install git-lfs` on Ubuntu).
-    - **EMBL Cluster**: If you are working on the EMBL cluster, you can simply load the module: `module load git-lfs`.
-    - **Initialization**: After installing, run `git lfs install` once on your machine to set it up globally.
+### Pixi
 
-## Installation
+3t-seq uses [Pixi](https://pixi.sh) to install and manage all software dependencies.
+Without it you would need to manually install and version-lock Snakemake, conda/mamba,
+STAR, Trimmomatic, featureCounts, DESeq2, samtools, deeptools, and a dozen other tools —
+and ensure they all agree on Python and R versions. Pixi replaces that entire process with a
+single command.
 
-1. Get the source code:
-    - **Download**: [Latest release](https://github.com/boulardlab/3t-seq/releases) (extract the archive).
-    - **Clone**: `git clone https://github.com/boulardlab/3t-seq.git`
-
-2. Install dependencies:
-
-   ```bash
-   cd 3t-seq
-   pixi install
-   ```
-
-## Your First Run
-
-To test the installation, you can run the integration test:
+Install it once on your machine (Linux / macOS):
 
 ```bash
-pixi run test remote-references laptop
+curl -fsSL https://pixi.sh/install.sh | bash
 ```
 
-This will run the pipeline on a small subset of data included in the repository.
+Or follow the [official instructions](https://pixi.sh/latest/#installation).
 
-!!! tip "Looking for a deeper guide?"
-    Check out our new [Step-by-Step Tutorial](../tutorial/quickstart.md) for a comprehensive guide on creating custom configurations, managing sample sheets, and scaling execution to HPC clusters via Slurm.
+### Git LFS
+
+3t-seq uses [Git Large File Storage (LFS)](https://git-lfs.com) to store the integration
+test data (chr19-subset FASTQs and reference files). Without git-lfs those files are
+downloaded as small pointer stubs, not real data. The setup step will then fail, and the
+test run will silently process empty inputs.
+
+Install it before cloning:
+
+=== "macOS (Homebrew)"
+    ```bash
+    brew install git-lfs
+    ```
+
+=== "Ubuntu / Debian"
+    ```bash
+    sudo apt install git-lfs
+    ```
+
+=== "EMBL cluster"
+    ```bash
+    module load git-lfs
+    ```
+
+Then activate it globally (once per machine):
+
+```bash
+git lfs install
+```
 
 ---
 
-## Apple Silicon & macOS Support
+## Installation
 
-3t-seq includes built-in support for macOS, particularly for Apple Silicon (`arm64`, like M1/M2/M3 chips). However, setting up the computational environment on a Mac can be tricky. Here are some things to keep in mind.
+1. Clone the repository:
 
-!!! warning "GNU Coreutils Shims (Translating Commands)"
-    On macOS, standard system commands (like `ln` for making file links, or `sed` for replacing text) are slightly different from the Linux versions that most bioinformatics tools expect.
+    ```bash
+    git clone https://github.com/boulardlab/3t-seq.git
+    cd 3t-seq
+    ```
 
-    When you run the pipeline via Pixi on macOS, a setup script automatically creates "shims" in `.pixi/macos-shims`. You can think of a **shim** as a small translator: when a bioinformatics tool asks for the Linux command, the shim steps in and translates the request so your Mac understands it.
+    !!! tip "Development branch"
+        For the latest (potentially unstable) features, clone `dev` instead:
+        ```bash
+        git clone -b dev https://github.com/boulardlab/3t-seq.git
+        ```
 
-    Ensure you have `coreutils` installed via Homebrew (`brew install coreutils`) so these translators have the right dictionary!
+2. Pull the LFS assets and install all dependencies:
 
-!!! warning "Using Singularity/Apptainer on macOS"
-    **Containers** (like Singularity or Apptainer) are virtual software boxes. They pack up an entire program and all its requirements into one file, so it runs identically on your laptop or a supercomputer.
+    ```bash
+    pixi run -e dev setup   # pulls git-lfs test data
+    pixi install            # installs all software
+    ```
 
-    However, Singularity does not run natively on macOS. If you plan to use containers on Apple Silicon, you must run them through a Linux virtual machine (like [Lima](https://github.com/lima-vm/lima) or [Colima](https://github.com/abiosoft/colima)). Think of this as running a computer-inside-your-computer.
+---
 
-    Most bioinformatics containers are built for Intel/AMD chips (`linux/amd64`). Running these on an Apple Silicon chip requires **architecture emulation** (on-the-fly translation from Intel instructions to Apple instructions). This can lead to:
+## Your First Run
 
-    - **Performance overhead**: Emulation is significantly slower than running software built natively for your Mac.
-    - **Stability issues**: Some older tools (especially Java-based ones) may crash during this translation process.
+Run the integration test to verify the installation:
+
+```bash
+pixi run test local-references laptop
+```
+
+This processes a 4-sample chr19 subset of the [GSE130735](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE130735)
+mouse lung dataset (WT vs KO, paired-end) and checks that all pipeline stages complete
+successfully. Expected runtime: ~10–20 minutes on a laptop.
+
+!!! tip "Step-by-step walkthrough"
+    The [Tutorial](../tutorial/quickstart.md) walks through this exact test run in detail —
+    explaining every config option, sample sheet column, and output file.
+
+---
+
+## Apple Silicon & macOS notes
+
+3t-seq supports macOS including Apple Silicon (M1/M2/M3). A few things to be aware of:
+
+- **GNU coreutils shims**: macOS ships BSD versions of `ln`, `sed`, etc. that differ from
+  the Linux versions bioinformatics tools expect. When you run the pipeline via Pixi a
+  setup script creates shims in `.pixi/macos-shims`. Install `coreutils` via Homebrew so
+  the shims have something to point to:
+
+  ```bash
+  brew install coreutils
+  ```
+
+- **Singularity / Apptainer**: does not run natively on macOS. Container-based execution
+  requires a Linux VM (e.g., [Lima](https://github.com/lima-vm/lima) or
+  [Colima](https://github.com/abiosoft/colima)). Most containers are built for `linux/amd64`;
+  running them on Apple Silicon adds architecture emulation overhead and may cause instability
+  with Java-based tools.

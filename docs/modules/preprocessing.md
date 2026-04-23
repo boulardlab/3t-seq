@@ -32,7 +32,7 @@ By default, 3t-seq uses its [Adaptive Trimming](../algorithms/adaptive-trimming.
 You can provide fixed parameters for specific libraries in the `config.yaml`:
 
 ```yaml
-sequencing_libraries:
+comparisons:
   - name: Sample1
     trimmomatic:
       adaptive: false

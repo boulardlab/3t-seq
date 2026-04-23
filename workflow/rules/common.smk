@@ -93,7 +93,7 @@ def get_sample_sheet_path(wildcards):
     sample_sheet_path = next(
         (
             lib["sample_sheet"]
-            for lib in config["sequencing_libraries"]
+            for lib in config["comparisons"]
             if lib["name"] == wildcards.serie
         ),
         None,
@@ -121,7 +121,7 @@ def get_samples_names(wildcards) -> list[str]:
 def get_bw(wildcards):
     """Builds bigwig paths for rule all"""
     o = []
-    for lib in config["sequencing_libraries"]:
+    for lib in config["comparisons"]:
         sample_sheet = pd.read_csv(lib["sample_sheet"])
         samples = sample_sheet["name"].tolist()
 
@@ -154,7 +154,7 @@ def get_star_input(wildcards):
 def get_params(wildcards, key, default=""):
     """Returns the value of a specific key for the current serie"""
     params = default
-    for lib in config["sequencing_libraries"]:
+    for lib in config["comparisons"]:
         if lib["name"] == wildcards.serie:
             params = lib.get(key, default)
     return params
@@ -163,7 +163,7 @@ def get_params(wildcards, key, default=""):
 def get_resolved_param(wildcards, key, nested_key=None, default=None):
     """
     Resolves a parameter by checking:
-    1. Library-specific override in config["sequencing_libraries"]
+    1. Comparison-specific override in config["comparisons"]
     2. Global default in config["defaults"]
     3. Provided default fallback
     """
@@ -183,7 +183,7 @@ def get_resolved_param(wildcards, key, nested_key=None, default=None):
 
     # 1. Library override
     if serie:
-        for lib in config.get("sequencing_libraries", []):
+        for lib in config.get("comparisons", []):
             if lib["name"] == serie:
                 val = lib.get(key)
                 if nested_key and isinstance(val, dict):
@@ -207,8 +207,8 @@ def get_resolved_param(wildcards, key, nested_key=None, default=None):
     # 4. Failure
     param_name = f"{key}.{nested_key}" if nested_key else key
     raise ValueError(
-        f"Parameter '{param_name}' could not be resolved for library '{serie}'. "
-        "Please define it in your config under 'defaults' or within the 'sequencing_libraries' entry."
+        f"Parameter '{param_name}' could not be resolved for comparison '{serie}'. "
+        "Please define it in your config under 'defaults' or within the 'comparisons' entry."
     )
 
 
@@ -375,7 +375,7 @@ def populate_sample_registry():
         "gtf": config["genome"].get("gtf_path"),
     }
 
-    for lib in config.get("sequencing_libraries", []):
+    for lib in config.get("comparisons", []):
         serie = lib["name"]
         sheet_path = Path(lib["sample_sheet"])
         if not sheet_path.is_absolute():
@@ -870,7 +870,7 @@ def validate_sample_sheets():
     print("Validating sample sheets against filesystem...")
     missing_files = []
 
-    for lib in config.get("sequencing_libraries", []):
+    for lib in config.get("comparisons", []):
         serie = lib["name"]
         sheet_path = Path(lib["sample_sheet"])
         # If relative, it's relative to CWD

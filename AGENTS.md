@@ -26,11 +26,12 @@ pixi run -e docs docs-serve
 
 | Task | Command | Description |
 | :--- | :--- | :--- |
+| **Setup** | `pixi run setup` | Initializes Git LFS and pulls large test assets (FASTQs, etc.). |
 | **Linting** | `pixi run lint <config> <profile>` | Runs `snakemake --lint`. Defaults: `remote-references`, `laptop`. |
 | **Formatting** | `pixi run format` | Formats Snakemake files using `snakefmt`. |
 | **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). |
-| **Test** | `pixi run test <config> <profile>` | Executes the integration test. |
-| **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report. |
+| **Test** | `pixi run test <config> <profile>` | Executes the integration test (depends on `setup`). |
+| **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report (depends on `test`). |
 | **Containers** | `pixi run containerize` | Generates the `Dockerfile` for the workflow. |
 | **Pre-build** | `pixi run build-conda-envs` | Pre-creates all Conda environments. |
 
