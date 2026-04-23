@@ -1,7 +1,7 @@
 # Configuration Reference
 
 This page is an exhaustive reference for every parameter in `config.yaml`.
-The pipeline validates your config against a [JSON Schema](../../workflow/schemas/config.schema.yaml)
+The pipeline validates your config against a JSON Schema
 before any jobs run — so typos and missing required fields are caught early.
 
 Run the validator manually at any time with:
