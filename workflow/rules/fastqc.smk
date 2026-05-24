@@ -19,16 +19,21 @@ rule fastqc_raw_se:
         ),
     conda:
         "../env/qc.yml"
-    threads: 4
+    threads: 8
     resources:
-        runtime=60,
+        runtime=10,
         mem_mb=4000,
     params:
         fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
-        set -e 
+        set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
+
+        f=$(basename {input})
+        f="${{f%.gz}}"
+        mv {params.fastqc_folder}/${{f}}_fastqc.zip {output[0]}
+        mv {params.fastqc_folder}/${{f}}_fastqc.html {output[1]}
         """
 
 
@@ -58,14 +63,23 @@ rule fastqc_raw_pe:
         ),
     conda:
         "../env/qc.yml"
-    threads: 4
+    threads: 8
     resources:
-        runtime=120,
+        runtime=10,
         mem_mb=4000,
     params:
         fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
-        set -e 
+        set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input.m1} {input.m2}
+
+        m1=$(basename {input.m1})
+        m1="${{m1%.gz}}"
+        m2=$(basename {input.m2}) 
+        m2="${{m2%.gz}}"
+        mv {params.fastqc_folder}/${{m1}}_fastqc.zip {output[0]}
+        mv {params.fastqc_folder}/${{m1}}_fastqc.html {output[1]}
+        mv {params.fastqc_folder}/${{m2}}_fastqc.zip {output[2]}
+        mv {params.fastqc_folder}/${{m2}}_fastqc.html {output[3]}
         """
