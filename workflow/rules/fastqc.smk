@@ -30,8 +30,9 @@ rule fastqc_raw_se:
         set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
 
-        f=$(basename {input})
-        f="${{f%.gz}}"
+        # FastQC names outputs from the input stem (strips compression then format extension).
+        # Strip .gz/.bz2 then the remaining extension to match what FastQC produces.
+        f=$(basename {input}); f="${{f%.gz}}"; f="${{f%.bz2}}"; f="${{f%.*}}"
         mv {params.fastqc_folder}/${{f}}_fastqc.zip {output[0]}
         mv {params.fastqc_folder}/${{f}}_fastqc.html {output[1]}
         """
@@ -74,10 +75,10 @@ rule fastqc_raw_pe:
         set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder} {input.m1} {input.m2}
 
-        m1=$(basename {input.m1})
-        m1="${{m1%.gz}}"
-        m2=$(basename {input.m2}) 
-        m2="${{m2%.gz}}"
+        # FastQC names outputs from the input stem (strips compression then format extension).
+        # Strip .gz/.bz2 then the remaining extension to match what FastQC produces.
+        m1=$(basename {input.m1}); m1="${{m1%.gz}}"; m1="${{m1%.bz2}}"; m1="${{m1%.*}}"
+        m2=$(basename {input.m2}); m2="${{m2%.gz}}"; m2="${{m2%.bz2}}"; m2="${{m2%.*}}"
         mv {params.fastqc_folder}/${{m1}}_fastqc.zip {output[0]}
         mv {params.fastqc_folder}/${{m1}}_fastqc.html {output[1]}
         mv {params.fastqc_folder}/${{m2}}_fastqc.zip {output[2]}
