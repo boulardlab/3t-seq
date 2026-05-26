@@ -28,13 +28,25 @@ rule fastqc_raw_se:
     shell:
         """
         set -e
-        fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
-
         # FastQC names outputs from the input stem (strips compression then format extension).
         # Strip .gz/.bz2 then the remaining extension to match what FastQC produces.
         f=$(basename {input}); f="${{f%.gz}}"; f="${{f%.bz2}}"; f="${{f%.*}}"
-        mv {params.fastqc_folder}/${{f}}_fastqc.zip {output[0]}
-        mv {params.fastqc_folder}/${{f}}_fastqc.html {output[1]}
+
+        if [ ! -z $TMPDIR ]; then
+            echo "Using TMPDIR: $TMPDIR" | tee -a {log}
+            fastqc -t {threads} -noextract -o $TMPDIR {input} | tee -a {log}
+
+            sleep $(( 5 + RANDOM % 5 ))
+            mv $TMPDIR/${{f}}_fastqc.zip {output[0]}
+            mv $TMPDIR/${{f}}_fastqc.html {output[1]}
+        else
+            echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
+            fastqc -t {threads} -noextract -o {params.fastqc_folder} {input} | tee -a {log}
+
+            sleep $(( 5 + RANDOM % 5 ))
+            mv {params.fastqc_folder}/${{f}}_fastqc.zip {output[0]}
+            mv {params.fastqc_folder}/${{f}}_fastqc.html {output[1]}
+        fi
         """
 
 
@@ -73,14 +85,32 @@ rule fastqc_raw_pe:
     shell:
         """
         set -e
-        fastqc -t {threads} -noextract -o {params.fastqc_folder} {input.m1} {input.m2}
 
         # FastQC names outputs from the input stem (strips compression then format extension).
         # Strip .gz/.bz2 then the remaining extension to match what FastQC produces.
         m1=$(basename {input.m1}); m1="${{m1%.gz}}"; m1="${{m1%.bz2}}"; m1="${{m1%.*}}"
         m2=$(basename {input.m2}); m2="${{m2%.gz}}"; m2="${{m2%.bz2}}"; m2="${{m2%.*}}"
-        mv {params.fastqc_folder}/${{m1}}_fastqc.zip {output[0]}
-        mv {params.fastqc_folder}/${{m1}}_fastqc.html {output[1]}
-        mv {params.fastqc_folder}/${{m2}}_fastqc.zip {output[2]}
-        mv {params.fastqc_folder}/${{m2}}_fastqc.html {output[3]}
+
+        if [ ! -z $TMPDIR ]; then
+            echo "Using TMPDIR: $TMPDIR" | tee -a {log}
+            fastqc -t {threads} -noextract -o $TMPDIR {input.m1} {input.m2} | tee -a {log}  
+            ls -l $TMPDIR
+
+            sleep $(( 5 + RANDOM % 5 )) 
+            mv $TMPDIR/${{m1}}_fastqc.zip {output[0]}
+            mv $TMPDIR/${{m1}}_fastqc.html {output[1]}
+            mv $TMPDIR/${{m2}}_fastqc.zip {output[2]}
+            mv $TMPDIR/${{m2}}_fastqc.html {output[3]}
+
+        else 
+            echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
+            fastqc -t {threads} -noextract -o {params.fastqc_folder} {input.m1} {input.m2} | tee -a {log}
+            ls -l {params.fastqc_folder}
+
+            sleep $(( 5 + RANDOM % 5 )) 
+            mv {params.fastqc_folder}/${{m1}}_fastqc.zip {output[0]}
+            mv {params.fastqc_folder}/${{m1}}_fastqc.html {output[1]}
+            mv {params.fastqc_folder}/${{m2}}_fastqc.zip {output[2]}
+            mv {params.fastqc_folder}/${{m2}}_fastqc.html {output[3]}
+        fi
         """
