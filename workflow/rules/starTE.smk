@@ -1,3 +1,9 @@
+localrules:
+    yte_starTE_random,
+    datavzrd_starTE_random,
+    symlink_starTE_multihit, 
+    symlink_starTE_random
+
 rule starTE_shared_random:
     """Deduplicated starTE alignment (random mode)."""
     input:
@@ -163,9 +169,6 @@ rule deseq2_starTE_random:
         "../scripts/deseq2_starTE_random_v1.R"
 
 
-localrules:
-    yte_starTE_random,
-    datavzrd_starTE_random,
 
 
 rule yte_starTE_random:
