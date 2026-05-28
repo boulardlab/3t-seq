@@ -1,3 +1,5 @@
+localrules: symlink_star
+
 rule star_genome_preparation:
     input:
         genome_fasta_file=fasta_path,

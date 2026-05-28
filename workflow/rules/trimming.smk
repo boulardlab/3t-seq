@@ -1,6 +1,6 @@
 ruleorder: trimmomatic_shared_pe > trimmomatic_shared_se
 ruleorder: symlink_trim_pe > symlink_trim_se
-
+localrules: derive_trim_params, symlink_trim_pe, symlink_trim_se
 
 rule derive_trim_params:
     """Derives adaptive trimming parameters from FastQC results."""
