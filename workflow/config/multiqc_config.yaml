@@ -18,3 +18,5 @@ fn_clean_exts:
   - ".summary"
   - ".stats"
   - ".Log.final.out"
+  - ".txt.gz"
+  - "_sequence"

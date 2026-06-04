@@ -13,7 +13,7 @@ rule multiqc:
     conda:
         "../env/qc.yml"
     resources:
-        runtime=30,
+        runtime=get_multiqc_runtime,
         mem_mb=2048,
     params:
         config=workflow.source_path("../config/multiqc_config.yaml"),

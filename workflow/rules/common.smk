@@ -240,6 +240,22 @@ def get_star_runtime(wildcards, input, attempt):
     return int((base_runtime + scaling) * attempt)
 
 
+def get_fastqc_runtime(wildcards, input, attempt):
+    input_size_gb = get_input_size_gb(input)
+    # 10 min base + 2 min per GB of compressed FASTQ (8 threads)
+    base_runtime = 10
+    scaling = input_size_gb * 2
+    return int((base_runtime + scaling) * attempt)
+
+
+def get_multiqc_runtime(wildcards, input, attempt):
+    input_size_gb = get_input_size_gb(input)
+    # 20 min base + 10 min per GB of input (FastQC zips + stats files)
+    base_runtime = 20
+    scaling = input_size_gb * 10
+    return int((base_runtime + scaling) * attempt)
+
+
 def get_featurecounts_mem_mb(wildcards, input):
     input_size_gb = get_input_size_gb(input)
     # Base 4GB + 2GB per GB of input BAM (approximate)
