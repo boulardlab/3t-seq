@@ -86,7 +86,7 @@ rule trimmomatic_shared_pe:
     shell:
         """
         trimmomatic PE \
-        -threads {threads} -trimlog {log} \
+        -threads {threads} \
         -summary {output.summary} \
         {input.m1} {input.m2} \
         {output.paired1} {output.unpaired1} \
@@ -180,7 +180,7 @@ rule trimmomatic_shared_se:
     shell:
         """
         trimmomatic SE \
-        -threads {threads} -trimlog {log} \
+        -threads {threads} \
         -summary {output.summary} \
         {input.reads} \
         {output.fastq} \
@@ -224,9 +224,9 @@ rule fastqc_trim:
     input:
         get_trimmed_fastq,
     output:
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
+        fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_fastqc.zip"),
         report(
-            fastqc_trim_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_fastqc.html"),
             category="FastQC",
             subcategory="Trimmed reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
@@ -245,8 +245,10 @@ rule fastqc_trim:
         fastqc_folder=fastqc_trim_folder,
     shell:
         """
-        set -e 
+        set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_fastqc.zip {output[0]}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_fastqc.html {output[1]}
         """
 
 
@@ -257,16 +259,16 @@ rule fastqc_trim_pe:
             trim_reads_folder.joinpath("{serie}/{sample}_2.fastq.gz"),
         ],
     output:
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
+        fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_1_fastqc.zip"),
         report(
-            fastqc_trim_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_1_fastqc.html"),
             category="FastQC",
             subcategory="Trimmed reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
         ),
-        fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
+        fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_2_fastqc.zip"),
         report(
-            fastqc_trim_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
+            fastqc_trim_folder.joinpath("{serie}", "{sample}_trimmed_2_fastqc.html"),
             category="FastQC",
             subcategory="Trimmed reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
@@ -285,6 +287,10 @@ rule fastqc_trim_pe:
         fastqc_folder=fastqc_trim_folder,
     shell:
         """
-        set -e 
+        set -e
         fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_1_fastqc.zip {output[0]}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_1_fastqc.html {output[1]}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_2_fastqc.zip {output[2]}
+        mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_2_fastqc.html {output[3]}
         """

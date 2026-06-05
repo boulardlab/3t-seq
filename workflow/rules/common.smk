@@ -697,30 +697,30 @@ def get_multiqc_inputs(wildcards):
     # --- Raw FastQC ---
     if is_paired:
         raw_fastqc = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_1_fastqc.zip"),
             sample=samples,
         ) + expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_2_fastqc.zip"),
             sample=samples,
         )
     else:
         raw_fastqc = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_fastqc.zip"),
             sample=samples,
         )
 
     # --- Trimmed FastQC + Trimmomatic stats ---
     if is_paired:
         trim_fastqc = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_1_fastqc.zip"),
             sample=samples,
         ) + expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_2_fastqc.zip"),
             sample=samples,
         )
     else:
         trim_fastqc = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
+            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_fastqc.zip"),
             sample=samples,
         )
 
@@ -788,15 +788,15 @@ def get_fastqc_raw(wildcards):
     s = get_samples(wildcards)
     if wildcards.serie in library_names_single:
         fastqcs = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_fastqc.zip"),
             sample=s,
         )
     else:
         fastqcs = expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_1_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_1_fastqc.zip"),
             sample=s,
         ) + expand(
-            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_2_fastqc.zip"),
+            fastqc_raw_folder.joinpath(wildcards.serie, "{sample}_raw_2_fastqc.zip"),
             sample=s,
         )
     return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}

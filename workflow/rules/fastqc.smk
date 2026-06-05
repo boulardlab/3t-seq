@@ -4,9 +4,9 @@ rule fastqc_raw_se:
     input:
         get_fastq,
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.zip"),
         report(
-            fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
@@ -60,16 +60,16 @@ rule fastqc_raw_pe:
     input:
         unpack(get_fastq_paired),
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.zip"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.zip"),
         report(
-            fastqc_raw_folder.joinpath("{serie}", "{sample}_1_fastqc.html"),
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
         ),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.zip"),
+        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.zip"),
         report(
-            fastqc_raw_folder.joinpath("{serie}", "{sample}_2_fastqc.html"),
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
