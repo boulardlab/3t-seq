@@ -88,7 +88,7 @@ rule fastqc_markdup:
         "../env/qc.yml"
     threads: 4
     resources:
-        runtime=20,
+        runtime=get_fastqc_runtime,
         mem_mb=4000,
     params:
         fastqc_folder=fastqc_markdup_folder,

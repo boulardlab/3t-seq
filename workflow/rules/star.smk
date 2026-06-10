@@ -212,7 +212,7 @@ rule fastqc_star:
         "../env/qc.yml"
     threads: 2
     resources:
-        runtime=20,
+        runtime=get_fastqc_runtime,
         mem_mb=4000,
     params:
         fastqc_folder=fastqc_star_folder,

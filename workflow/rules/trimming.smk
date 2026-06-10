@@ -77,10 +77,10 @@ rule trimmomatic_shared_pe:
         trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
-    threads: 4
+    threads: 16
     resources:
         runtime=lambda wildcards, attempt: 240 * attempt,
-        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+        mem_mb=lambda wildcards, attempt, input: max(8000, int((Path(input.m1).stat().st_size + Path(input.m2).stat().st_size) / 1024**2 * 8)) * attempt,
     params:
         trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
@@ -171,10 +171,11 @@ rule trimmomatic_shared_se:
         trim_reads_folder.joinpath("_shared", "{trim_hash}", "{sample}.stats.txt"),
     conda:
         "../env/trimmomatic.yml"
-    threads: 4
+    threads: 16
+    retries: 2
     resources:
         runtime=lambda wildcards, attempt: 180 * attempt,
-        mem_mb=lambda wildcards, attempt: 4000 * attempt,
+        mem_mb=lambda wildcards, attempt, input: max(4000, int(Path(input.reads).stat().st_size / 1024**2 * 8)) * attempt,
     params:
         trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
@@ -239,8 +240,9 @@ rule fastqc_trim:
         "../env/qc.yml"
     threads: 4
     resources:
-        runtime=90,
+        runtime=get_fastqc_runtime,
         mem_mb=4000,
+        slurm_extra="--exclude=smeb01-3,smeb02-3",
     params:
         fastqc_folder=fastqc_trim_folder,
     shell:
@@ -281,8 +283,9 @@ rule fastqc_trim_pe:
         "../env/qc.yml"
     threads: 4
     resources:
-        runtime=90,
+        runtime=get_fastqc_runtime,
         mem_mb=4000,
+        slurm_extra="--exclude=smeb01-3,smeb02-3",
     params:
         fastqc_folder=fastqc_trim_folder,
     shell:

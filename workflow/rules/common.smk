@@ -242,9 +242,9 @@ def get_star_runtime(wildcards, input, attempt):
 
 def get_fastqc_runtime(wildcards, input, attempt):
     input_size_gb = get_input_size_gb(input)
-    # 10 min base + 2 min per GB of compressed FASTQ (8 threads)
-    base_runtime = 10
-    scaling = input_size_gb * 2
+    # 20 min base + 5 min per GB of input (compressed FASTQ or BAM)
+    base_runtime = 20
+    scaling = input_size_gb * 5
     return int((base_runtime + scaling) * attempt)
 
 

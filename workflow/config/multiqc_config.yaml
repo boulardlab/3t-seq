@@ -2,7 +2,30 @@
 no_version_check: true
 
 module_order:
-  - fastqc
+  - fastqc:
+      name: "FastQC (raw reads)"
+      anchor: "fastqc_raw"
+      path_filters:
+        - "*_raw_fastqc.zip"
+        - "*_raw_1_fastqc.zip"
+        - "*_raw_2_fastqc.zip"
+  - fastqc:
+      name: "FastQC (trimmed reads)"
+      anchor: "fastqc_trimmed"
+      path_filters:
+        - "*_trimmed_fastqc.zip"
+        - "*_trimmed_1_fastqc.zip"
+        - "*_trimmed_2_fastqc.zip"
+  - fastqc:
+      name: "FastQC (aligned reads)"
+      anchor: "fastqc_aligned"
+      path_filters:
+        - "*.Aligned.sortedByCoord.out_fastqc.zip"
+  - fastqc:
+      name: "FastQC (deduplicated reads)"
+      anchor: "fastqc_markdup"
+      path_filters:
+        - "*.markdup_fastqc.zip"
   - trimmomatic
   - star
   - picard
@@ -10,8 +33,6 @@ module_order:
 fn_clean_exts:
   - ".fastq.gz"
   - ".fq.gz"
-  - "_1"
-  - "_2"
   - ".Aligned.sortedByCoord.out"
   - ".markdup"
   - "_fastqc"
