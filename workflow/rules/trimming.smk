@@ -85,6 +85,7 @@ rule trimmomatic_shared_pe:
         trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
         """
+        _JAVA_OPTIONS="-Xmx$(( {resources.mem_mb} - 1000 ))m" \
         trimmomatic PE \
         -threads {threads} \
         -summary {output.summary} \
@@ -180,6 +181,7 @@ rule trimmomatic_shared_se:
         trimmomatic_cmd=lambda wildcards: get_trimmomatic_command(wildcards),
     shell:
         """
+        _JAVA_OPTIONS="-Xmx$(( {resources.mem_mb} - 1000 ))m" \
         trimmomatic SE \
         -threads {threads} \
         -summary {output.summary} \
@@ -242,7 +244,6 @@ rule fastqc_trim:
     resources:
         runtime=get_fastqc_runtime,
         mem_mb=4000,
-        slurm_extra="--exclude=smeb01-3,smeb02-3",
     params:
         fastqc_folder=fastqc_trim_folder,
     shell:
@@ -285,7 +286,6 @@ rule fastqc_trim_pe:
     resources:
         runtime=get_fastqc_runtime,
         mem_mb=4000,
-        slurm_extra="--exclude=smeb01-3,smeb02-3",
     params:
         fastqc_folder=fastqc_trim_folder,
     shell:

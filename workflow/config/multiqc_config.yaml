@@ -9,6 +9,7 @@ module_order:
         - "*_raw_fastqc.zip"
         - "*_raw_1_fastqc.zip"
         - "*_raw_2_fastqc.zip"
+  - trimmomatic
   - fastqc:
       name: "FastQC (trimmed reads)"
       anchor: "fastqc_trimmed"
@@ -16,6 +17,7 @@ module_order:
         - "*_trimmed_fastqc.zip"
         - "*_trimmed_1_fastqc.zip"
         - "*_trimmed_2_fastqc.zip"
+  - star
   - fastqc:
       name: "FastQC (aligned reads)"
       anchor: "fastqc_aligned"
@@ -26,8 +28,6 @@ module_order:
       anchor: "fastqc_markdup"
       path_filters:
         - "*.markdup_fastqc.zip"
-  - trimmomatic
-  - star
   - picard
 
 fn_clean_exts:

@@ -729,9 +729,13 @@ def get_multiqc_inputs(wildcards):
         sample=samples,
     )
 
-    # --- STAR logs + post-alignment FastQC ---
+    # --- STAR logs + gene counts + post-alignment FastQC ---
     star_logs = expand(
         star_folder.joinpath(wildcards.serie, "{sample}.Log.final.out"),
+        sample=samples,
+    )
+    star_gene_counts = expand(
+        star_folder.joinpath(wildcards.serie, "{sample}.ReadsPerGene.out.tab"),
         sample=samples,
     )
     star_fastqc = expand(
@@ -756,6 +760,7 @@ def get_multiqc_inputs(wildcards):
         "trim_fastqc": trim_fastqc,
         "trimmomatic_stats": trimmomatic_stats,
         "star_logs": star_logs,
+        "star_gene_counts": star_gene_counts,
         "star_fastqc": star_fastqc,
         "markdup_stats": markdup_stats,
         "markdup_fastqc": markdup_fastqc,
