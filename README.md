@@ -1,5 +1,7 @@
 # 3t-seq: automatic gene expression analysis of single copy genes, transposable elements and tRNAs
 
+![visitors](https://visitor-badge.laobi.icu/badge?page_id=boulardlab.3t-seq&left_text=visitors)
+
 ## Overview
 
 This is a Snakemake workflow for the integrated analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
