@@ -186,3 +186,6 @@ choices = ["remote-references", "local-references", "adaptive-trim"]
 arg = "profile"
 default = "laptop"
 choices = ["laptop", "hpc"]
+
+[dependencies]
+snakemake-executor-plugin-slurm = { version = ">=2.8.0,<3", channel = "bioconda" }
