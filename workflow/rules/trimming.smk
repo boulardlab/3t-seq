@@ -121,13 +121,13 @@ rule symlink_trim_pe:
         summary=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
             wildcards.sample,
-            "",
-        ).with_suffix(".summary.txt"),
+            ext=".summary.txt",
+        ),
         stats=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
             wildcards.sample,
-            "",
-        ).with_suffix(".stats.txt"),
+            ext=".stats.txt",
+        ),
     output:
         paired1=trim_reads_folder.joinpath("{serie}", "{sample}_1.fastq.gz"),
         paired2=trim_reads_folder.joinpath("{serie}", "{sample}_2.fastq.gz"),
@@ -200,11 +200,13 @@ rule symlink_trim_se:
         summary=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
             wildcards.sample,
-        ).with_suffix(".summary.txt"),
+            ext=".summary.txt",
+        ),
         stats=lambda wildcards: get_shared_trim_path(
             get_sample_hash(wildcards.serie, wildcards.sample, "trim"),
             wildcards.sample,
-        ).with_suffix(".stats.txt"),
+            ext=".stats.txt",
+        ),
     output:
         fastq=trim_reads_folder.joinpath("{serie}", "{sample}.fastq.gz"),
         summary=trim_reads_folder.joinpath("{serie}", "{sample}.summary.txt"),

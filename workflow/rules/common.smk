@@ -494,10 +494,10 @@ def populate_sample_registry():
                 }
 
 
-def get_shared_trim_path(trim_hash, sample, suffix=""):
-    """Returns the path to a shared trimmed fastq."""
+def get_shared_trim_path(trim_hash, sample, suffix="", ext=".fastq.gz"):
+    """Returns the path to a shared trimmed fastq (or an associated stats/summary file)."""
     return trim_reads_folder.joinpath(
-        "_shared", trim_hash, f"{sample}{suffix}.fastq.gz"
+        "_shared", trim_hash, f"{sample}{suffix}{ext}"
     )
 
 
