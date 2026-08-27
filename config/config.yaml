@@ -1,31 +1,40 @@
-
-comparisons:
-  - name: OLFR466_TRIM66_SmartSeq
-    protocol: pe
-    sample_sheet: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/data/input_data_3t_seq_pipeline/olfr446_mOSN_smartSeq_t3Pipeline_input_sampleSheet.tsv
-    deseq2:
-      test: Wald
-      variable: cell_type
-      reference_level: WT
-
-disable_TE_analysis: false
-disable_salmonTE_analysis: false
-disable_tRNA_analysis: false
-
-tRNA_quantification:
-  method: "mim-tRNA-seq" # Options: "standard" or "mim-tRNA-seq"
-  mimseq_params:
-    max_mismatches: 0.1
-    cluster_identity: 0.95
-    min_cov: 10
-
 globals:
-  results_folder: /g/boulard/lyons/projects/olfr446_mOSN_smartSeq/results/00_preprocessing_alignment_3TSeq/results
+  results_folder: /scratch/zeloni/prj/tests_atacseq/dataset/prova_claude/phase1/3t-seq
 
 genome:
   label: mm10
-  annotation_type: other
 
-  # URL to GtRNAdb files
-  gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Hsapi38/hg38-tRNAs.tar.gz
-  #gtrnadb_bed: ../../../data/references/tRNA/mm10-tRNAs.bed
+comparisons:
+  - name: Morula_vs_4C
+    protocol: pe
+    sample_sheet: metadata_morula_4C.csv
+    deseq2:
+      test: Wald
+      variable: Stage
+      reference_level: 4C
+  - name: Blastocyst_vs_Morula
+    protocol: pe
+    sample_sheet: metadata_blasto_morula.csv
+    deseq2:
+      test: Wald
+      variable: Stage
+      reference_level: Morula
+  - name: 2C_vs_Zygote
+    protocol: pe
+    sample_sheet: metadata_2C_zygote.csv
+    deseq2:
+      test: Wald
+      variable: Stage
+      reference_level: Zygote
+  - name: 4C_vs_2C
+    protocol: pe
+    sample_sheet: metadata_4C_2C.csv
+    deseq2:
+      test: Wald
+      variable: Stage
+      reference_level: 2C
+
+disable_TE_analysis: false
+disable_salmonTE_analysis: false
+disable_tRNA_analysis: true
+disable_trimming: false
