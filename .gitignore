@@ -24,6 +24,5 @@ report.zip
 snakemake_run
 snakemake_test
 TODO
-scripts/
 **/report*
 site/
