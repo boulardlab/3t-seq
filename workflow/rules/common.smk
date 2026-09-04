@@ -386,6 +386,27 @@ def get_sample_hash(serie, sample, step="alignment"):
     return SAMPLE_HASHES.get((serie, sample), {}).get(step, "unknown")
 
 
+def get_hash_params(step, hash_value, sample):
+    """Returns the parameters registered for a hash, checked against the requested sample.
+
+    The _shared layout assumes one hash identifies one sample's inputs. When that does not
+    hold, the rule would silently be fed another sample's reads, so fail loudly instead.
+    """
+    if hash_value not in HASH_TO_PARAMS[step]:
+        raise ValueError(
+            "No {} parameters registered for hash {}".format(step, hash_value)
+        )
+    params = HASH_TO_PARAMS[step][hash_value]
+    if params["sample"] != sample:
+        raise ValueError(
+            "{} hash {} is registered for sample '{}' but was requested for sample "
+            "'{}': the hash does not capture sample identity.".format(
+                step, hash_value, params["sample"], sample
+            )
+        )
+    return Struct(**params)
+
+
 def calculate_content_hash(data_dict):
     """Generates a stable hash from a dictionary of parameters/files."""
     encoded = json.dumps(data_dict, sort_keys=True).encode()
@@ -432,18 +453,24 @@ def populate_sample_registry():
         for _, row in df.iterrows():
             sample_name = row["name"]
 
-            # --- Trimming Hash (skip if disabled) ---
-            if disable_trimming:
-                trim_hash = "none_trimming_disabled"
+            # --- Trimming Hash ---
+            # This must stay sample-specific even when trimming is disabled: the
+            # alignment, starTE and markdup hashes are all derived from it, so a
+            # constant value collapses every sample into one _shared folder and each
+            # STAR job then reads the first sample's fastq files.
+            if is_paired:
+                inputs = {
+                    "f1": str(resolve_raw_read_path(serie, row.get("filename_1"))),
+                    "f2": str(resolve_raw_read_path(serie, row.get("filename_2"))),
+                }
             else:
-                if is_paired:
-                    inputs = {
-                        "f1": str(resolve_raw_read_path(serie, row.get("filename_1"))),
-                        "f2": str(resolve_raw_read_path(serie, row.get("filename_2"))),
-                    }
-                else:
-                    inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
+                inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
 
+            if disable_trimming:
+                trim_hash = "notrim_" + calculate_content_hash(
+                    {"inputs": inputs, "paired": is_paired}
+                )
+            else:
                 trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
                 trim_hash = calculate_content_hash(trim_data)
 

@@ -41,7 +41,7 @@ rule star_shared:
     """Deduplicated STAR alignment."""
     input:
         fastq=lambda wildcards: get_star_input(
-            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash])
+            get_hash_params("alignment", wildcards.align_hash, wildcards.sample)
         ),
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,

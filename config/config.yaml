@@ -1,5 +1,5 @@
 globals:
-  results_folder: /scratch/zeloni/prj/tests_atacseq/dataset/prova_claude/phase1/3t-seq
+  results_folder: /scratch/zeloni/prj/github_3tseq_fork/dataset/phase1/3t-seq/results_notrim
 
 genome:
   label: mm10
@@ -37,4 +37,4 @@ comparisons:
 disable_TE_analysis: false
 disable_salmonTE_analysis: false
 disable_tRNA_analysis: true
-disable_trimming: false
+disable_trimming: true

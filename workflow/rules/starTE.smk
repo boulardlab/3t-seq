@@ -8,7 +8,7 @@ rule starTE_shared_random:
     """Deduplicated starTE alignment (random mode)."""
     input:
         fastq=lambda wildcards: get_star_input(
-            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+            get_hash_params("starTE", wildcards.starte_hash, wildcards.sample)
         ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
@@ -211,7 +211,7 @@ rule starTE_shared_multihit:
     """Deduplicated starTE alignment (multihit mode)."""
     input:
         fastq=lambda wildcards: get_star_input(
-            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+            get_hash_params("starTE", wildcards.starte_hash, wildcards.sample)
         ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
