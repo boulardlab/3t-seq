@@ -8,6 +8,9 @@ This is a Snakemake workflow for the end-to-end analysis of single copy genes, t
 <img src="docs/figures/3t-wf.png" width="500">
 </p>
 
+> [!IMPORTANT]
+> **Upgrading from 1.x?** Version 2.0 changes the config file, the sample sheet and how the pipeline is installed and run. Follow the [migration guide](docs/migration/index.md) before re-using a 1.x project.
+
 ## Quickstart
 3t-seq uses [Pixi](https://pixi.sh) to manage its dependencies automatically.
 
@@ -19,11 +22,11 @@ This is a Snakemake workflow for the end-to-end analysis of single copy genes, t
    cd 3t-seq
    ```
 
-!!! tip "Using the Development Branch"
-    If you want the latest features or are contributing to the project, you can clone the `dev` branch directly:
-    ```bash
-    git clone -b dev https://github.com/boulardlab/3t-seq.git
-    ```
+> [!TIP]
+> If you want the latest features or are contributing to the project, you can clone the `dev` branch directly:
+> ```bash
+> git clone -b dev https://github.com/boulardlab/3t-seq.git
+> ```
 
 
 ### 2. Setup & Verification
@@ -48,13 +51,13 @@ pixi run -e dev test
 
 ### 1. Configure samples and parameters
 
-Edit the `config.yaml` file. The [`config/` folder](config/) contains a README with common patterns, and the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
+Write a config file (e.g. `config/my_config.yaml`) and a sample sheet. The [`config/` folder](config/) contains a README with common patterns, and the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
 
 ### 2. Execute the pipeline
 
-Run the default pipeline using:
+Run the pipeline with the default local profile. The workflow has no built-in config file, so always pass `--configfile`:
 ```bash
-pixi run snakemake --profile profile/default
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml
 ```
 
 *Note: 3t-seq uses predefined environments (`default`, `dev`, `docs`). The `pixi run` command automatically handles all dependencies.*
@@ -63,42 +66,43 @@ pixi run snakemake --profile profile/default
 
 After successful execution, generate an interactive HTML report:
 ```bash
-pixi run snakemake --profile profile/default --report report.zip
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml --report report.zip
 ```
 
 ## Configuration
 
-Adjust parameters in the `config.yaml` file to match your experimental setup. See `config/README.md` for further instructions.
+Adjust parameters in your config file to match your experimental setup. See [`config/README.md`](config/README.md) for further instructions.
 
 ### Automatic Resource Allocation
 
 3t-seq automatically calculates the necessary computing resources (threads, memory, and runtime) based on the size of your input FASTQ files and the known requirements of tools like STAR and featureCounts.
 
-- **Memory**: STAR is allocated base memory for the genome index (~32GB for human/mouse) plus dynamic memory for sorting proportional to input size.
+- **Memory**: STAR is allocated base memory for the genome index (~32GB for mouse) plus dynamic memory for sorting proportional to input size.
 - **Runtime**: Scaled linearly with the size of the compressed input reads.
 - **Threads**: Optimized for different pipeline stages (8 threads for alignment, 4 for quantification).
 
 ### Custom Genome References
 
-If you prefer to provide your own explicit FASTA and GTF reference files rather than having them downloaded automatically via Refgenie, you can omit the `label` parameter and provide `fasta_path` and `gtf_path` instead in `config.yaml`:
+By default, references for `genome.label` (`mm10` or `mm39`) are downloaded automatically via Refgenie. To use your own FASTA and GTF files instead, keep the `label` and add `fasta_path`, `gtf_path` and `annotation_type` (all three are required together):
 
 ```yaml
 genome:
+  label: mm10
   fasta_path: /absolute/path/to/your/genome.fa
   gtf_path: /absolute/path/to/your/annotation.gtf
-  salmonte_species: mm # "mm", "hs", "dr", or "dm"
+  annotation_type: ensembl # "ensembl", "gencode" or "mgi"
 ```
 
-The pipeline will automatically apply necessary pre-processing to these files (like enforcing `chr` nomenclature and subsetting chromosomes) just like it does with Refgenie downloads. Make sure to specify `salmonte_species` to define the target species for SalmonTE quantification since the `label` parameter is missing.
+The pipeline will automatically apply necessary pre-processing to these files (like enforcing `chr` nomenclature and subsetting chromosomes) just like it does with Refgenie downloads. The `label` is still used to fetch the matching RepeatMasker and GtRNAdb annotations.
 
 ### Sample sheet preparation
 
 The sample sheet is a csv file that describe samples metadata:
 
 - The `name` column reports a human readable name for each sample.
-- For pe libraries, `filename_1` and `filename_2` columns report file names for each of the two
-sequencing reads mates. For se libraries, `filename` is sufficient. **The pipeline will use these columns to determine if a given dataset was sequenced with pe or se method**.
-- The `genotype` column reports the variable of interest. The name of this column is flexible and can be anything as long as you specify what's this name in the config file (in the `deseq2` section).
+- For paired-end libraries, `filename_1` and `filename_2` hold the paths to the two read mates; for single-end libraries, `filename` holds the path to the reads. Paths are absolute or relative to the Snakemake working directory, and the `.fastq.gz` / `.fq.gz` extension is optional.
+- Whether a library is paired-end is set in the config, not in the sample sheet: add `protocol: pe` to each paired-end entry under `comparisons`.
+- The `genotype` column reports the variable of interest. The name of this column is flexible and can be anything as long as you set it as `deseq2.variable` in the config file.
 
 
 ## Directory Structure
@@ -121,7 +125,7 @@ pixi run -e dev test
 pixi run -e dev test-report
 ```
 
-For more advanced testing options, see the [Testing Documentation](docs/getting-started/index.md#running-tests).
+For more advanced testing options, see the [Usage documentation](docs/usage/index.md#pixi-tasks).
 
 ## References
 
