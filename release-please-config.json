@@ -4,7 +4,6 @@
     ".": {
       "release-type": "simple",
       "include-component-in-tag": false,
-      "release-as": "2.0.0",
       "extra-files": [
         "workflow/rules/salmonTE.smk",
         "pixi.toml"

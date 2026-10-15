@@ -24,7 +24,17 @@ jobs:
   #     - name: Run Pytest
   #       run: pixi run unit-test
 
+  # Pulls the pinned images through Singularity: wait until they exist
+  # (on PRs they may still be building).
+  images:
+    uses: ./.github/workflows/container-check.yml
+    permissions:
+      contents: read
+      packages: read
+      actions: read
+
   run-integration-tests:
+    needs: images
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
