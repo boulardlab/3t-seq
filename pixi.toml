@@ -93,7 +93,9 @@ cmd = [
     "-n", 
     "+2", 
     ">", 
-    "Dockerfile"
+    "Dockerfile",
+    "&&",
+    "python", ".github/scripts/container_pin.py", "update"
 ]
 
 ################################################################################

@@ -32,7 +32,7 @@ pixi run -e docs docs-serve
 | **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). |
 | **Test** | `pixi run test <config> <profile>` | Executes the integration test (depends on `setup`). |
 | **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report (depends on `test`). |
-| **Containers** | `pixi run containerize` | Generates the `Dockerfile` for the workflow. |
+| **Containers** | `pixi run containerize` | Regenerates the `Dockerfile` and updates the 3t-seq image pin in `workflow/Snakefile`. Run after any conda env change and commit both files. |
 | **Pre-build** | `pixi run build-conda-envs` | Pre-creates all Conda environments. |
 
 **Available Arguments (Positional):**
@@ -93,6 +93,14 @@ pixi run -e docs docs-serve
 #### Containerization & CI
 - **Multi-arch Support:** Docker builds must support both `linux/amd64` and `linux/arm64`. Verify that all dependencies in `workflow/envs/*.yaml` are solvable for both architectures.
 - **SHA Tagging:** Images pushed to GHCR should be tagged with the commit SHA in addition to the branch/tag name.
+- **Pinned Images:** Every `ghcr.io/boulardlab/*` image under `workflow/` must use an immutable tag (never `:latest` or untagged) that exists in GHCR. The `container-check.yml` gate enforces this on PRs to `main`/`dev` and on pushes to `main`.
+- **3t-seq Image (env hash):** Snakemake looks conda envs up inside the `containerized:` image by content hash and fails if one is missing, so the image must match the envs of every commit.
+    - The image is tagged `env-<conda_env_hash>`, using the label `snakemake --containerize` writes into the `Dockerfile`. `workflow/Snakefile` pins that tag, managed by `.github/scripts/container_pin.py`.
+    - After changing anything in a conda env, run `pixi run containerize` and commit `Dockerfile` + `workflow/Snakefile` together. CI (`container-check.yml`, job `dockerfile-sync`) fails if either is stale.
+    - `build-3t-seq.yml` builds each `env-<hash>` once (PRs from this repo, and pushes to `main`/`dev`) and never overwrites it. If the hash already exists, branch/`sha-*`/`latest` tags are pointed at it without rebuilding. `latest` moves only on pushes to `main`. A `v*` tag adds an `:X.Y.Z` alias.
+    - PRs from forks cannot push images. A maintainer must build the hash (push the branch to this repo or run the workflow manually).
+- **SalmonTE Image (release version):** `workflow/rules/salmonTE.smk` pins `salmonte:X.Y.Z` (`x-release-please-version` markers). `build-salmonte.yml` builds `:X.Y.Z` from the release-please PR before it merges, or manually with the `version` input to bootstrap. It refuses to overwrite once git tag `vX.Y.Z` exists.
+- **Releases:** release-please (`release-please-config.json`, `.release-please-manifest.json`) bumps `pixi.toml` and the SalmonTE pins. It needs the `RELEASE_PLEASE_TOKEN` secret (a PAT or App token), because PRs and tags created with `GITHUB_TOKEN` do not trigger other workflows.
 
 ### 5. Agent Specific Rules
 - **Cursor Rules:** [Check for .cursor/rules/ or .cursorrules for specific agent instructions.]

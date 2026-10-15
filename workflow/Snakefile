@@ -50,7 +50,7 @@ apply_schema_defaults(config, str(schema_path))
 ###########################
 
 
-containerized: "docker://ghcr.io/boulardlab/3t-seq:2.0.0"  # x-release-please-version
+containerized: "docker://ghcr.io/boulardlab/3t-seq:env-2a4c9ee664ce41a562c0007df6c2c4782f10edc9f14fb7c10de48cf954e15448"
 
 
 #######################

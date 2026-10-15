@@ -4,10 +4,11 @@
 #
 # Usage: check-containers.sh [--list] [--wait-minutes N] [--head-sha SHA]
 #   --list          only print the extracted refs, no registry access
-#   --wait-minutes  poll until all refs exist (release-please PRs, where the
-#                   build workflows run concurrently); 0 = check once
-#   --head-sha      with --wait-minutes, fail fast if a build workflow run for
-#                   this commit concluded with failure (needs `gh` + GH_TOKEN)
+#   --wait-minutes  poll for up to N minutes while a build workflow run for
+#                   --head-sha is still in progress (PRs, where the builds run
+#                   concurrently with this check); 0 = check once
+#   --head-sha      commit whose build-* workflow runs to follow (needs `gh`
+#                   and GH_TOKEN); without it, waits until the deadline
 set -euo pipefail
 
 workflow_dir="workflow"
@@ -67,29 +68,48 @@ missing_refs() {
   done
 }
 
-build_failed() {
-  [[ -z "$head_sha" ]] && return 1
-  local wf
-  for wf in "${build_workflows[@]}"; do
-    if gh run list --workflow "$wf" --commit "$head_sha" \
-      --json conclusion --jq '.[].conclusion' | grep -qx failure; then
-      echo "::error::$wf failed for $head_sha"
-      return 0
-    fi
-  done
-  return 1
+# Status of the build-* runs for head_sha: "failed", "running" or "idle".
+build_status() {
+  local wf states
+  states=$(for wf in "${build_workflows[@]}"; do
+    gh run list --workflow "$wf" --commit "$head_sha" \
+      --json status,conclusion --jq '.[] | "\(.status) \(.conclusion)"'
+  done)
+  if [[ -z "$states" ]]; then
+    echo idle
+  elif grep -q ' failure$' <<< "$states"; then
+    echo failed
+  elif grep -qv '^completed ' <<< "$states"; then
+    echo running
+  else
+    echo idle
+  fi
 }
 
-deadline=$(( $(date +%s) + wait_minutes * 60 ))
+start=$(date +%s)
+deadline=$(( start + wait_minutes * 60 ))
+# Build runs triggered by the same event may not be registered yet.
+grace=$(( start + ${GRACE_SECONDS:-180} ))
 while true; do
   mapfile -t missing < <(missing_refs)
   if [[ ${#missing[@]} -eq 0 ]]; then
     echo "All pinned images exist."
     exit 0
   fi
-  if [[ $(date +%s) -ge $deadline ]] || build_failed; then
+  now=$(date +%s)
+  give_up=0
+  if [[ $now -ge $deadline ]]; then
+    give_up=1
+  elif [[ -n "$head_sha" && $now -ge $grace ]]; then
+    case "$(build_status)" in
+      failed) echo "::error::a build workflow failed for $head_sha"; give_up=1 ;;
+      idle) echo "No build running for $head_sha."; give_up=1 ;;
+    esac
+  fi
+  if [[ $give_up -eq 1 ]]; then
     echo "::error::missing images in ghcr.io:"
     printf '  %s\n' "${missing[@]}"
+    echo "Build them with the build-3t-seq / build-salmonte workflows (see their workflow_dispatch)."
     exit 1
   fi
   echo "Waiting for: ${missing[*]}"
