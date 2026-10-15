@@ -2,8 +2,7 @@ name: Build SalmonTE
 
 on:
   push:
-    branches:
-      - '**'
+    branches: [main, dev]
     # Released images are built from the release-please PR; a tag push only
     # builds :X.Y.Z if it is missing, otherwise it no-ops.
     tags:
@@ -109,7 +108,7 @@ jobs:
             type=ref,event=branch,suffix=-{{sha}}
             type=raw,value=${{ steps.version.outputs.version }},enable=${{ steps.version.outputs.version != '' }}
             type=sha,format=long
-            type=raw,value=latest,enable=${{ github.event_name != 'pull_request' }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
         if: steps.version.outputs.build == 'true'
