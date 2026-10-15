@@ -46,7 +46,13 @@ Designed for scaling up to hundreds of samples on a High-Performance Computing c
   pixi run snakemake --profile profile/slurm --configfile my_config.yaml
   ```
 
-`profile/slurm` stands for your own Slurm profile; create it as shown in the next section.
+`profile/slurm` stands for your own Slurm profile. Start from the example shipped with the
+repository and fill in your Slurm account and partition (`profile/slurm/` is git-ignored):
+
+```bash
+cp -r profile/slurm-example profile/slurm
+```
+
 Snakemake 8 selects Slurm with `executor: slurm` (the plugin ships with the Pixi
 environment). Profiles written for 3t-seq 1.x with `slurm: True` no longer work; see
 [Migrating from 1.x](../migration/index.md#profiles).
