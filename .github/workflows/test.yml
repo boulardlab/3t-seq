@@ -42,5 +42,5 @@ jobs:
       - name: Run Integration Tests
         run: |
           ROOT=$(realpath .)
-          pixi run -e dev test adaptive-trim laptop \
+          pixi run -e dev test adaptive-trim laptop -- \
           --singularity-args="--bind $ROOT --bind $HOME"
