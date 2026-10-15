@@ -1,8 +1,9 @@
 localrules:
     yte_starTE_random,
     datavzrd_starTE_random,
-    symlink_starTE_multihit, 
-    symlink_starTE_random
+    symlink_starTE_multihit,
+    symlink_starTE_random,
+
 
 rule starTE_shared_random:
     """Deduplicated starTE alignment (random mode)."""
@@ -167,8 +168,6 @@ rule deseq2_starTE_random:
         reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     script:
         "../scripts/deseq2_starTE_random_v1.R"
-
-
 
 
 rule yte_starTE_random:

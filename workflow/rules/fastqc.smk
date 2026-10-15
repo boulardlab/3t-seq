@@ -2,10 +2,10 @@
 
 rule fastqc_raw_se:
     input:
-        get_fastq,
+        fastq=get_fastq,
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.zip"),
-        report(
+        zip=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.zip"),
+        html=report(
             fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
@@ -31,7 +31,7 @@ rule fastqc_raw_se:
         # Symlink input under the sample name so FastQC embeds the correct sample
         # name inside the zip regardless of whether the original path is absolute
         # or relative and regardless of the original filename.
-        src=$(realpath {input})
+        src=$(realpath {input.fastq})
         ext="${{src##*.}}"
         [ "$ext" = "gz" ] && link={wildcards.sample}.fastq.gz || link={wildcards.sample}.fastq
 
@@ -41,16 +41,16 @@ rule fastqc_raw_se:
             fastqc -t {threads} -noextract -o $TMPDIR $TMPDIR/$link | tee -a {log}
 
             sleep $(( 5 + RANDOM % 5 ))
-            mv $TMPDIR/{wildcards.sample}_fastqc.zip {output[0]}
-            mv $TMPDIR/{wildcards.sample}_fastqc.html {output[1]}
+            mv $TMPDIR/{wildcards.sample}_fastqc.zip {output.zip}
+            mv $TMPDIR/{wildcards.sample}_fastqc.html {output.html}
         else
             echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
             ln -sf "$src" {params.fastqc_folder}/$link
             fastqc -t {threads} -noextract -o {params.fastqc_folder} {params.fastqc_folder}/$link | tee -a {log}
 
             sleep $(( 5 + RANDOM % 5 ))
-            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.zip {output[0]}
-            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.html {output[1]}
+            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.zip {output.zip}
+            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.html {output.html}
             rm -f {params.fastqc_folder}/$link
         fi
         """
@@ -60,15 +60,15 @@ rule fastqc_raw_pe:
     input:
         unpack(get_fastq_paired),
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.zip"),
-        report(
+        zip1=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.zip"),
+        html1=report(
             fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
         ),
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.zip"),
-        report(
+        zip2=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.zip"),
+        html2=report(
             fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
@@ -109,10 +109,10 @@ rule fastqc_raw_pe:
             fastqc -t {threads} -noextract -o $TMPDIR $TMPDIR/$link1 $TMPDIR/$link2 | tee -a {log}
 
             sleep $(( 5 + RANDOM % 5 ))
-            mv $TMPDIR/{wildcards.sample}_1_fastqc.zip {output[0]}
-            mv $TMPDIR/{wildcards.sample}_1_fastqc.html {output[1]}
-            mv $TMPDIR/{wildcards.sample}_2_fastqc.zip {output[2]}
-            mv $TMPDIR/{wildcards.sample}_2_fastqc.html {output[3]}
+            mv $TMPDIR/{wildcards.sample}_1_fastqc.zip {output.zip1}
+            mv $TMPDIR/{wildcards.sample}_1_fastqc.html {output.html1}
+            mv $TMPDIR/{wildcards.sample}_2_fastqc.zip {output.zip2}
+            mv $TMPDIR/{wildcards.sample}_2_fastqc.html {output.html2}
 
         else
             echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
@@ -121,10 +121,10 @@ rule fastqc_raw_pe:
             fastqc -t {threads} -noextract -o {params.fastqc_folder} {params.fastqc_folder}/$link1 {params.fastqc_folder}/$link2 | tee -a {log}
 
             sleep $(( 5 + RANDOM % 5 ))
-            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.zip {output[0]}
-            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.html {output[1]}
-            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.zip {output[2]}
-            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.html {output[3]}
+            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.zip {output.zip1}
+            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.html {output.html1}
+            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.zip {output.zip2}
+            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.html {output.html2}
             rm -f {params.fastqc_folder}/$link1 {params.fastqc_folder}/$link2
         fi
         """

@@ -41,6 +41,7 @@ env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
 
 [feature.dev.tasks]
 format = "snakefmt workflow"
+format-check = "snakefmt --check --diff workflow"
 hooks = "pre-commit run --all-files"
 setup = "git lfs install && git lfs pull"
 
