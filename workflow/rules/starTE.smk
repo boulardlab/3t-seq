@@ -140,10 +140,13 @@ rule featureCounts_random:
         strandedness=lambda wildcards: get_resolved_param(
             wildcards, "strandedness", default=0
         ),
+        paired_flag=lambda wildcards: (
+            "-p" if wildcards.serie in library_names_paired else ""
+        ),
     shell:
         """
          set -e 
-         featureCounts -p -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts {params.paired_flag} -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
         """
 
 
@@ -342,8 +345,11 @@ rule featureCounts_multihit:
         strandedness=lambda wildcards: get_resolved_param(
             wildcards, "strandedness", default=0
         ),
+        paired_flag=lambda wildcards: (
+            "-p" if wildcards.serie in library_names_paired else ""
+        ),
     shell:
         """
          set -e 
-         featureCounts -p -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts {params.paired_flag} -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
          """
