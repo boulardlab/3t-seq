@@ -154,6 +154,10 @@ properties:
     type: boolean
     default: false
     description: "Disable TE analysis."
+  disable_trimming:
+    type: boolean
+    default: false
+    description: "If true, skip trimming and use raw FASTQ for alignment"
   disable_salmonTE_analysis:
     type: boolean
     default: false

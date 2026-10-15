@@ -6,7 +6,7 @@ rule derive_trim_params:
     """Derives adaptive trimming parameters from FastQC results."""
     input:
         fastqc=lambda wildcards: get_fastqc_raw(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+            get_hash_params("trim", wildcards.trim_hash, wildcards.sample)
         )["fastqc"],
     output:
         json=trim_reads_folder.joinpath(
@@ -45,10 +45,10 @@ rule trimmomatic_shared_pe:
     """Deduplicated trimmomatic for paired-end reads."""
     input:
         m1=lambda wildcards: get_fastq_paired(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+            get_hash_params("trim", wildcards.trim_hash, wildcards.sample)
         )["m1"],
         m2=lambda wildcards: get_fastq_paired(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+            get_hash_params("trim", wildcards.trim_hash, wildcards.sample)
         )["m2"],
         adaptive=get_trimmomatic_adaptive_input,
     output:
@@ -156,7 +156,7 @@ rule trimmomatic_shared_se:
     """Deduplicated trimmomatic for single-end reads."""
     input:
         reads=lambda wildcards: get_fastq(
-            Struct(**HASH_TO_PARAMS["trim"][wildcards.trim_hash])
+            get_hash_params("trim", wildcards.trim_hash, wildcards.sample)
         ),
         adaptive=get_trimmomatic_adaptive_input,
     output:

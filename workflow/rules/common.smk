@@ -1,3 +1,5 @@
+# vim: syntax=python
+
 import hashlib
 import json
 import yaml
@@ -134,21 +136,33 @@ def get_bw(wildcards):
 
 
 def get_star_input(wildcards):
-    """Builds input paths for STAR alignment testing if a library is single-end or paired-end"""
-
+    """Builds input paths for STAR alignment; handles trimming bypass"""
+    
     samples_names = get_samples_names(wildcards)
     filenames_no_mate = get_samples(wildcards)
     idx = samples_names.index(wildcards.sample)
     s = filenames_no_mate[idx]
 
-    if wildcards.serie in library_names_single:
-        ret = trim_reads_folder.joinpath(wildcards.serie, "{0}.fastq.gz".format(s))
+    # Check if trimming is disabled
+    if config.get("disable_trimming", False):
+        # Use raw FASTQ paths from sample sheet
+        if wildcards.serie in library_names_single:
+            return get_fastq(wildcards)
+        else:
+            # get_fastq_paired returns a dict with 'm1' and 'm2' keys
+            # STAR expects a list, so extract the values
+            paired = get_fastq_paired(wildcards)
+            return [paired["m1"], paired["m2"]]
     else:
-        ret = [
-            trim_reads_folder.joinpath(wildcards.serie, "{0}_1.fastq.gz".format(s)),
-            trim_reads_folder.joinpath(wildcards.serie, "{0}_2.fastq.gz".format(s)),
-        ]
-    return ret
+        # Original behavior: use trimmed reads
+        if wildcards.serie in library_names_single:
+            ret = trim_reads_folder.joinpath(wildcards.serie, "{0}.fastq.gz".format(s))
+        else:
+            ret = [
+                trim_reads_folder.joinpath(wildcards.serie, "{0}_1.fastq.gz".format(s)),
+                trim_reads_folder.joinpath(wildcards.serie, "{0}_2.fastq.gz".format(s)),
+            ]
+        return ret
 
 
 def get_params(wildcards, key, default=""):
@@ -372,6 +386,27 @@ def get_sample_hash(serie, sample, step="alignment"):
     return SAMPLE_HASHES.get((serie, sample), {}).get(step, "unknown")
 
 
+def get_hash_params(step, hash_value, sample):
+    """Returns the parameters registered for a hash, checked against the requested sample.
+
+    The _shared layout assumes one hash identifies one sample's inputs. When that does not
+    hold, the rule would silently be fed another sample's reads, so fail loudly instead.
+    """
+    if hash_value not in HASH_TO_PARAMS[step]:
+        raise ValueError(
+            "No {} parameters registered for hash {}".format(step, hash_value)
+        )
+    params = HASH_TO_PARAMS[step][hash_value]
+    if params["sample"] != sample:
+        raise ValueError(
+            "{} hash {} is registered for sample '{}' but was requested for sample "
+            "'{}': the hash does not capture sample identity.".format(
+                step, hash_value, params["sample"], sample
+            )
+        )
+    return Struct(**params)
+
+
 def calculate_content_hash(data_dict):
     """Generates a stable hash from a dictionary of parameters/files."""
     encoded = json.dumps(data_dict, sort_keys=True).encode()
@@ -379,10 +414,7 @@ def calculate_content_hash(data_dict):
 
 
 def populate_sample_registry():
-    """
-    Scans all sequencing libraries and populates SAMPLE_HASHES and HASH_TO_PARAMS
-    for deduplication of trimming and alignment tasks.
-    """
+    """Populates SAMPLE_HASHES and HASH_TO_PARAMS; skips trimming if disabled."""
     global SAMPLE_HASHES, HASH_TO_PARAMS
 
     genome_params = {
@@ -390,6 +422,8 @@ def populate_sample_registry():
         "fasta": config["genome"].get("fasta_path"),
         "gtf": config["genome"].get("gtf_path"),
     }
+
+    disable_trimming = config.get("disable_trimming", False)
 
     for lib in config.get("comparisons", []):
         serie = lib["name"]
@@ -411,10 +445,7 @@ def populate_sample_registry():
 
         star_params = lib.get("star", "default")
 
-        # New: Resolve starTE and strandedness for hashing
-        # We use empty wildcards here since we only care about the 'serie' (lib name)
         w = Wildcards(fromdict={"serie": serie})
-
         lib_strandedness = get_resolved_param(w, "strandedness", default=0)
         lib_starTE_random = get_resolved_param(w, "starTE_random", default={})
         lib_starTE_multihit = get_resolved_param(w, "starTE_multihit", default={})
@@ -423,6 +454,10 @@ def populate_sample_registry():
             sample_name = row["name"]
 
             # --- Trimming Hash ---
+            # This must stay sample-specific even when trimming is disabled: the
+            # alignment, starTE and markdup hashes are all derived from it, so a
+            # constant value collapses every sample into one _shared folder and each
+            # STAR job then reads the first sample's fastq files.
             if is_paired:
                 inputs = {
                     "f1": str(resolve_raw_read_path(serie, row.get("filename_1"))),
@@ -431,8 +466,13 @@ def populate_sample_registry():
             else:
                 inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
 
-            trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
-            trim_hash = calculate_content_hash(trim_data)
+            if disable_trimming:
+                trim_hash = "notrim_" + calculate_content_hash(
+                    {"inputs": inputs, "paired": is_paired}
+                )
+            else:
+                trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
+                trim_hash = calculate_content_hash(trim_data)
 
             # --- Alignment Hash (STAR) ---
             align_data = {
@@ -464,13 +504,14 @@ def populate_sample_registry():
                 "markdup": markdup_hash,
             }
 
-            # --- Reverse Mappings ---
-            if trim_hash not in HASH_TO_PARAMS["trim"]:
-                HASH_TO_PARAMS["trim"][trim_hash] = {
-                    "serie": serie,
-                    "sample": sample_name,
-                    "paired": is_paired,
-                }
+            # --- Reverse Mappings (only if trimming enabled) ---
+            if not disable_trimming:
+                if trim_hash not in HASH_TO_PARAMS["trim"]:
+                    HASH_TO_PARAMS["trim"][trim_hash] = {
+                        "serie": serie,
+                        "sample": sample_name,
+                        "paired": is_paired,
+                    }
 
             if align_hash not in HASH_TO_PARAMS["alignment"]:
                 HASH_TO_PARAMS["alignment"][align_hash] = {
@@ -690,9 +731,10 @@ def set_salmonTE_genome():
 
 
 def get_multiqc_inputs(wildcards):
-    """Returns all QC files across every pipeline stage for the consolidated multiqc rule."""
+    """Returns QC files; excludes trimming if disabled."""
     samples = get_samples_names(wildcards)
     is_paired = wildcards.serie in library_names_paired
+    disable_trimming = config.get("disable_trimming", False)
 
     # --- Raw FastQC ---
     if is_paired:
@@ -709,27 +751,31 @@ def get_multiqc_inputs(wildcards):
             sample=samples,
         )
 
-    # --- Trimmed FastQC + Trimmomatic stats ---
-    if is_paired:
-        trim_fastqc = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_1_fastqc.zip"),
-            sample=samples,
-        ) + expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_2_fastqc.zip"),
-            sample=samples,
-        )
+    # --- Trimmed FastQC + Trimmomatic stats (skip if disabled) ---
+    if disable_trimming:
+        trim_fastqc = []
+        trimmomatic_stats = []
     else:
-        trim_fastqc = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_fastqc.zip"),
+        if is_paired:
+            trim_fastqc = expand(
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_1_fastqc.zip"),
+                sample=samples,
+            ) + expand(
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_2_fastqc.zip"),
+                sample=samples,
+            )
+        else:
+            trim_fastqc = expand(
+                fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_fastqc.zip"),
+                sample=samples,
+            )
+
+        trimmomatic_stats = expand(
+            trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
             sample=samples,
         )
 
-    trimmomatic_stats = expand(
-        trim_reads_folder.joinpath(wildcards.serie, "{sample}.stats.txt"),
-        sample=samples,
-    )
-
-    # --- STAR logs + gene counts + post-alignment FastQC ---
+    # --- STAR logs, counts, and post-alignment FastQC (always included) ---
     star_logs = expand(
         star_folder.joinpath(wildcards.serie, "{sample}.Log.final.out"),
         sample=samples,
@@ -745,7 +791,7 @@ def get_multiqc_inputs(wildcards):
         sample=samples,
     )
 
-    # --- Markdup stats + FastQC ---
+    # --- Markdup stats + FastQC (always included) ---
     markdup_stats = expand(
         markdup_folder.joinpath(wildcards.serie, "{sample}.markdup.stats.txt"),
         sample=samples,
@@ -805,6 +851,74 @@ def get_fastqc_raw(wildcards):
             sample=s,
         )
     return {"fastqc": fastqcs, "sample_sheet": get_sample_sheet_path(wildcards)}
+
+
+def build_rule_all_inputs(wildcards):
+    ret = []
+
+    # MultiQC reports
+    ret += expand(
+        multiqc_folder.joinpath("{serie}", "multiqc_report.html"),
+        serie=library_names_single + library_names_paired,
+    )
+
+    # DESeq2 + datavzrd (always)
+    ret += expand(
+        rdata_folder.joinpath("deseq2/{serie}/dds.rds"),
+        serie=library_names_single + library_names_paired,
+    )
+    ret += expand(
+        analysis_folder.joinpath("datavzrd", "{serie}", "datavzrd"),
+        serie=library_names_single + library_names_paired,
+    )
+
+    # Bigwig files
+    ret += get_bw(wildcards)
+
+    # TE (conditional)
+    if not config["disable_TE_analysis"]:
+        ret += expand(
+            starTE_folder.joinpath("{se_serie}/featureCount/{method}.txt"),
+            se_serie=library_names_single,
+            method=["multihit", "random"],
+        )
+        ret += expand(
+            starTE_folder.joinpath("{pe_serie}/featureCount/{method}.txt"),
+            pe_serie=library_names_paired,
+            method=["multihit", "random"],
+        )
+        ret += expand(
+            starTE_folder.joinpath("{serie}", "random", "datavzrd"),
+            serie=library_names_single + library_names_paired,
+        )
+
+    # tRNA coverage files
+    if not config["disable_tRNA_analysis"]:
+        method = config.get("tRNA_quantification", {}).get("method", "standard")
+        m_str = "mimseq" if method == "mim-tRNA-seq" else "standard"
+
+        ret += expand(
+            trna_coverage_folder.joinpath("{serie}", f"tRNA_lfc_{m_str}.csv"),
+            serie=library_names_paired + library_names_single,
+        )
+        ret += expand(
+            trna_coverage_folder.joinpath("{serie}", f"datavzrd_{m_str}"),
+            serie=library_names_paired + library_names_single,
+        )
+
+    # SalmonTE quantification
+    if not config["disable_salmonTE_analysis"]:
+        # SalmonTE quantification result
+        ret += expand(
+            data_folder.joinpath("salmonTE/de_analysis/{se_serie}"),
+            se_serie=library_names_single,
+        )
+        ret += expand(
+            data_folder.joinpath("salmonTE/de_analysis/{pe_serie}"),
+            pe_serie=library_names_paired,
+        )
+
+    return ret
 
 
 def build_rule_all_inputs(wildcards):

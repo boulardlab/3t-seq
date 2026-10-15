@@ -8,7 +8,7 @@ rule starTE_shared_random:
     """Deduplicated starTE alignment (random mode)."""
     input:
         fastq=lambda wildcards: get_star_input(
-            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+            get_hash_params("starTE", wildcards.starte_hash, wildcards.sample)
         ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
@@ -140,10 +140,13 @@ rule featureCounts_random:
         strandedness=lambda wildcards: get_resolved_param(
             wildcards, "strandedness", default=0
         ),
+        paired_flag=lambda wildcards: (
+            "-p" if wildcards.serie in library_names_paired else ""
+        ),
     shell:
         """
          set -e 
-         featureCounts -p -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts {params.paired_flag} -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
         """
 
 
@@ -211,7 +214,7 @@ rule starTE_shared_multihit:
     """Deduplicated starTE alignment (multihit mode)."""
     input:
         fastq=lambda wildcards: get_star_input(
-            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+            get_hash_params("starTE", wildcards.starte_hash, wildcards.sample)
         ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
@@ -342,8 +345,11 @@ rule featureCounts_multihit:
         strandedness=lambda wildcards: get_resolved_param(
             wildcards, "strandedness", default=0
         ),
+        paired_flag=lambda wildcards: (
+            "-p" if wildcards.serie in library_names_paired else ""
+        ),
     shell:
         """
          set -e 
-         featureCounts -p -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
+         featureCounts {params.paired_flag} -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
          """

@@ -68,7 +68,7 @@ cmd = [
 [[tasks.lint.args]]
 arg = "config"
 default = "remote-references"
-choices = ["remote-references", "local-references", "adaptive-trim"]
+choices = ["remote-references", "local-references", "adaptive-trim", "local-references-se", "local-references-se-notrim"]
 
 [[tasks.lint.args]]
 arg = "profile"
@@ -129,7 +129,7 @@ cmd = [
 [[tasks.dry-run.args]]
 arg = "config"
 default = "remote-references"
-choices = ["remote-references", "local-references", "adaptive-trim"]
+choices = ["remote-references", "local-references", "adaptive-trim", "local-references-se", "local-references-se-notrim"]
 
 [[tasks.dry-run.args]]
 arg = "profile"
@@ -154,7 +154,7 @@ cmd = [
 [[tasks.test.args]]
 arg = "config"
 default = "local-references"
-choices = ["remote-references", "local-references", "adaptive-trim"]
+choices = ["remote-references", "local-references", "adaptive-trim", "local-references-se", "local-references-se-notrim"]
 
 [[tasks.test.args]]
 arg = "profile"
@@ -180,7 +180,7 @@ cmd = [
 [[tasks.test-report.args]]
 arg = "config"
 default = "local-references"
-choices = ["remote-references", "local-references", "adaptive-trim"]
+choices = ["remote-references", "local-references", "adaptive-trim", "local-references-se", "local-references-se-notrim"]
 
 [[tasks.test-report.args]]
 arg = "profile"
