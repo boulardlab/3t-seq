@@ -51,7 +51,13 @@ pixi run -e dev test
 
 ### 1. Configure samples and parameters
 
-Write a config file (e.g. `config/my_config.yaml`) and a sample sheet. The [`config/` folder](config/) contains a README with common patterns, and the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
+Copy the commented template and fill it in, then write a sample sheet:
+
+```bash
+cp config/config.yaml config/my_config.yaml
+```
+
+The [`config/` folder](config/) contains a README with common patterns and a worked example in [`config/examples/`](config/examples/); the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
 
 ### 2. Execute the pipeline
 

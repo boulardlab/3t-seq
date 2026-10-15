@@ -10,23 +10,38 @@ Coming from 3t-seq 1.x? See the [migration guide](../docs/migration/index.md) fo
 pixi run lint
 ```
 
-## A complete example
+## Files in this folder
+
+| File | Purpose |
+| :--- | :--- |
+| [`config.yaml`](config.yaml) | Commented template with every option. Copy it (e.g. to `config/my_config.yaml`) and fill in the placeholders. |
+| [`examples/GSE130735.yaml`](examples/GSE130735.yaml) | Full-genome analysis of the public GSE130735 dataset that the integration test is subsampled from. |
+
+```bash
+cp config/config.yaml config/my_config.yaml
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml
+```
+
+## A minimal example
 
 ```yaml
-# config/config.yaml
+globals:
+  results_folder: results/
 
-# A list of sequencing libraries to process.
-# Each item in the list represents a distinct sequencing run or library batch, 
-# defined by a unique 'name' and a 'sample_sheet' detailing the samples inside it.
-# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness, deseq2) are optional per-library 
-# and will fall back to pipeline defaults defined in the schema if omitted.
+# A list of comparisons to process.
+# Each item groups a set of samples, listed in 'sample_sheet', under a unique 'name'.
+# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness, deseq2) are optional per-comparison
+# and fall back to pipeline defaults defined in the schema if omitted.
 comparisons:
-  - name: GSE13073
+  - name: GSE130735
     protocol: pe              # required for paired-end data; omit for single-end
     sample_sheet: sample-sheet.csv
-    # Optional library-level overrides:
+    # Optional comparison-level overrides:
     deseq2:
-      variable: cell_type     # This overrides the global default 'genotype' for this library
+      variable: cell_type     # This overrides the global default 'genotype' for this comparison
+
+genome:
+  label: mm10
 ```
 
 ## How 3t-seq resolves reads paths
