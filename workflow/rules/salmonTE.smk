@@ -35,7 +35,7 @@ rule salmonTE_quant:
     log:
         log_folder.joinpath("salmonTE/{serie}/quant.log"),
     container:
-        "docker://ghcr.io/boulardlab/3t-seq/salmonte:latest"
+        "docker://ghcr.io/boulardlab/3t-seq/salmonte:2.0.0"  # x-release-please-version
     threads: 8
     resources:
         runtime=720,
@@ -65,7 +65,7 @@ rule salmonTE_test:
     log:
         log_folder.joinpath("salmonTE/{serie}/test_de.log"),
     container:
-        "docker://ghcr.io/boulardlab/3t-seq/salmonte:latest"
+        "docker://ghcr.io/boulardlab/3t-seq/salmonte:2.0.0"  # x-release-please-version
     threads: 4
     resources:
         runtime=360,

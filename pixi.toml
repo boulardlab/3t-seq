@@ -1,6 +1,6 @@
 [workspace]
 name = "3t-seq"
-version = "2.0.0"
+version = "2.0.0"  # x-release-please-version
 description = "3t-seq: a Snakemake pipeline for total RNA-seq analysis"
 authors = ["Francesco Tabaro"]
 channels = ["conda-forge", "bioconda"]

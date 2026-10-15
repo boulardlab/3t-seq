@@ -13,7 +13,8 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         with:
-          release-type: simple
-          package-name: 3t-seq
+          # PAT / GitHub App token so the release PR and v* tag trigger the
+          # build, container-check and test workflows (GITHUB_TOKEN events don't).
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}

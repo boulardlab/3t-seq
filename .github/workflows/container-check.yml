@@ -1,0 +1,51 @@
+name: Container check
+
+# Gate: every pinned ghcr.io/boulardlab/* image must use an immutable tag and
+# exist in the registry. On release-please PRs the images are built
+# concurrently by build-3t-seq.yml / build-salmonte.yml, so the check polls
+# until they appear (or a build fails). Also callable from other workflows
+# (test.yml) so they start only once the images exist.
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+concurrency:
+  group: container-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check pinned images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          IS_RELEASE_PR: ${{ github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--') }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ "$IS_RELEASE_PR" == "true" ]]; then
+            bash .github/scripts/check-containers.sh --wait-minutes 210 --head-sha "$HEAD_SHA"
+          else
+            bash .github/scripts/check-containers.sh
+          fi
