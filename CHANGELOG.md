@@ -1,12 +1,30 @@
 # Changelog
 
-## [Unreleased]
+<!--
+  2.0.0 release notes, hand-curated. release-please inserts its generated
+  "## [2.0.0]" section right above "## [1.1.0]", i.e. below this block.
+  When the release-please PR is open: move this block into the 2.0.0 section of
+  that PR's CHANGELOG.md (and the GitHub release body), then delete it from
+  here, so the 2.0.0 notes appear exactly once.
+-->
+### ⚠ BREAKING CHANGES (2.0.0)
 
-### Features
+2.0.0 is not config-compatible with 1.x. See the [migration guide](docs/migration/index.md).
 
-* **Auto-derive Results Subdirectories:** Internal pipeline folders (`qc`, `log`, `references`, `tmp`, `analysis`) are now automatically derived from `results_folder`, removing them from manual user configuration.
-* **Sensible Tool Defaults:** Complex parameters for `trimmomatic`, `star`, and `bamCoverage` are now natively embedded as sensible defaults and are entirely optional in the `config.yaml`.
-* **Enhanced Sample Sheet Parsing:** The pipeline now resolves input sequence paths directly via the `filename_1` and `filename_2` mappings in the sample sheet, enabling flexible filename variations and direct absolute path imports without requiring rigid directory restructuring. Includes pre-flight validation to catch missing files before launch.
+* **Pixi environment:** the pipeline runs through [Pixi](https://pixi.sh) (`pixi run snakemake ...`) on Snakemake 8.9.0. Slurm execution uses `snakemake-executor-plugin-slurm` (`executor: slurm`) instead of `slurm: True`.
+* **`sequencing_libraries` renamed to `comparisons`:** the old key is still accepted with a deprecation warning and will be removed in a future release.
+* **Paired-end must be declared:** set `protocol: pe` on each paired-end comparison; any other comparison is processed as single-end (1.x inferred this from the sample sheet).
+* **Auto-derived results subfolders:** `globals` only accepts `results_folder`. `reads_folder`, `qc_folder`, `log_folder`, `references_folder`, `tmp_folder` and `analysis_folder` were removed and are rejected by the config schema.
+* **Sample sheet drives input paths:** `filename_1` / `filename_2` (paired-end) or `filename` (single-end) now hold paths to the FASTQ files (absolute or relative to the working directory, extension optional), replacing `<reads_folder>/<library>/<stem>`. Missing files are reported before any job starts.
+* **DESeq2 defaults moved:** the top-level `deseq2` block moved to `defaults.deseq2` (or per comparison) and is ignored at top level; `deseq2.working_directory` was removed.
+* **Genome references:** `genome.label` (`mm10` or `mm39`) is required and references are fetched via Refgenie. `fasta_url`, `gtf_url`, `gtrnadb_url` and `rmsk_path` were removed; local files go in `fasta_path` + `gtf_path` + `annotation_type` (`ensembl`, `gencode` or `mgi`).
+
+### Highlights (2.0.0)
+
+* **Optional tool parameters:** `trimmomatic`, `star` and `bamCoverage` are optional and fall back to built-in defaults.
+* **Adaptive trimming:** `trimmomatic: {adaptive: true}` derives Trimmomatic parameters per sample from FastQC output.
+* **Deduplicated processing:** trimming and alignment outputs are content-hashed, so samples shared between comparisons are processed once.
+* **New options:** `defaults` (global `strandedness`, `starTE_random`, `starTE_multihit`, `deseq2`), per-comparison `strandedness`, `disable_salmonTE_analysis`, `tRNA_quantification` (`standard` or `mim-tRNA-seq`), `genome.selected_chromosomes`.
 
 ## [1.1.0](https://github.com/boulardlab/3t-seq/compare/v1.0.1...v1.1.0) (2024-03-12)
 

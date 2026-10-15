@@ -19,11 +19,11 @@ For standard genomes like `mm10` and `mm39`, 3t-seq uses [Refgenie](http://refge
 If you are working with a custom genome assembly or want to use specific local files, you can override the automated downloads.
 
 !!! important "Label Requirement"
-    Even when overriding paths, you should keep a standard species prefix in your `label` (e.g., `mm10-custom`). The pipeline uses this label to resolve supporting resources like **GtRNAdb** and **SalmonTE** which expect standard species identifiers.
+    `label` is required even when overriding paths, and must be one of the supported genomes (`mm10`, `mm39`). The pipeline uses it to fetch supporting resources (**RepeatMasker**, **GtRNAdb**) that match your assembly.
 
 ```yaml
 genome:
-  label: "mm10-custom" # Keep a standard prefix for resource resolution
+  label: "mm10" # Required; must match the assembly of your FASTA/GTF
   fasta_path: "/path/to/my_genome.fa"
   gtf_path: "/path/to/my_annotation.gtf"
   annotation_type: "ensembl" # Must be one of: ensembl, gencode, mgi

@@ -39,7 +39,7 @@ For production runs or custom flags, call Snakemake directly through Pixi:
 
 ```bash
 pixi run snakemake \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile config/my_config.yaml
 ```
 
@@ -47,7 +47,7 @@ Override a single config value without editing the file:
 
 ```bash
 pixi run snakemake \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile config/my_config.yaml \
     --config globals:results_folder="results/rerun_v2"
 ```
@@ -59,7 +59,7 @@ pixi run snakemake \
 ```bash
 pixi run snakemake \
     --report report.html \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile config/my_config.yaml
 ```
 
@@ -88,7 +88,9 @@ Common causes:
 - Missing required key (`globals.results_folder`, `genome.label`, or `comparisons`).
 - `fasta_path` provided without `gtf_path` (or vice versa).
 - `annotation_type` not set when using custom FASTA/GTF.
-- A comparison entry missing `name`, `protocol`, or `sample_sheet`.
+- A comparison entry missing `name` or `sample_sheet`.
+- A 1.x key still present (e.g. `globals.reads_folder`, `globals.qc_folder`). See
+  [Migrating from 1.x](../migration/index.md).
 
 ### Sample sheet files not found
 
@@ -96,8 +98,9 @@ Common causes:
 Validation failed: The following necessary input read files could not be found
 ```
 
-- Check that `protocol` in your config matches the columns in your CSV (`pe` requires
-  `filename_1`/`filename_2`; `se` requires `filename`).
+- Check that `protocol` in your config matches the columns in your CSV (`protocol: pe`
+  requires `filename_1`/`filename_2`; without it the comparison is treated as single-end
+  and `filename` is required).
 - Relative paths in the sample sheet are resolved relative to `--directory` (the working
   directory passed to Snakemake), not relative to the config file or sample sheet location.
 - Confirm the FASTQ files actually exist at those paths on disk.
@@ -124,7 +127,7 @@ Snakemake's `--rerun-incomplete` flag re-runs any jobs that terminated abnormall
 
 ```bash
 pixi run snakemake \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile config/my_config.yaml \
     --rerun-incomplete
 ```
@@ -138,4 +141,5 @@ CONFIG DEPRECATION: The 'sequencing_libraries' key has been renamed to 'comparis
 ```
 
 Open your config file and rename the top-level key from `sequencing_libraries` to
-`comparisons`. The old key still works but will be removed in a future release.
+`comparisons`. The old key still works but will be removed in a future release. Other
+1.x keys need changes too; see [Migrating from 1.x](../migration/index.md).

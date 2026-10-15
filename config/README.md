@@ -1,5 +1,7 @@
 See below for an example config file with explanation of each option and description of common use-cases. For a complete, exhaustive guide on all available parameters, please refer to the [Full Configuration Documentation](../docs/configuration/index.md).
 
+Coming from 3t-seq 1.x? See the [migration guide](../docs/migration/index.md) for the old -> new key mapping.
+
 ## Configuration Validation
 
 3t-seq includes a built-in schema validator to ensure your `config.yaml` is correctly formatted before running the full pipeline. You can run the validator using:
@@ -20,6 +22,7 @@ pixi run lint
 # and will fall back to pipeline defaults defined in the schema if omitted.
 comparisons:
   - name: GSE13073
+    protocol: pe              # required for paired-end data; omit for single-end
     sample_sheet: sample-sheet.csv
     # Optional library-level overrides:
     deseq2:
@@ -29,7 +32,7 @@ comparisons:
 ## How 3t-seq resolves reads paths
 
 The pipeline relies primarily on the paths provided in your sample sheet to locate input read files.
-For each sample, you can provide paths in the `filename` (for single-end) or `filename_1` and `filename_2` (for paired-end) columns.
+For each sample, you can provide paths in the `filename` (for single-end) or `filename_1` and `filename_2` (for paired-end) columns. Which columns are read depends on the comparison's `protocol` in the config (`pe` for paired-end, otherwise single-end).
 
 These paths can be provided in several flexible formats:
 1. **Absolute Paths:** If an absolute path (e.g. `/data/my_experiment/reads/sample1_R1.fq.gz`) is provided, 3t-seq will use it directly.
@@ -54,7 +57,7 @@ sampleB,/data/raw/batch1/B_read1.fq.gz,/data/raw/batch1/B_read2.fq.gz,KO
 
 ## Built-in Reference Genomes via Refgenie
 
-3t-seq now natively integrates with **Refgenie** to automatically retrieve and manage standard reference genomes (like `mm10` or `hg38`). 
+3t-seq now natively integrates with **Refgenie** to automatically retrieve and manage the supported reference genomes (`mm10` and `mm39`). 
 
 To use this feature, simply provide the `label` in your configuration's `genome` section and omit `fasta_path` and `gtf_path`. The pipeline will automatically fetch the FASTA and GTF files for that genome and symlink them into your results directory. 
 
@@ -62,12 +65,12 @@ To use this feature, simply provide the `label` in your configuration's `genome`
 
 ## How to use custom local reference files
 
-If you are working with a non-standard genome or prefer to use your own reference files, you can override the built-in profiles by removing the `label` property and providing absolute paths to your local `fasta_path` and `gtf_path`:
+If you prefer to use your own reference files, you can override the Refgenie downloads by providing absolute paths to your local `fasta_path` and `gtf_path`. Keep the `label`: it is required and is still used to fetch the matching RepeatMasker and GtRNAdb annotations.
 
 ```yaml
 genome:
-  # Remove 'label' to prevent Refgenie lookups
-  # label: mm10
+  # Required: mm10 or mm39
+  label: mm10
   
   # Provide an absolute path to your fasta:
   fasta_path: /path/to/references/custom-mm10.fa
@@ -77,9 +80,6 @@ genome:
   
   # Explicitly specify the annotation type (required for custom references)
   annotation_type: ensembl
-  
-  # Specify the target species for SalmonTE quantification (e.g. mm, hs, dr, dm):
-  salmonte_species: mm
 ```
 
-These two approaches are mutually exclusive; the configuration validator will alert you if you mix a `label` with explicit `fasta_path` or `gtf_path` parameters.
+`fasta_path`, `gtf_path` and `annotation_type` must be provided together; the configuration validator rejects a config that sets only some of them.
