@@ -23,8 +23,6 @@ rule fastqc_raw_se:
     resources:
         runtime=get_fastqc_runtime,
         mem_mb=4000,
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
         set -e
@@ -35,24 +33,17 @@ rule fastqc_raw_se:
         ext="${{src##*.}}"
         [ "$ext" = "gz" ] && link={wildcards.sample}.fastq.gz || link={wildcards.sample}.fastq
 
-        if [ ! -z $TMPDIR ]; then
-            echo "Using TMPDIR: $TMPDIR" | tee -a {log}
-            ln -sf "$src" $TMPDIR/$link
-            fastqc -t {threads} -noextract -o $TMPDIR $TMPDIR/$link | tee -a {log}
+        # Per-job scratch dir under resources.tmpdir: rendered by Snakemake, so it
+        # does not depend on $TMPDIR being propagated into the container.
+        tmp=$(mktemp -d -p "{resources.tmpdir}")
+        trap 'rm -rf "$tmp"' EXIT
+        echo "Using scratch directory: $tmp" | tee -a {log}
+        ln -sf "$src" "$tmp/$link"
+        fastqc -t {threads} -noextract -o "$tmp" "$tmp/$link" | tee -a {log}
 
-            sleep $(( 5 + RANDOM % 5 ))
-            mv $TMPDIR/{wildcards.sample}_fastqc.zip {output.zip}
-            mv $TMPDIR/{wildcards.sample}_fastqc.html {output.html}
-        else
-            echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
-            ln -sf "$src" {params.fastqc_folder}/$link
-            fastqc -t {threads} -noextract -o {params.fastqc_folder} {params.fastqc_folder}/$link | tee -a {log}
-
-            sleep $(( 5 + RANDOM % 5 ))
-            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.zip {output.zip}
-            mv {params.fastqc_folder}/{wildcards.sample}_fastqc.html {output.html}
-            rm -f {params.fastqc_folder}/$link
-        fi
+        sleep $(( 5 + RANDOM % 5 ))
+        mv "$tmp/{wildcards.sample}_fastqc.zip" {output.zip}
+        mv "$tmp/{wildcards.sample}_fastqc.html" {output.html}
         """
 
 
@@ -86,8 +77,6 @@ rule fastqc_raw_pe:
     resources:
         runtime=get_fastqc_runtime,
         mem_mb=4000,
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
     shell:
         """
         set -e
@@ -102,29 +91,18 @@ rule fastqc_raw_pe:
         [ "$ext1" = "gz" ] && link1={wildcards.sample}_1.fastq.gz || link1={wildcards.sample}_1.fastq
         [ "$ext2" = "gz" ] && link2={wildcards.sample}_2.fastq.gz || link2={wildcards.sample}_2.fastq
 
-        if [ ! -z $TMPDIR ]; then
-            echo "Using TMPDIR: $TMPDIR" | tee -a {log}
-            ln -sf "$src1" $TMPDIR/$link1
-            ln -sf "$src2" $TMPDIR/$link2
-            fastqc -t {threads} -noextract -o $TMPDIR $TMPDIR/$link1 $TMPDIR/$link2 | tee -a {log}
+        # Per-job scratch dir under resources.tmpdir: rendered by Snakemake, so it
+        # does not depend on $TMPDIR being propagated into the container.
+        tmp=$(mktemp -d -p "{resources.tmpdir}")
+        trap 'rm -rf "$tmp"' EXIT
+        echo "Using scratch directory: $tmp" | tee -a {log}
+        ln -sf "$src1" "$tmp/$link1"
+        ln -sf "$src2" "$tmp/$link2"
+        fastqc -t {threads} -noextract -o "$tmp" "$tmp/$link1" "$tmp/$link2" | tee -a {log}
 
-            sleep $(( 5 + RANDOM % 5 ))
-            mv $TMPDIR/{wildcards.sample}_1_fastqc.zip {output.zip1}
-            mv $TMPDIR/{wildcards.sample}_1_fastqc.html {output.html1}
-            mv $TMPDIR/{wildcards.sample}_2_fastqc.zip {output.zip2}
-            mv $TMPDIR/{wildcards.sample}_2_fastqc.html {output.html2}
-
-        else
-            echo "Using default output directory: {params.fastqc_folder}" | tee -a {log}
-            ln -sf "$src1" {params.fastqc_folder}/$link1
-            ln -sf "$src2" {params.fastqc_folder}/$link2
-            fastqc -t {threads} -noextract -o {params.fastqc_folder} {params.fastqc_folder}/$link1 {params.fastqc_folder}/$link2 | tee -a {log}
-
-            sleep $(( 5 + RANDOM % 5 ))
-            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.zip {output.zip1}
-            mv {params.fastqc_folder}/{wildcards.sample}_1_fastqc.html {output.html1}
-            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.zip {output.zip2}
-            mv {params.fastqc_folder}/{wildcards.sample}_2_fastqc.html {output.html2}
-            rm -f {params.fastqc_folder}/$link1 {params.fastqc_folder}/$link2
-        fi
+        sleep $(( 5 + RANDOM % 5 ))
+        mv "$tmp/{wildcards.sample}_1_fastqc.zip" {output.zip1}
+        mv "$tmp/{wildcards.sample}_1_fastqc.html" {output.html1}
+        mv "$tmp/{wildcards.sample}_2_fastqc.zip" {output.zip2}
+        mv "$tmp/{wildcards.sample}_2_fastqc.html" {output.html2}
         """
