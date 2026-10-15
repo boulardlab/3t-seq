@@ -113,11 +113,22 @@ The sample sheet is a csv file that describe samples metadata:
 
 ## Directory Structure
 
-The pipeline will generate an ouput folder tree like so
+All outputs are written below `globals.results_folder`:
 
-<p align="center">
-  <img src="docs/figures/folder-tree-tikz.png">
-</p>
+```text
+<results_folder>/
+├── qc/              FastQC and MultiQC reports
+├── trim/            trimmed reads
+├── alignments/      STAR (genes), deduplicated and STAR-TE alignments, TE counts and DESeq2
+├── salmonTE/        SalmonTE quantification and differential expression
+├── tRNA_coverage/   tRNA coverage, counts and DESeq2
+├── analysis/        gene DESeq2 tables, R objects and datavzrd reports
+├── references/      processed genome, annotations and indices
+├── log/             job logs, one folder per run date
+└── tmp/             scratch space
+```
+
+See [Results layout](docs/usage/index.md#results-layout) for the full tree.
 
 ## Run tests
 

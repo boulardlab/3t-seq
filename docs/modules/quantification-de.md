@@ -54,7 +54,10 @@ DESeq2 results are visualized through:
 
 | Location | Description |
 | :--- | :--- |
-| `results/analysis/rdata/` | DESeq2 analysis objects and normalized counts. |
-| `results/analysis/tables/` | Lists of differentially expressed genes, TEs, and tRNAs. |
-| `results/analysis/pictures/` | Volcano plots, MA plots, and PCA plots. |
+| `results/analysis/tables/deseq2/<comparison>/` | Gene DESeq2 results (`results.csv`, `results.shrink.csv`). |
+| `results/analysis/rdata/deseq2/<comparison>/` | Gene DESeq2 object (`dds.rds`). |
+| `results/analysis/datavzrd/<comparison>/` | Interactive gene results report. |
 | `results/qc/multiqc/` | Integrated reports from the entire pipeline. |
+
+TE and tRNA results are written next to their quantification; see
+[Results layout](../usage/index.md#results-layout).

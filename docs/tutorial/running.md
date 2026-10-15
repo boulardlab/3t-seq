@@ -60,7 +60,7 @@ The generated `report.html` is a stand-alone file that you can share with collea
 
 You can monitor the progress of your jobs in real-time:
 - **Terminal Output**: Snakemake provides a live count of finished/remaining jobs.
-- **Log Files**: Every rule execution creates a corresponding log file in your `results/logs/` directory.
+- **Log Files**: Every rule execution creates a corresponding log file under `results/log/<date>/`.
 
 ---
 
