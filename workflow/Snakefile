@@ -10,7 +10,7 @@ import pandas as pd
 ## PIN SNAKEMAKE VERSION
 ##########################
 
-from snakemake.utils import min_version, validate
+from snakemake.utils import min_version
 
 min_version("7.21.0")
 
@@ -18,20 +18,6 @@ min_version("7.21.0")
 ################
 ## CONFIG FILE
 ################
-
-
-# Backwards compat: the key was renamed from sequencing_libraries to comparisons in v1.x.
-# Accept the old name with a deprecation warning and alias it before validation.
-if "sequencing_libraries" in config and "comparisons" not in config:
-    logger.warning(
-        "CONFIG DEPRECATION: The 'sequencing_libraries' key has been renamed to 'comparisons'. "
-        "Please update your config file — 'sequencing_libraries' will be removed in a future release."
-    )
-    config["comparisons"] = config.pop("sequencing_libraries")
-
-# Load and validate config
-schema_path = Path(workflow.basedir) / "schemas" / "config.schema.yaml"
-validate(config, schema=str(schema_path))
 
 
 #############################
@@ -42,7 +28,10 @@ validate(config, schema=str(schema_path))
 include: "rules/common.smk"
 
 
-apply_schema_defaults(config, str(schema_path))
+# Validate config: aliases renamed 1.x keys, rejects removed ones with
+# migration hints, applies schema defaults, checks genome support.
+schema_path = Path(workflow.basedir) / "schemas" / "config.schema.yaml"
+validate_config(config, str(schema_path))
 
 
 ###########################
@@ -107,7 +96,7 @@ else:
 # Comparisons
 libraries = config["comparisons"]
 library_names_paired = [lib["name"] for lib in libraries if lib.get("protocol") == "pe"]
-library_names_single = [lib["name"] for lib in libraries if lib.get("protocol") != "pe"]
+library_names_single = [lib["name"] for lib in libraries if lib.get("protocol") == "se"]
 
 # Defaults and validation
 validate_sample_sheets()

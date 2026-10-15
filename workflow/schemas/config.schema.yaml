@@ -12,7 +12,6 @@ properties:
     required:
       - results_folder
     additionalProperties: false
-    errorMessage: "Invalid globals configuration. Paths like qc_folder, log_folder, references_folder, tmp_folder, and analysis_folder are now automatically derived from results_folder and should be removed from the config file."
   defaults:
     type: object
     default: {}
@@ -64,6 +63,7 @@ properties:
           reference_level:
             type: string
         additionalProperties: false
+    additionalProperties: false
   comparisons:
     type: array
     description: "List of comparisons to process. Each comparison groups a set of samples (via a sample sheet) with its alignment and differential expression settings."
@@ -76,6 +76,10 @@ properties:
         sample_sheet:
           type: string
           description: "Path to the sample sheet CSV file."
+        protocol:
+          type: string
+          enum: ["pe", "se"]
+          description: "Sequencing protocol: 'pe' (paired-end, sample sheet needs filename_1 and filename_2 columns) or 'se' (single-end, sample sheet needs a filename column). Required: unlike 1.x it is not inferred from the sample sheet."
         trimmomatic:
           oneOf:
             - type: string
@@ -119,14 +123,16 @@ properties:
       required:
         - name
         - sample_sheet
+        - protocol
+      additionalProperties: false
   genome:
     type: object
     description: "Genome references."
     properties:
       label:
         type: string
-        enum: ["mm10", "mm39"]
-        description: "Genome label. Required."
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        description: "Genome label, used in reference file names. Must be 'mm10' or 'mm39' when references are fetched automatically (no fasta_path/gtf_path). With custom fasta_path + gtf_path any label made of letters, digits, '.', '_' and '-' is accepted. Required."
       fasta_path:
         type: string
         description: "Local path to explicit genome fasta."
@@ -149,7 +155,14 @@ properties:
     dependencies:
       fasta_path: ["gtf_path", "annotation_type"]
       gtf_path: ["fasta_path", "annotation_type"]
-    errorMessage: "You must provide a 'label' (e.g. mm10, mm39). If you provide 'fasta_path' or 'gtf_path', you must provide both plus 'annotation_type' to override the default references."
+    # Automatically fetched references only exist for mm10/mm39; any other
+    # label requires custom fasta_path + gtf_path.
+    anyOf:
+      - required: ["fasta_path", "gtf_path"]
+      - properties:
+          label:
+            enum: ["mm10", "mm39"]
+    additionalProperties: false
   disable_TE_analysis:
     type: boolean
     default: false
@@ -185,9 +198,12 @@ properties:
             type: integer
             default: 10
             description: "Minimum coverage required for a tRNA to be quantified."
+        additionalProperties: false
     required:
       - method
+    additionalProperties: false
 required:
   - globals
   - comparisons
   - genome
+additionalProperties: false
