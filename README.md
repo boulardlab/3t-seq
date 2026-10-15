@@ -51,7 +51,13 @@ pixi run -e dev test
 
 ### 1. Configure samples and parameters
 
-Write a config file (e.g. `config/my_config.yaml`) and a sample sheet. The [`config/` folder](config/) contains a README with common patterns, and the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
+Copy the commented template and fill it in, then write a sample sheet:
+
+```bash
+cp config/config.yaml config/my_config.yaml
+```
+
+The [`config/` folder](config/) contains a README with common patterns and a worked example in [`config/examples/`](config/examples/); the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
 
 ### 2. Execute the pipeline
 
@@ -107,11 +113,22 @@ The sample sheet is a csv file that describe samples metadata:
 
 ## Directory Structure
 
-The pipeline will generate an ouput folder tree like so
+All outputs are written below `globals.results_folder`:
 
-<p align="center">
-  <img src="docs/figures/folder-tree-tikz.png">
-</p>
+```text
+<results_folder>/
+├── qc/              FastQC and MultiQC reports
+├── trim/            trimmed reads
+├── alignments/      STAR (genes), deduplicated and STAR-TE alignments, TE counts and DESeq2
+├── salmonTE/        SalmonTE quantification and differential expression
+├── tRNA_coverage/   tRNA coverage, counts and DESeq2
+├── analysis/        gene DESeq2 tables, R objects and datavzrd reports
+├── references/      processed genome, annotations and indices
+├── log/             job logs, one folder per run date
+└── tmp/             scratch space
+```
+
+See [Results layout](docs/usage/index.md#results-layout) for the full tree.
 
 ## Run tests
 

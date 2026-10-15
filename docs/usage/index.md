@@ -54,6 +54,63 @@ pixi run snakemake \
 
 ---
 
+## Results layout
+
+Everything is written below `globals.results_folder`; the sub-folders are fixed and
+cannot be configured. `<comparison>` is the `name` of an entry under `comparisons`,
+`<sample>` the `name` column of its sample sheet.
+
+```text
+<results_folder>/
+├── qc/
+│   ├── fastqc-raw/<comparison>/          FastQC on raw reads
+│   ├── fastqc-trimmed/<comparison>/      FastQC on trimmed reads
+│   ├── fastqc-markdup/<comparison>/      FastQC on deduplicated alignments
+│   ├── star/<comparison>/                FastQC on STAR alignments
+│   └── multiqc/<comparison>/multiqc_report.html
+├── trim/
+│   ├── _shared/<hash>/                   trimmed reads, shared between comparisons
+│   └── <comparison>/                     links to _shared/, trimming stats
+├── alignments/
+│   ├── star/
+│   │   ├── _shared/<hash>/               single-copy gene alignments
+│   │   └── <comparison>/                 BAM, BAI, bigWig, ReadsPerGene, STAR logs
+│   ├── star_markdup/
+│   │   ├── _shared/<hash>/
+│   │   └── <comparison>/                 duplicate-marked BAM and stats
+│   └── starTE/
+│       ├── _shared/<hash>/{random,multihit}/
+│       └── <comparison>/
+│           ├── random/ multihit/         TE alignments
+│           ├── filter/                   TE-only BAMs
+│           ├── featureCount/             TE counts (random, multihit)
+│           ├── DESeq2/                   TE differential expression (lfc.csv, dds_random.rds)
+│           └── random/datavzrd/          interactive TE results report
+├── salmonTE/
+│   ├── quant/<comparison>/               SalmonTE quantification
+│   └── de_analysis/<comparison>/         SalmonTE differential expression
+├── tRNA_coverage/<comparison>/           tRNA coverage, counts, DESeq2 results, datavzrd report
+├── analysis/
+│   ├── tables/deseq2/<comparison>/       gene DESeq2 results (results.csv, results.shrink.csv)
+│   ├── rdata/deseq2/<comparison>/        DESeq2 object (dds.rds)
+│   └── datavzrd/<comparison>/            interactive gene results report
+├── references/
+│   ├── <label>/                          processed FASTA and GTF
+│   ├── STAR/                             STAR index
+│   ├── rmsk/                             RepeatMasker annotation
+│   ├── gtrnadb/                          GtRNAdb tRNA annotation
+│   └── refgenie/                         Refgenie genome config
+├── log/<YYYY-MM-DD>/<tool>/              job logs, one folder per run date
+└── tmp/                                  scratch space for STAR
+```
+
+`salmonTE/`, `alignments/starTE/` and `tRNA_coverage/` are only created when the
+corresponding analysis is enabled (see `disable_*_analysis` in the
+[configuration reference](../configuration/index.md)). The `_shared/` folders are
+explained in [Deduplication](../algorithms/deduplication.md).
+
+---
+
 ## Generating a report
 
 ```bash

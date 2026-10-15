@@ -55,7 +55,7 @@ starTE uses STAR for alignment and a specialized counting algorithm for multi-ma
 
 | Location | Description |
 | :--- | :--- |
-| `results/alignments/starTE/` | STAR-TE quantification results and log files. |
-| `results/salmonTE/` | SalmonTE quantification results. |
-| `results/analysis/rdata/` | Normalized TE counts for downstream analysis. |
-| `results/analysis/tables/` | Tabular summaries of TE expression. |
+| `results/alignments/starTE/<comparison>/` | STAR-TE alignments, TE-only BAMs and featureCounts tables. |
+| `results/alignments/starTE/<comparison>/DESeq2/` | TE differential expression (`lfc.csv`, `dds_random.rds`). |
+| `results/alignments/starTE/<comparison>/random/datavzrd/` | Interactive TE results report. |
+| `results/salmonTE/` | SalmonTE quantification and differential expression. |

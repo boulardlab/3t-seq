@@ -44,7 +44,9 @@ Snakemake 8 changed several profile keys. Update any 1.x profile you kept:
 | `slurm: True` | `executor: slurm` |
 | `use-conda: True` + `use-singularity: True` | `software-deployment-method: [conda, apptainer]` (the old flags still work but are deprecated) |
 
-See [Advanced Profiles](../tutorial/profiles.md) for complete examples.
+`profile/slurm-example/` is a ready-to-copy Snakemake 8 Slurm profile; the 1.x
+`profile/slurm-GSE130735/` was removed (rules now size `mem_mb`, `runtime` and `threads`
+themselves). See [Advanced Profiles](../tutorial/profiles.md) for complete examples.
 
 ---
 
