@@ -49,6 +49,11 @@ jobs:
           cache: true
           environments: dev
 
+      # ubuntu-24.04 restricts unprivileged user namespaces via AppArmor;
+      # rootless Apptainer (conda-forge) needs them to run containers.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run Integration Tests
         run: |
           ROOT=$(realpath .)
