@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   # run-unit-tests:
@@ -49,8 +49,13 @@ jobs:
           cache: true
           environments: dev
 
+      # ubuntu-24.04 restricts unprivileged user namespaces via AppArmor;
+      # rootless Apptainer (conda-forge) needs them to run containers.
+      - name: Allow unprivileged user namespaces
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Run Integration Tests
         run: |
           ROOT=$(realpath .)
-          pixi run -e dev test adaptive-trim laptop \
+          pixi run -e dev test adaptive-trim laptop -- \
           --singularity-args="--bind $ROOT --bind $HOME"

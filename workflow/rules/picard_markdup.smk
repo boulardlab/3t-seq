@@ -1,4 +1,6 @@
-localrules: symlink_markdup
+localrules:
+    symlink_markdup,
+
 
 rule picard_markdup_shared:
     """Deduplicated Picard MarkDuplicates."""

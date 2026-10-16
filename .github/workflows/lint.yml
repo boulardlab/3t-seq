@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   lint:
@@ -20,7 +20,7 @@ jobs:
           environments: dev
 
       - name: Run formatting check
-        run: pixi run -e dev format
+        run: pixi run -e dev format-check
 
       - name: Run Snakemake lint
         run: pixi run -e dev lint
