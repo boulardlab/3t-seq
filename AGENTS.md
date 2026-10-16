@@ -29,6 +29,7 @@ pixi run -e docs docs-serve
 | **Setup** | `pixi run setup` | Initializes Git LFS and pulls large test assets (FASTQs, etc.). |
 | **Linting** | `pixi run lint <config> <profile>` | Runs `snakemake --lint`. Defaults: `remote-references`, `laptop`. |
 | **Formatting** | `pixi run format` | Formats Snakemake files using `snakefmt`. |
+| **Format check** | `pixi run -e dev format-check` | `snakefmt --check --diff`; what `lint.yml` runs. Does not modify files. |
 | **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). |
 | **Test** | `pixi run test <config> <profile>` | Executes the integration test (depends on `setup`). |
 | **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report (depends on `test`). |
@@ -91,6 +92,8 @@ pixi run -e docs docs-serve
 - **Temporary Directories:** Respect the `$TMPDIR` environment variable. Use centralized logic for temporary directory assignment to ensure compatibility with HPC nodes and local machines.
 
 #### Containerization & CI
+The full reference (branch/PR model, each workflow and its failure modes, image tags, the `main` ruleset, release procedure, troubleshooting) is the Developer Guide in `docs/developer/`; start at `docs/developer/index.md`. Keep this section a summary and update the guide when CI or container behaviour changes.
+
 - **Multi-arch Support:** Docker builds must support both `linux/amd64` and `linux/arm64`. Verify that all dependencies in `workflow/envs/*.yaml` are solvable for both architectures.
 - **SHA Tagging:** Images pushed to GHCR should be tagged with the commit SHA in addition to the branch/tag name.
 - **Pinned Images:** Every `ghcr.io/boulardlab/*` image under `workflow/` must use an immutable tag (never `:latest` or untagged) that exists in GHCR. The `container-check.yml` gate enforces this on PRs to `main`/`dev` and on pushes to `main`.
