@@ -93,5 +93,13 @@ nav:
   - Algorithms:
       - Deduplication: algorithms/deduplication.md
       - Adaptive Trimming: algorithms/adaptive-trimming.md
+  - Developer Guide:
+      - developer/index.md
+      - Branches and PRs: developer/branches.md
+      - Local Checks: developer/local-checks.md
+      - CI Reference: developer/ci.md
+      - Containers: developer/containers.md
+      - Release Procedure: developer/release.md
+      - Troubleshooting: developer/troubleshooting.md
   - Appendix:
       - YAML Syntax Primer: tutorial/yaml-syntax.md
