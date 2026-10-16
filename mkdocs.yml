@@ -82,6 +82,7 @@ nav:
       - 4. Running & Reporting: tutorial/running.md
   - Configuration: configuration/index.md
   - Usage: usage/index.md
+  - Migrating from 1.x: migration/index.md
   - Analysis Modules:
       - Reference Management: modules/references.md
       - Preprocessing: modules/preprocessing.md

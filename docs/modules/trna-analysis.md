@@ -43,7 +43,5 @@ The pipeline uses annotations from [GtRNAdb](http://gtrnadb.ucsc.edu/), which ar
 
 | Location | Description |
 | :--- | :--- |
-| `results/tRNA_coverage/` | tRNA coverage maps and quantification results. |
-| `results/analysis/rdata/` | Normalized tRNA counts for downstream analysis. |
-| `results/analysis/tables/` | tRNA-specific quantification tables. |
-| `results/references/gtrnadb/` | Down-loaded tRNA annotations. |
+| `results/tRNA_coverage/<comparison>/` | tRNA coverage, count matrix, DESeq2 results and datavzrd report. |
+| `results/references/gtrnadb/` | Downloaded tRNA annotations. |

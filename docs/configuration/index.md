@@ -63,10 +63,13 @@ Controls which reference genome is used.
 
 === "Custom local files"
 
-    Remove `label` and provide explicit paths. All three keys are required together.
+    Keep `label` and add explicit paths. `fasta_path`, `gtf_path` and `annotation_type`
+    are required together. The `label` is still used to fetch RepeatMasker and GtRNAdb
+    annotations.
 
     ```yaml
     genome:
+      label: mm10
       fasta_path: /data/refs/my_genome.fa
       gtf_path: /data/refs/my_genome.gtf
       annotation_type: ensembl
@@ -74,14 +77,15 @@ Controls which reference genome is used.
 
     | Key | Required | Default | Description |
     | :--- | :--- | :--- | :--- |
+    | `label` | **Yes** | — | `mm10` or `mm39`. |
     | `fasta_path` | **Yes** (with gtf) | — | Absolute path to genome FASTA. |
     | `gtf_path` | **Yes** (with fasta) | — | Absolute path to gene annotation GTF. |
     | `annotation_type` | **Yes** (with fasta) | — | `ensembl`, `gencode`, or `mgi`. |
     | `selected_chromosomes` | No | all | Restrict to a chromosome subset. |
 
     !!! warning
-        `label` and `fasta_path`/`gtf_path` are mutually exclusive. The validator will
-        reject a config that mixes them.
+        The validator rejects a config that sets only some of `fasta_path`, `gtf_path`
+        and `annotation_type`.
 
 ---
 
@@ -113,7 +117,7 @@ comparisons:
 | Key | Required | Description |
 | :--- | :--- | :--- |
 | `name` | **Yes** | Label for this comparison. Used to name output subdirectories. |
-| `protocol` | **Yes** | `pe` (paired-end) or `se` (single-end). Must match the sample sheet columns. |
+| `protocol` | For paired-end | Set `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`). Any other value, or omitting it, means single-end (`filename` column). |
 | `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). |
 
 ### DESeq2 settings
@@ -133,8 +137,8 @@ A per-comparison value always takes precedence over the global default.
 | :--- | :--- | :--- |
 | `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. |
 | `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{adaptive: true}` for automatic parameter derivation. |
-| `star` | `""` | Extra CLI flags passed to the STAR aligner. |
-| `bamCoverage` | `""` | Extra flags for `deeptools bamCoverage`. |
+| `star` | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra CLI flags passed to the STAR aligner. |
+| `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. |
 
 ---
 

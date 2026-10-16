@@ -1,0 +1,25 @@
+# Example: full analysis of GSE130735 (mouse, paired-end), the dataset the
+# integration test (.tests/integration) is subsampled from.
+# Start from config/config.yaml for your own data.
+comparisons:
+  - name: GSE130735
+    protocol: pe
+    # CSV with columns name, filename_1, filename_2, genotype. E.g.
+    #  name,filename_1,filename_2,genotype
+    #  s01,/data/GSE130735/s01_1.fq.gz,/data/GSE130735/s01_2.fq.gz,WT
+    #  s02,/data/GSE130735/s02_1.fq.gz,/data/GSE130735/s02_2.fq.gz,KO
+    sample_sheet: resources/sample-sheet.csv
+    deseq2:
+      test: Wald
+      variable: genotype
+      reference_level: WT
+
+disable_TE_analysis: false
+disable_tRNA_analysis: false
+
+globals:
+  results_folder: results/
+
+genome:
+  label: mm10
+  annotation_type: mgi

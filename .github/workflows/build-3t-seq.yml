@@ -1,28 +1,53 @@
 name: Build 3t-seq
 
+# The image is content-addressed: tagged env-<hash> from the conda_env_hash
+# label in the generated Dockerfile, which workflow/Snakefile pins (see
+# .github/scripts/container_pin.py). An env-<hash> tag is built once and never
+# overwritten; if it already exists the other tags are just pointed at it.
+
 on:
   push:
+    branches: [main, dev]
+    # v* tags add a readable :X.Y.Z alias to the env-<hash> image
+    tags:
+      - 'v*'
+    paths:
+      - 'Dockerfile'
+      - '.github/workflows/build-3t-seq.yml'
+  # Build before an env change is merged, so the PR (tests, container-check)
+  # runs against the image it pins. Same-repo PRs only, see job `if`.
+  pull_request:
+    branches: [main, dev]
     paths:
       - 'Dockerfile'
       - '.github/workflows/build-3t-seq.yml'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  IMAGE: ghcr.io/boulardlab/3t-seq
+
 jobs:
   docker:
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    env:
+      # type=sha tags the PR head commit, not the merge commit
+      DOCKER_METADATA_PR_HEAD_SHA: true
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -31,20 +56,50 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve image tags
+        id: image
+        run: |
+          tag=$(python3 .github/scripts/container_pin.py tag)
+          exists=false
+          docker manifest inspect "$IMAGE:$tag" > /dev/null 2>&1 && exists=true
+          version=""
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            v="${GITHUB_REF_NAME#v}"
+            if docker manifest inspect "$IMAGE:$v" > /dev/null 2>&1; then
+              echo "$IMAGE:$v already exists; leaving it untouched."
+            else
+              version="$v"
+            fi
+          fi
+          echo "$IMAGE:$tag exists: $exists"
+          {
+            echo "tag=$tag"
+            echo "exists=$exists"
+            echo "version=$version"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        if: steps.image.outputs.exists != 'true'
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/boulardlab/3t-seq
+          images: ${{ env.IMAGE }}
           tags: |
+            type=raw,value=${{ steps.image.outputs.tag }}
             type=ref,event=branch
             type=ref,event=branch,suffix=-{{sha}}
-            type=ref,event=pr
-            type=semver,pattern={{version}}
+            type=raw,value=${{ steps.image.outputs.version }},enable=${{ steps.image.outputs.version != '' }}
             type=sha,format=long
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and push Docker image
+        if: steps.image.outputs.exists != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -54,3 +109,19 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Same envs => same image: point the remaining tags at env-<hash>
+      # instead of rebuilding (env-<hash> itself is never rewritten).
+      - name: Retag existing image
+        if: steps.image.outputs.exists == 'true'
+        env:
+          SOURCE: ${{ env.IMAGE }}:${{ steps.image.outputs.tag }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          args=()
+          while read -r t; do
+            if [[ -n "$t" && "$t" != "$SOURCE" ]]; then args+=(--tag "$t"); fi
+          done <<< "$TAGS"
+          if [[ ${#args[@]} -gt 0 ]]; then
+            docker buildx imagetools create "${args[@]}" "$SOURCE"
+          fi
