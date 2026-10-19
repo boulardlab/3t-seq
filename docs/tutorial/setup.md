@@ -115,40 +115,42 @@ set of alignment parameters, and one DESeq2 contrast.
 | Key | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `name` | Yes | — | Label for this comparison. Used to name output subdirectories. |
-| `protocol` | Yes | — | `pe` (paired-end) or `se` (single-end). Must match the sample sheet columns. |
+| `protocol` | For paired-end | single-end | Set `pe` for paired-end data (`filename_1`/`filename_2`). Any other value, or omitting it, means single-end (`filename`). |
 | `sample_sheet` | Yes | — | Path to the CSV file. |
 | `deseq2.test` | No | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
 | `deseq2.reference_level` | No | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. Strongly recommended. |
 | `strandedness` | No | `0` | `0` unstranded, `1` forward-stranded, `2` reverse-stranded. |
 | `trimmomatic` | No | TruSeq3 defaults | Fixed string or `{adaptive: true}` for automatic parameter derivation. |
-| `star` | No | `""` | Extra flags passed to STAR. |
-| `bamCoverage` | No | `""` | Extra flags for deeptools bamCoverage. |
+| `star` | No | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra flags passed to STAR. |
+| `bamCoverage` | No | `--binSize 50 --normalizeUsing None` | Extra flags for deeptools bamCoverage. |
 
 ### The `genome` section
 
 | Key | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `label` | Yes | — | `mm10` or `mm39`. Downloads references automatically via Refgenie. |
-| `fasta_path` | No | derived from `label` | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
-| `gtf_path` | No | derived from `label` | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
+| `fasta_path` | No | Refgenie download | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
+| `gtf_path` | No | Refgenie download | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
 | `annotation_type` | No | `ensembl` | `ensembl`, `gencode`, or `mgi`. Required when using custom FASTA/GTF. |
 | `selected_chromosomes` | No | all | Restrict to a subset of chromosomes (useful for pilot runs). |
 
 ### Using your own reference files
 
-Remove `label` and provide explicit paths:
+Keep `label` and add explicit paths. `label` is still used to fetch the RepeatMasker and
+GtRNAdb annotations.
 
 ```yaml
 genome:
+  label: mm10
   fasta_path: /data/refs/custom.fa
   gtf_path: /data/refs/custom.gtf
   annotation_type: ensembl
 ```
 
 !!! warning
-    `label` and `fasta_path`/`gtf_path` are mutually exclusive. The config validator
-    will raise an error if you mix them.
+    `fasta_path`, `gtf_path` and `annotation_type` must be set together. The config
+    validator raises an error if only some of them are present.
 
 ---
 
@@ -176,7 +178,7 @@ Run it:
 
 ```bash
 pixi run snakemake \
-    --profile profiles/laptop \
+    --profile .tests/integration/profiles/laptop \
     --configfile config/my_config.yaml
 ```
 

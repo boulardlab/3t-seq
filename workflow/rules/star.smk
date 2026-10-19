@@ -22,14 +22,19 @@ rule star_genome_preparation:
         set -e 
 
         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
-        
+
+        # STAR manual: genomeSAindexNbases = min(14, log2(GenomeLength)/2 - 1).
+        # 14 for mammalian genomes; smaller for subsets such as a single chromosome.
+        SA_NBASES=$(awk '!/^>/ {{ n += length($0) }} END {{ v = int(log(n) / log(2) / 2 - 1); print (v > 14 ? 14 : v) }}' {input.genome_fasta_file})
+
         STAR --runMode genomeGenerate \
         --outTmpDir $TMP_FOLDER \
         --runThreadN {threads} \
         --genomeDir {output} \
         --genomeFastaFiles {input.genome_fasta_file} \
         --sjdbGTFfile {input.genome_annotation_file} \
-        --sjdbOverhang 100         
+        --sjdbOverhang 100 \
+        --genomeSAindexNbases $SA_NBASES
         
         if [ -f {output}/Log.out ]; then
           cp {output}/Log.out {log}
@@ -221,9 +226,9 @@ rule fastqc_star:
     shell:
         """
 
-        set -e 
+        set -e
 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input} > {log} 2>&1
 
         """
 

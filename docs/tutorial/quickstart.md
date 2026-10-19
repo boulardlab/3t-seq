@@ -158,13 +158,16 @@ results/
 ├── qc/
 │   └── multiqc/GSE130735-subset/multiqc_report.html   ← QC overview
 ├── alignments/
-│   └── star/GSE130735-subset/                          ← BAM files
+│   ├── star/GSE130735-subset/                          ← BAM files
+│   └── starTE/GSE130735-subset/DESeq2/                 ← TE differential expression
 ├── analysis/
-│   ├── tables/GSE130735-subset/                        ← count matrices
-│   └── pictures/GSE130735-subset/                      ← DESeq2 plots
+│   ├── tables/deseq2/GSE130735-subset/                 ← gene DESeq2 results
+│   └── datavzrd/GSE130735-subset/                      ← interactive gene report
 └── tRNA_coverage/
     └── GSE130735-subset/                               ← tRNA quantification
 ```
+
+The full tree is described in [Results layout](../usage/index.md#results-layout).
 
 Open `results/qc/multiqc/GSE130735-subset/multiqc_report.html` in your browser for a
 summary of read counts, mapping rates, and duplication metrics.

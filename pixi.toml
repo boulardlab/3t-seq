@@ -1,6 +1,6 @@
 [workspace]
 name = "3t-seq"
-version = "2.0.0"
+version = "2.0.0"  # x-release-please-version
 description = "3t-seq: a Snakemake pipeline for total RNA-seq analysis"
 authors = ["Francesco Tabaro"]
 channels = ["conda-forge", "bioconda"]
@@ -32,8 +32,9 @@ default = ["snakemake"]
 dev = ["snakemake", "dev"]
 docs = ["snakemake", "dev", "docs"]
 
-[feature.snakemake.target.linux-64.dependencies]
-apptainer = ">=1.2.5"
+# Apptainer is not a pixi dependency: the conda-forge squashfuse_ll it pulls in
+# hangs on reads of SIF images (conda-forge/squashfuse-feedstock#21, #39).
+# Use the system / HPC module Apptainer (>= 1.2.5) instead.
 
 [target.osx-arm64.activation]
 scripts = ["scripts/macos-coreutils-setup.sh"]
@@ -74,7 +75,7 @@ choices = ["remote-references", "local-references", "adaptive-trim"]
 [[tasks.lint.args]]
 arg = "profile"
 default = "laptop"
-choices = ["laptop", "hpc"]
+choices = ["laptop", "hpc", "ci"]
 
 ################################################################################
 # Containerize
@@ -94,7 +95,9 @@ cmd = [
     "-n", 
     "+2", 
     ">", 
-    "Dockerfile"
+    "Dockerfile",
+    "&&",
+    "python", ".github/scripts/container_pin.py", "update"
 ]
 
 ################################################################################
@@ -135,7 +138,7 @@ choices = ["remote-references", "local-references", "adaptive-trim"]
 [[tasks.dry-run.args]]
 arg = "profile"
 default = "laptop"
-choices = ["laptop", "hpc"]
+choices = ["laptop", "hpc", "ci"]
 
 ################################################################################
 # Test
@@ -160,7 +163,7 @@ choices = ["remote-references", "local-references", "adaptive-trim"]
 [[tasks.test.args]]
 arg = "profile"
 default = "laptop"
-choices = ["laptop", "hpc"]
+choices = ["laptop", "hpc", "ci"]
 
 ################################################################################
 # Test report
@@ -186,7 +189,7 @@ choices = ["remote-references", "local-references", "adaptive-trim"]
 [[tasks.test-report.args]]
 arg = "profile"
 default = "laptop"
-choices = ["laptop", "hpc"]
+choices = ["laptop", "hpc", "ci"]
 
 [dependencies]
 snakemake-executor-plugin-slurm = { version = ">=2.8.0,<3", channel = "bioconda" }

@@ -77,4 +77,5 @@ graph TD
 - [Getting Started](getting-started/index.md): Installation and your first run.
 - [Configuration](configuration/index.md): Detailed guide on how to set up your analysis.
 - [Usage](usage/index.md): Commands and workflows.
+- [Migrating from 1.x](migration/index.md): Config, sample sheet and environment changes in 2.0.
 - [Deduplication](algorithms/deduplication.md): Understanding the deduplication strategy.

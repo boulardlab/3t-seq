@@ -268,7 +268,7 @@ rule fastqc_trim:
     shell:
         """
         set -e
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.fastq}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.fastq} > {log} 2>&1
         mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_fastqc.zip {output.zip}
         mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_fastqc.html {output.html}
         """
@@ -310,7 +310,7 @@ rule fastqc_trim_pe:
     shell:
         """
         set -e
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.fastq}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.fastq} > {log} 2>&1
         mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_1_fastqc.zip {output.zip1}
         mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_1_fastqc.html {output.html1}
         mv {params.fastqc_folder}/{wildcards.serie}/{wildcards.sample}_2_fastqc.zip {output.zip2}

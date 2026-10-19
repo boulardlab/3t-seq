@@ -10,7 +10,7 @@ A standard Snakemake invocation for 3t-seq follows a predictable pattern. Using 
 
 ```bash
 pixi run snakemake \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile my_config.yaml
 ```
 
@@ -26,7 +26,7 @@ The pipeline will then automatically:
 Sometimes you may want to override a single parameter without changing your `config.yaml`. You can do this using the `--config` flag:
 
 ```bash
-pixi run snakemake --profile profiles/slurm --configfile my_config.yaml --config globals:results_folder="results/rerun_test"
+pixi run snakemake --profile profile/slurm --configfile my_config.yaml --config globals:results_folder="results/rerun_test"
 ```
 
 ---
@@ -42,7 +42,7 @@ To ensure the report accurately reflects the run that generated the results, **u
 ```bash
 pixi run snakemake \
     --report report.html \
-    --profile profiles/slurm \
+    --profile profile/slurm \
     --configfile my_config.yaml
 ```
 
@@ -60,7 +60,7 @@ The generated `report.html` is a stand-alone file that you can share with collea
 
 You can monitor the progress of your jobs in real-time:
 - **Terminal Output**: Snakemake provides a live count of finished/remaining jobs.
-- **Log Files**: Every rule execution creates a corresponding log file in your `results/logs/` directory.
+- **Log Files**: Every rule execution creates a corresponding log file under `results/log/<date>/`.
 
 ---
 

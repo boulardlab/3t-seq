@@ -1,42 +1,55 @@
-# Enable Slurm scheduler interface
-slurm: True
+# Example Snakemake 8 profile for Slurm clusters.
+#
+# Copy it to profile/slurm/ (git-ignored), replace the placeholders, then run:
+#   pixi run snakemake --profile profile/slurm --configfile my_config.yaml
+#
+# Uses snakemake-executor-plugin-slurm, installed with the Pixi environment.
+# Executor options: https://snakemake.github.io/snakemake-plugin-catalog/plugins/executor/slurm.html
 
-# let Snakemake submit up to 100 jobs at the time
+# Submit jobs through Slurm
+executor: slurm
+
+# Let Snakemake submit up to 100 jobs at the time
 jobs: 100
 
-# Print the reason why some job is executed
-reason: True
+# Software deployment (both required)
+software-deployment-method:
+  - conda
+  - apptainer
+# Mount extra file systems in the containers (e.g. scratch or data folders)
+apptainer-args: "--no-home --bind /scratch"
 
-# Enable Conda (required)
-use-conda: True
-
-# Enable Singularity (required)
-use-singularity: True
-singularity-args: "--no-home --bind /scratch" # --bind mounts specific folder in a Singularity container
+# Print shell commands and logs of failed jobs
+printshellcmds: True
+show-failed-logs: True
 
 # Wait up to 2 minutes for files to appear on file system
 # This is to handle latency on some shared file systems
 latency-wait: 120
 
-# If a job fails, let Snakemake retry running it up to 2 times
+# If a job fails, let Snakemake retry running it up to 2 times.
+# Runtime and memory of the heavy rules grow with each attempt.
 retries: 2
 
+# Be gentle with the Slurm controller
+max-jobs-per-second: 1
+max-status-checks-per-second: 1
+
+# Defaults for every job. Rules set their own threads, mem_mb and runtime,
+# scaled to input size; only the Slurm account and partition are site-specific.
 default-resources:
-  - "slurm_account=boulard" # this is the default account for billing of used resources
-  - "slurm_partition=htc-el8" # this is the default partition jobs should be submitted to
+  slurm_account: your_account # account billed for the jobs
+  slurm_partition: your_partition # partition jobs are submitted to
 
-set-resources:
-  # this syntax manipulates specific resources for specific rules
-  - "starTE_random:runtime=2880" # runtime
-  - "star:mem_mb=128000" # memory
-  - "star:slurm_partition=bigmem" # Cluster partition
-
-# Manipulate the number of cores allocated to a specific rule
-set-threads:
-  - "fastqc_raw=16"
-  - "star=32"
-  - "starTE_random=32"
-  - "starTE_multihit=32"
-  - "star_genome_preparation=32"
-  - "trimmomatic_pe=16"
-  - "trimmomatic_se=16"
+# Per-rule overrides (rule names as in workflow/rules/*.smk), e.g. send the
+# STAR alignments to a large-memory partition:
+# set-resources:
+#   star_shared:
+#     slurm_partition: bigmem
+#   starTE_shared_random:
+#     slurm_partition: bigmem
+#     runtime: 2880
+#   starTE_shared_multihit:
+#     slurm_partition: bigmem
+# set-threads:
+#   star_shared: 32

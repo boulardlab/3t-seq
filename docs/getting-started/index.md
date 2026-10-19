@@ -50,6 +50,26 @@ git lfs install
 
 ---
 
+### Apptainer
+
+Tools run inside the pinned 3t-seq containers, so you need
+[Apptainer](https://apptainer.org/docs/admin/latest/installation.html) ≥ 1.2.5 on Linux.
+Pixi does not install it: use your system package or your cluster's module
+(e.g. `module load Apptainer`). On Ubuntu:
+
+```bash
+sudo add-apt-repository -y ppa:apptainer/ppa
+sudo apt install -y apptainer
+```
+
+!!! warning "Do not use the conda-forge Apptainer"
+    The `squashfuse_ll` shipped with conda-forge's `apptainer` / `squashfuse` packages can
+    hang indefinitely while reading files inside the image (seen with Trimmomatic; see
+    [conda-forge/squashfuse-feedstock#21](https://github.com/conda-forge/squashfuse-feedstock/issues/21)).
+    Make sure `which apptainer` does not point into a conda environment.
+
+On macOS, see [Apple Silicon & macOS notes](#apple-silicon-macos-notes).
+
 ## Installation
 
 1. Clone the repository:

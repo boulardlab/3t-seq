@@ -43,8 +43,19 @@ Designed for scaling up to hundreds of samples on a High-Performance Computing c
 - **Usage**:
 
   ```bash
-  pixi run snakemake --profile profiles/slurm --configfile my_config.yaml
+  pixi run snakemake --profile profile/slurm --configfile my_config.yaml
   ```
+
+`profile/slurm` stands for your own Slurm profile. Start from the example shipped with the
+repository and fill in your Slurm account and partition (`profile/slurm/` is git-ignored):
+
+```bash
+cp -r profile/slurm-example profile/slurm
+```
+
+Snakemake 8 selects Slurm with `executor: slurm` (the plugin ships with the Pixi
+environment). Profiles written for 3t-seq 1.x with `slurm: True` no longer work; see
+[Migrating from 1.x](../migration/index.md#profiles).
 
 ---
 
@@ -52,10 +63,10 @@ Designed for scaling up to hundreds of samples on a High-Performance Computing c
 
 **Reproducibility** is at the heart of 3t-seq. Typing out long, complex commands with dozens of `--config` flags is error-prone and hard to share.
 
-Instead, we recommend **encapsulating these settings into a profile**. You can create a folder (e.g., `profiles/my_experiment/`) and add a `config.yaml` inside it:
+Instead, we recommend **encapsulating these settings into a profile**. You can create a folder (e.g., `profile/my_experiment/`) and add a `config.yaml` inside it:
 
 ```yaml
-# profiles/my_experiment/config.yaml
+# profile/my_experiment/config.yaml
 executor: slurm
 jobs: 50
 default-resources:
@@ -66,7 +77,7 @@ default-resources:
 Now, instead of a long CLI string, you simply run:
 
 ```bash
-pixi run snakemake --profile profiles/my_experiment --configfile my_samples.yaml
+pixi run snakemake --profile profile/my_experiment --configfile my_samples.yaml
 ```
 
 ---
