@@ -1,45 +1,82 @@
 name: Run tests
 
+# smoke: fast lint + dry-run of every integration config. Required on PRs.
+# e2e:   full pipeline on the chr19 test data. Non-blocking; runs on
+#        release-please PRs, nightly and on demand.
+
 on:
   push:
-    branches: [ main ]
+    branches: [ main, fix/39-40-e2e-test ]  # TEMP: own branch, for CI iteration
   pull_request:
     branches: [ main, dev ]
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+concurrency:
+  group: test-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  # run-unit-tests:
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         lfs: true
+  smoke:
+    name: smoke
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Setup Pixi
-  #       uses: prefix-dev/setup-pixi@v0.8.1
-  #       with:
-  #         pixi-version: v0.39.1
-  #         cache: true
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.66.0
+          cache: true
+          environments: dev
 
-  #     - name: Run Pytest
-  #       run: pixi run unit-test
+      - name: Lint
+        run: |
+          for config in remote-references local-references adaptive-trim; do
+            echo "::group::lint $config"
+            pixi run -e dev lint "$config" laptop
+            echo "::endgroup::"
+          done
 
-  # Pulls the pinned images through Singularity: wait until they exist
+      # Conda only: with Apptainer the dry-run needs the pulled images.
+      - name: Dry-run
+        run: |
+          for config in remote-references local-references adaptive-trim; do
+            echo "::group::dry-run $config"
+            pixi run -e dev dry-run "$config" ci -- --sdm conda
+            echo "::endgroup::"
+          done
+
+  # Pulls the pinned images through Apptainer: wait until they exist
   # (on PRs they may still be building).
   images:
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      github.ref == 'refs/heads/fix/39-40-e2e-test' ||
+      (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--'))
     uses: ./.github/workflows/container-check.yml
     permissions:
       contents: read
       packages: read
       actions: read
 
-  run-integration-tests:
+  e2e:
+    name: e2e
     needs: images
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           lfs: true
 
       - name: Setup Pixi
@@ -49,13 +86,56 @@ jobs:
           cache: true
           environments: dev
 
+      # Not from conda-forge: its squashfuse_ll hangs on SIF reads (#39).
+      - name: Install Apptainer
+        run: |
+          sudo add-apt-repository -y ppa:apptainer/ppa
+          sudo apt-get install -y -q apptainer
+          apptainer --version
+
       # ubuntu-24.04 restricts unprivileged user namespaces via AppArmor;
-      # rootless Apptainer (conda-forge) needs them to run containers.
+      # rootless Apptainer needs them to run containers.
       - name: Allow unprivileged user namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Run Integration Tests
+      - name: Cache keys
+        id: keys
+        run: |
+          images=$(grep -rhoE 'docker://ghcr\.io/boulardlab/[^"]+' workflow | sort -u)
+          echo "$images"
+          echo "images=sif-$(echo "$images" | sha256sum | cut -c1-16)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Apptainer images
+        id: sif
+        uses: actions/cache/restore@v4
+        with:
+          path: .tests/integration/.snakemake/singularity
+          key: ${{ steps.keys.outputs.images }}
+
+      - name: Run pipeline
         run: |
           ROOT=$(realpath .)
-          pixi run -e dev test adaptive-trim laptop -- \
-          --singularity-args="--bind $ROOT --bind $HOME"
+          pixi run -e dev test local-references ci -- \
+            --singularity-args="--bind $ROOT --bind $HOME"
+
+      - name: Job times
+        if: always()
+        run: |
+          log=$(ls -t .tests/integration/.snakemake/log/*.snakemake.log | head -1)
+          python3 .github/scripts/snakemake_job_times.py "$log" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Apptainer images
+        if: always() && steps.sif.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .tests/integration/.snakemake/singularity
+          key: ${{ steps.keys.outputs.images }}
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-logs
+          path: |
+            .tests/integration/.snakemake/log/
+            .tests/integration/results/log/
+          if-no-files-found: ignore
