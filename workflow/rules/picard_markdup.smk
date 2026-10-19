@@ -75,7 +75,7 @@ rule symlink_markdup:
 
 rule fastqc_markdup:
     input:
-        unpack(get_markdup_bam),
+        bam=markdup_folder.joinpath("{serie}/{sample}.markdup.bam"),
     output:
         fastqc_markdup_folder.joinpath("{serie}", "{sample}.markdup_fastqc.zip"),
         report(
@@ -97,8 +97,8 @@ rule fastqc_markdup:
     shell:
         """
 
-        set -e 
+        set -e
 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.bam}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input.bam} > {log} 2>&1
 
         """
