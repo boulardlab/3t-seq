@@ -221,9 +221,9 @@ rule fastqc_star:
     shell:
         """
 
-        set -e 
+        set -e
 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input} > {log} 2>&1
 
         """
 

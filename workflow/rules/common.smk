@@ -625,26 +625,6 @@ def get_deseq2_reference_level(wildcards):
     return get_resolved_param(wildcards, "deseq2", "reference_level")
 
 
-def get_markdup_bam(wildcards):
-    return {
-        "bam": expand(
-            markdup_folder.joinpath("{{serie}}/{sample}.markdup.bam"),
-            sample=get_samples_names(wildcards),
-        ),
-        "sample_sheet": get_sample_sheet_path(wildcards),
-    }
-
-
-def get_markdup_fastqc(wildcards):
-    return {
-        "fastqc": expand(
-            fastqc_markdup_folder.joinpath("{{serie}}", "{sample}.markdup_fastqc.zip"),
-            sample=get_samples_names(wildcards),
-        ),
-        "sample_sheet": get_sample_sheet_path(wildcards),
-    }
-
-
 def get_salmonTE_quant_input(wildcards):
     sample_sheet_path = get_sample_sheet_path(wildcards)
     sample_sheet = pd.read_csv(sample_sheet_path)
