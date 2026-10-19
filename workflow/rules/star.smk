@@ -1,4 +1,6 @@
-localrules: symlink_star
+localrules:
+    symlink_star,
+
 
 rule star_genome_preparation:
     input:

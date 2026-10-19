@@ -496,9 +496,7 @@ def populate_sample_registry():
 
 def get_shared_trim_path(trim_hash, sample, suffix="", ext=".fastq.gz"):
     """Returns the path to a shared trimmed fastq (or an associated stats/summary file)."""
-    return trim_reads_folder.joinpath(
-        "_shared", trim_hash, f"{sample}{suffix}{ext}"
-    )
+    return trim_reads_folder.joinpath("_shared", trim_hash, f"{sample}{suffix}{ext}")
 
 
 def get_shared_star_path(align_hash, sample, suffix=""):
@@ -712,10 +710,14 @@ def get_multiqc_inputs(wildcards):
     # --- Trimmed FastQC + Trimmomatic stats ---
     if is_paired:
         trim_fastqc = expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_1_fastqc.zip"),
+            fastqc_trim_folder.joinpath(
+                wildcards.serie, "{sample}_trimmed_1_fastqc.zip"
+            ),
             sample=samples,
         ) + expand(
-            fastqc_trim_folder.joinpath(wildcards.serie, "{sample}_trimmed_2_fastqc.zip"),
+            fastqc_trim_folder.joinpath(
+                wildcards.serie, "{sample}_trimmed_2_fastqc.zip"
+            ),
             sample=samples,
         )
     else:
