@@ -16,9 +16,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  repro:
+  experiments:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      IMG: docker://ghcr.io/boulardlab/3t-seq:env-2a4c9ee664ce41a562c0007df6c2c4782f10edc9f14fb7c10de48cf954e15448
+      ENV: /conda-envs/50e30cdbbcff8910a88966012cee653e
+      JAR: /conda-envs/50e30cdbbcff8910a88966012cee653e/share/trimmomatic-0.40-0/trimmomatic.jar
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,81 +38,73 @@ jobs:
       - name: Allow unprivileged user namespaces
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 
-      - name: Host info
+      - name: Pull image
         run: |
-          nproc; free -m; df -h . /tmp; ulimit -a
-          cat /sys/fs/cgroup/memory.max 2>/dev/null || true
+          pixi run -e dev apptainer --version
+          pixi run -e dev squashfuse_ll --version 2>&1 | head -3 || true
+          time pixi run -e dev apptainer pull --disable-cache img.sif "$IMG"
 
-      - name: Run until trimmomatic_shared_pe (with watchdog)
-        timeout-minutes: 30
+      - name: Experiments
         run: |
           set -u
-          ROOT=$(realpath .)
-          mkdir -p diag
-          pixi run -e dev test adaptive-trim laptop -- \
-            --singularity-args="--bind $ROOT --bind $HOME" \
-            --until trimmomatic_shared_pe \
-            --printshellcmds --show-failed-logs > diag/snakemake.out 2>&1 &
-          SMK=$!
-          tail -F diag/snakemake.out &
-          TAIL=$!
-          # Trimmomatic takes seconds natively on this data: anything over
-          # 5 min in the JVM is the hang.
-          hung=0
-          while kill -0 "$SMK" 2>/dev/null; do
-            sleep 30
-            jpid=$(pgrep -f 'trimmomatic.*\.jar' | head -1 || true)
-            if [[ -n "$jpid" ]]; then
-              et=$(ps -o etimes= -p "$jpid" | tr -d ' ' || echo 0)
-              echo "::notice::java pid=$jpid elapsed=${et}s"
-              if (( et > 300 )); then hung=1; break; fi
-            fi
-          done
-          if (( hung )); then
-            echo "::error::trimmomatic JVM running > 5 min, collecting diagnostics"
-            {
-              echo "== free -m"; free -m
-              echo "== ps auxf"; ps auxf
-              echo "== java /proc status"; cat /proc/$jpid/status
-              echo "== java wchan"; cat /proc/$jpid/wchan; echo
-              echo "== java fds"; ls -l /proc/$jpid/fd
-              echo "== java cmdline"; tr '\0' ' ' < /proc/$jpid/cmdline; echo
-              echo "== java environ (filtered)"; tr '\0' '\n' < /proc/$jpid/environ | grep -E 'JAVA|CONDA|TMP|HOME' || true
-              echo "== per-thread state"
-              for t in /proc/$jpid/task/*; do echo "$(basename $t) $(cat $t/comm) $(awk '{print $3}' $t/stat) $(cat $t/wchan)"; done
-            } > diag/hang.txt 2>&1
-            # Thread dump goes to the JVM's stdout, i.e. through tee into the rule log.
-            kill -3 "$jpid" || true
-            sleep 10
-            for d in $(ls -d .tests/integration/.snakemake/singularity 2>/dev/null); do ls -la "$d" >> diag/hang.txt; done
-            if command -v jstack >/dev/null; then jstack "$jpid" > diag/jstack.txt 2>&1 || true; fi
-            cat diag/hang.txt
-            kill "$SMK" || true
-            sleep 15
-            kill $TAIL || true
-            exit 1
-          fi
-          wait "$SMK"; rc=$?
-          kill $TAIL || true
-          exit $rc
-
-      - name: Collect rule logs
-        if: always()
-        run: |
-          find .tests/integration/results -path '*trim*' -name '*.txt' -o -path '*trim*' -name '*.json' -o -name '*.log' 2>/dev/null \
-            | head -200 | tee diag/files.txt
-          for f in $(find .tests/integration/results -path '*_shared*' \( -name '*stats.txt' -o -name '*summary.txt' -o -name '*.json' \) 2>/dev/null); do
-            echo "===== $f"; tail -n 200 "$f"
-          done
+          mkdir -p diag out
+          R1=.tests/integration/GSE130735-subset/SRX5795117_SRR9016963_1.fq.gz
+          R2=.tests/integration/GSE130735-subset/SRX5795117_SRR9016963_2.fq.gz
+          TRIM="trimmomatic PE -threads 2 $R1 $R2 out/p1.fq.gz out/u1.fq.gz out/p2.fq.gz out/u2.fq.gz LEADING:3 TRAILING:3"
+          dump() {
+            for p in $(pgrep -f 'java|squashfuse' || true); do
+              echo "-- pid $p $(tr '\0' ' ' < /proc/$p/cmdline | cut -c1-150)"
+              for t in /proc/$p/task/*; do echo "   $(basename $t) $(cat $t/comm) $(cat $t/wchan)"; done
+            done
+          }
+          run() {  # name, cmd...
+            local name=$1; shift
+            echo "::group::$name"
+            local t0=$(date +%s)
+            timeout -k 5 150 "$@" > "diag/$name.log" 2>&1 &
+            local pid=$!
+            sleep 100 &
+            local s=$!
+            while kill -0 $pid 2>/dev/null && kill -0 $s 2>/dev/null; do sleep 2; done
+            if kill -0 $pid 2>/dev/null; then echo "still running at 100s:"; dump | tee "diag/$name.hang.txt"; fi
+            wait $pid; local rc=$?
+            kill $s 2>/dev/null || true
+            tail -n 15 "diag/$name.log"
+            echo "RESULT $name rc=$rc t=$(( $(date +%s) - t0 ))s" | tee -a diag/results.txt
+            echo "::endgroup::"
+            pkill -9 -f squashfuse_ll || true
+          }
+          A="pixi run -e dev apptainer"
+          IN="source /opt/conda/bin/activate $ENV;"
+          run e1_shell        $A exec img.sif sh -c "ls -la $JAR && echo ok"
+          run e2_java_version $A exec img.sif sh -c "$IN java -version"
+          run e3_trim_version $A exec img.sif sh -c "$IN trimmomatic -version"
+          run e4_trim_run     $A exec img.sif sh -c "$IN $TRIM"
+          run e5_trim_run_rep $A exec img.sif sh -c "$IN $TRIM"
+          run e6_cat_jar      $A exec img.sif sh -c "cat $JAR | wc -c; cat $ENV/lib/jvm/lib/modules | wc -c"
+          run e7_unsquash     $A exec --unsquash img.sif sh -c "$IN $TRIM"
+          # Manual squashfuse_ll mounts, multi-threaded vs single-threaded (-s).
+          OFF=$(pixi run -e dev apptainer sif list img.sif | awk '/Squashfs|FS/ {print}' | head -3)
+          echo "$OFF"
+          OFFSET=$(pixi run -e dev python - <<'EOF'
+          import subprocess,re
+          out=subprocess.run(["apptainer","sif","list","img.sif"],capture_output=True,text=True).stdout
+          for l in out.splitlines():
+              if "FS" in l and "Squashfs" in l:
+                  print(re.split(r"\s*\|\s*", l.strip())[3].split("-")[0]); break
+          EOF
+          )
+          echo "offset=$OFFSET"
+          mkdir -p mnt_mt mnt_st
+          run e8_fuse_mt sh -c "pixi run -e dev squashfuse_ll -f -o ro,offset=$OFFSET img.sif mnt_mt & sleep 3; stat mnt_mt$JAR && cat mnt_mt$JAR | wc -c && cat mnt_mt$ENV/lib/jvm/lib/modules | wc -c; fusermount3 -u mnt_mt || fusermount -u mnt_mt"
+          run e9_fuse_st sh -c "pixi run -e dev squashfuse_ll -f -s -o ro,offset=$OFFSET img.sif mnt_st & sleep 3; stat mnt_st$JAR && cat mnt_st$JAR | wc -c && cat mnt_st$ENV/lib/jvm/lib/modules | wc -c; fusermount3 -u mnt_st || fusermount -u mnt_st"
+          # System apptainer (setuid, kernel squashfs mount: no FUSE).
+          sudo add-apt-repository -y ppa:apptainer/ppa > /dev/null 2>&1 && sudo apt-get install -y -q apptainer-suid > /dev/null 2>&1 && /usr/bin/apptainer --version
+          run e10_suid_trim /usr/bin/apptainer exec img.sif sh -c "$IN $TRIM"
+          echo; cat diag/results.txt
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: trimmomatic-repro
-          path: |
-            diag/
-            .tests/integration/.snakemake/log/
-            .tests/integration/results/log/
-            .tests/integration/results/**/_shared/**/*.txt
-            .tests/integration/results/**/_shared/**/*.json
-          if-no-files-found: warn
+          name: trimmomatic-experiments
+          path: diag/
