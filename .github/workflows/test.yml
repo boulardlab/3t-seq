@@ -6,7 +6,7 @@ name: Run tests
 
 on:
   push:
-    branches: [ main, fix/39-40-e2e-test ]  # TEMP: own branch, for CI iteration
+    branches: [ main ]
   pull_request:
     branches: [ main, dev ]
   schedule:
@@ -61,7 +61,6 @@ jobs:
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
-      github.ref == 'refs/heads/fix/39-40-e2e-test' ||
       (github.event_name == 'pull_request' && startsWith(github.head_ref, 'release-please--'))
     uses: ./.github/workflows/container-check.yml
     permissions:
