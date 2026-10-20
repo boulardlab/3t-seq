@@ -91,7 +91,7 @@ properties:
                 extra_params:
                   type: string
               additionalProperties: false
-          description: "Optional custom Trimmomatic parameters (fixed string or adaptive object)."
+          description: "Optional Trimmomatic steps: a fixed string (used as is), or an object whose extra_params are merged into the default steps, or into FastQC-derived steps when adaptive is true."
         star:
           type: string
           description: "Optional custom STAR aligner parameters for single-copy genes."

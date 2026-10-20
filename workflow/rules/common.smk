@@ -1,5 +1,6 @@
 import hashlib
 import json
+import sys
 import yaml
 import copy
 
@@ -7,6 +8,9 @@ from pathlib import Path, PosixPath
 from jsonschema import Draft7Validator, validators
 from snakemake.io import Wildcards
 from snakemake.exceptions import WorkflowError
+
+sys.path.insert(0, str(Path(workflow.basedir, "scripts")))
+from trimmomatic_steps import default_steps, merge_steps
 
 
 class Struct:
@@ -576,14 +580,16 @@ def get_trimmomatic_command(wildcards):
             data = json.load(f)
             return data["trimmomatic_params"]
 
-    # 2. Fixed string mode (explicit)
+    # 2. Fixed string mode (explicit): full user control, passed unchanged
     if isinstance(t_params, str) and t_params != "default":
         return t_params
 
-    # 3. Default fallback
-    is_paired = params.get("paired", False)
-    suffix = "PE" if is_paired else "SE"
-    return f"ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-{suffix}.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36"
+    # 3. Default steps, plus user extra_params when given as an object
+    #    without adaptive (issue #48: these were silently dropped)
+    extra_params = (
+        t_params.get("extra_params", "") if isinstance(t_params, dict) else ""
+    )
+    return merge_steps(default_steps(params.get("paired", False)), extra_params)
 
 
 def parse_filepath(filepath: PosixPath):

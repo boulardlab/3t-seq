@@ -136,7 +136,7 @@ A per-comparison value always takes precedence over the global default.
 | Key | Default | Description |
 | :--- | :--- | :--- |
 | `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. |
-| `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{adaptive: true}` for automatic parameter derivation. |
+| `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra CLI flags passed to the STAR aligner. |
 | `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. |
 
