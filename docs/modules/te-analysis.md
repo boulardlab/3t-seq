@@ -33,6 +33,11 @@ starTE uses STAR for alignment and a specialized counting algorithm for multi-ma
 - Uses quasi-mapping to quickly assign reads to a curated database of TE consensus sequences.
 - Highly efficient for large datasets.
 
+SalmonTE's differential expression uses the same grouping as DESeq2: samples whose
+`deseq2.variable` column equals `deseq2.reference_level` are `control`, all others are
+`treatment`. Other sample sheet columns are ignored, so any column name (including
+`condition`) is allowed.
+
 ## Parameters & Defaults
 
 ### starTE Random
