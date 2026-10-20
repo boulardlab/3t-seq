@@ -175,6 +175,22 @@ disable_salmonTE_analysis: false  # set true to skip SalmonTE only
 disable_tRNA_analysis: false      # set true to skip tRNA quantification
 ```
 
+### SalmonTE supported genomes
+
+SalmonTE ships TE indexes for a few species only. The pipeline picks the index from the
+first two letters of `genome.label`:
+
+| `genome.label` prefix | Species | SalmonTE `--reference_genome` |
+| :--- | :--- | :--- |
+| `mm` (e.g. `mm10`, `mm39`) | Mouse | `mm` |
+| `hg` (e.g. `hg38`) | Human | `hs` |
+| `dr` | Zebrafish | `dr` |
+| `dm` | Fruit fly | `dm` |
+
+With any other label, SalmonTE and its outputs are skipped and the pipeline logs one
+warning at start-up (`SalmonTE DISABLED: ...`); the rest of the pipeline runs normally.
+Set `disable_salmonTE_analysis: true` to skip SalmonTE without the warning.
+
 ---
 
 ## Expert parameters
