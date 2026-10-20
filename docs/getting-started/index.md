@@ -99,7 +99,7 @@ On macOS, see [Apple Silicon & macOS notes](#apple-silicon-macos-notes).
 Run the integration test to verify the installation:
 
 ```bash
-pixi run test local-references laptop
+pixi run -e dev test local-references laptop
 ```
 
 This processes a 4-sample chr19 subset of the [GSE130735](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE130735)
@@ -117,12 +117,14 @@ successfully. Expected runtime: ~10–20 minutes on a laptop.
 3t-seq supports macOS including Apple Silicon (M1/M2/M3). A few things to be aware of:
 
 - **GNU coreutils shims**: macOS ships BSD versions of `ln`, `sed`, etc. that differ from
-  the Linux versions bioinformatics tools expect. When you run the pipeline via Pixi a
-  setup script creates shims in `.pixi/macos-shims`. Install `coreutils` via Homebrew so
-  the shims have something to point to:
+  the Linux versions bioinformatics tools expect. `pixi.toml` refers to an activation
+  script (`scripts/macos-coreutils-setup.sh`) for shims in `.pixi/macos-shims`, but that
+  script is not in the repository yet, so pixi prints a warning and creates no shims.
+  Install `coreutils` via Homebrew and put the GNU versions first on your `PATH`:
 
   ```bash
   brew install coreutils
+  export PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
   ```
 
 - **Singularity / Apptainer**: does not run natively on macOS. Container-based execution

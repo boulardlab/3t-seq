@@ -46,7 +46,25 @@ Rootless Apptainer needs them.
 sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 ```
 
-The setting stays until the next reboot. `test.yml` does this step on the CI runner.
+The setting stays until the next reboot. The `e2e` job in `test.yml` does this step on the CI runner.
+
+## Apptainer: job hangs in a container
+
+**Symptom.** A container job starts but does not end, and its log stops changing. Trimmomatic is an example.
+In CI, the `e2e` job stops at its 90-minute limit. The job times show the rule as "unfinished".
+
+**Cause.** The Apptainer package from conda-forge uses `squashfuse_ll`.
+That `squashfuse_ll` can hang when it reads files in a SIF image.
+See [conda-forge/squashfuse-feedstock#21](https://github.com/conda-forge/squashfuse-feedstock/issues/21) and issue #39.
+Older 3t-seq versions installed this Apptainer through pixi on `linux-64`.
+
+**Action.**
+
+1. Run `which apptainer`. If the path is in `.pixi/` or in a conda env, do not use that Apptainer.
+2. Run `pixi install` to update the pixi environments. The current `pixi.toml` does not install Apptainer.
+3. Install Apptainer 1.2.5 or later from your system packages or your cluster modules.
+   See [Getting Started](../getting-started/index.md#apptainer).
+4. Run `which apptainer` again. Make sure that it shows the system Apptainer.
 
 ## Rule: "TMPDIR: unbound variable"
 
@@ -55,7 +73,7 @@ The setting stays until the next reboot. `test.yml` does this step on the CI run
 **Cause.** Snakemake runs shell commands with `set -u`. The container did not get `$TMPDIR`, so the variable is not set.
 
 **Action.** Use `{resources.tmpdir}` in rule shell commands, not `$TMPDIR`. Snakemake writes the value into the command.
-PR #27 makes this change for FastQC. Snakemake always gives `tmpdir` a value.
+The FastQC rules use `{resources.tmpdir}` since PR #27. Snakemake always gives `tmpdir` a value.
 The `laptop` test profile sets it to `/tmp` in `default-resources`.
 
 ## Container check waits or fails on missing images

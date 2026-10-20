@@ -28,24 +28,23 @@ flowchart LR
     PM -.->|path filter| D
     TAG["push of tag v*"] --> B3
     TAG --> BS
+    N["nightly 02:17 UTC"] --> T
 ```
 
 A dashed arrow means that the workflow runs only when its condition is true.
 
-| Workflow | PR to `dev` | PR to `main` | Push to `dev` | Push to `main` | Tag `v*` | Manual |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| `lint.yml` | Yes | Yes | No | Yes | No | No |
-| `test.yml` | Yes | Yes | No | Yes | No | No |
-| `container-check.yml` | Yes | Yes | No | Yes | No | Yes |
-| `build-3t-seq.yml` | Path filter | Path filter | Path filter | Path filter | Yes | Yes |
-| `build-salmonte.yml` | No | Release PR only | Path filter | Path filter | Yes | Yes |
-| `release-please.yml` | No | No | No | Yes | No | No |
-| `docs.yml` | No | No | Path filter | Path filter | No | Yes |
+| Workflow | PR to `dev` | PR to `main` | Push to `dev` | Push to `main` | Tag `v*` | Nightly | Manual |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| `lint.yml` | Yes | Yes | No | Yes | No | No | No |
+| `test.yml`, job `smoke` | Yes | Yes | No | Yes | No | No | No |
+| `test.yml`, jobs `images` and `e2e` | No | Release PR only | No | No | No | Yes | Yes |
+| `container-check.yml` | Yes | Yes | No | Yes | No | No | Yes |
+| `build-3t-seq.yml` | Path filter | Path filter | Path filter | Path filter | Yes | No | Yes |
+| `build-salmonte.yml` | No | Release PR only | Path filter | Path filter | Yes | No | Yes |
+| `release-please.yml` | No | No | No | Yes | No | No | No |
+| `docs.yml` | No | No | Path filter | Path filter | No | No | Yes |
 
-`test.yml` also calls `container-check.yml` as a reusable workflow (`workflow_call`).
-
-!!! note
-    `lint.yml` and `test.yml` run on PRs to `dev` after PR #27 merges. Before #27, they run only for `main`.
+`test.yml` also calls `container-check.yml` as a reusable workflow (`workflow_call`), in the job `images`.
 
 ## Required checks
 
@@ -55,9 +54,11 @@ The ruleset for `main` requires three checks. See [Ruleset for `main`](branches.
 | :--- | :--- |
 | `check` | `container-check.yml` |
 | `dockerfile-sync` | `container-check.yml` |
-| `run-integration-tests` | `test.yml` |
+| `smoke` | `test.yml` |
 
-The reusable call in `test.yml` shows its jobs as `images / check` and `images / dockerfile-sync`.
+The job `e2e` is not a required check. Do not merge a release PR when `e2e` fails.
+
+When `test.yml` calls `container-check.yml`, GitHub shows the jobs as `images / check` and `images / dockerfile-sync`.
 These are the same jobs. The ruleset uses the jobs from the direct `container-check.yml` run.
 
 ## `lint.yml` (Format and lint)
@@ -79,25 +80,79 @@ These are the same jobs. The ruleset uses the jobs from the direct `container-ch
 
 | | |
 | :--- | :--- |
-| Trigger | PR to `main` or `dev`; push to `main` |
-| Jobs | `images` (calls `container-check.yml`), then `run-integration-tests` |
-| Test | `pixi run -e dev test adaptive-trim laptop -- --singularity-args=...` |
+| Trigger | PR to `main` or `dev`; push to `main`; nightly at 02:17 UTC; manual |
+| Jobs | `smoke`; `images` (calls `container-check.yml`), then `e2e` |
+| Profile | `ci` (`.tests/integration/profiles/ci/`): 4 cores, 2 jobs, for the GitHub runner |
 
-`run-integration-tests` starts only after `images` passes.
-It needs the pinned images, and on a PR the images can still be in the build.
+### Job `smoke`
+
+`smoke` is fast (about 30 seconds) and does not run the pipeline. It runs on PRs and on pushes to `main`.
+
+1. It runs `pixi run -e dev lint <config> laptop` for the three configs.
+2. It runs `pixi run -e dev dry-run <config> ci -- --sdm conda` for the three configs.
+
+The dry run uses conda only, because a dry run with Apptainer needs the pulled images.
+
+**Failures:**
+
+- *`lint` reports warnings.* Run `pixi run -e dev lint <config> laptop`. Correct each warning.
+- *The dry run fails.* Most often, the config is not valid or a rule input is missing.
+  Run `pixi run -e dev dry-run <config> ci -- --sdm conda` on your computer. Read the error.
+- *Pixi stops before Snakemake starts.* Read [Troubleshooting](troubleshooting.md).
+
+### Job `e2e`
+
+`e2e` runs the full pipeline on the `local-references` test data:
+
+```bash
+pixi run -e dev test local-references ci -- --singularity-args="--bind $ROOT --bind $HOME"
+```
+
+It runs on release PRs, every night and on a manual start. It starts only after `images` passes.
+On a release PR, the new SalmonTE image can still be in the build.
 
 The job also does these steps:
 
 - It checks out the Git LFS test data.
+- It installs Apptainer from `ppa:apptainer/ppa`, not from conda-forge. See [Troubleshooting](troubleshooting.md#apptainer-job-hangs-in-a-container).
 - It sets `kernel.apparmor_restrict_unprivileged_userns=0`. Rootless Apptainer needs this on Ubuntu 24.04.
+- It keeps the pulled images in the GitHub Actions cache. The cache key is a hash of the pins.
+- The job stops after 90 minutes.
+
+To start `e2e` on a branch, run:
+
+```bash
+gh workflow run test.yml --ref <branch>
+```
+
+A manual start runs `images` and `e2e`, but not `smoke`.
+
+### Read the job times
+
+The step "Job times" runs `.github/scripts/snakemake_job_times.py` on the Snakemake log.
+It writes a table to the job summary, also when the job fails.
+
+1. Open the `test.yml` run: `gh run list --workflow test.yml`, then `gh run view <run-id> --web`.
+2. Scroll down to the summary of the `e2e` job.
+3. Read the table. Each row gives a rule, its number of jobs, the total minutes and the maximum minutes.
+   The rule with the highest total is first. A rule marked "unfinished" did not end.
+4. Read the "Snakemake wall time" line under the table.
+
+To make the same table from a local run, run:
+
+```bash
+python3 .github/scripts/snakemake_job_times.py .tests/integration/.snakemake/log/<log-file>
+```
 
 **Failures:**
 
 - *`images` fails.* Read [`container-check.yml`](#container-checkyml-container-check).
-- *A rule fails.* The `laptop` profile shows the log of the failed rule.
-  Run `pixi run -e dev test adaptive-trim laptop` on your computer to reproduce it.
+- *A rule fails.* The `ci` profile shows the log of the failed rule. The run also uploads the artifact `e2e-logs`.
+  Download it with `gh run download <run-id> -n e2e-logs`.
+- *The job stops at 90 minutes.* Read the job times. Find the rule that did not end.
+  See [Troubleshooting](troubleshooting.md#apptainer-job-hangs-in-a-container).
+- *To reproduce a failure*, run `pixi run -e dev test local-references laptop` on your computer.
   See [Local checks](local-checks.md).
-- *Pixi stops before Snakemake starts.* Read [Troubleshooting](troubleshooting.md).
 
 ## `container-check.yml` (Container check)
 

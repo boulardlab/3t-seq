@@ -23,10 +23,10 @@ Select the environment with `-e`, for example `pixi run -e dev lint`.
 | :--- | :--- | :--- |
 | Format | `pixi run -e dev format` | None. This task changes files. |
 | Format check | `pixi run -e dev format-check` | `lint.yml` |
-| Lint | `pixi run -e dev lint <config> <profile>` | `lint.yml` |
-| Dry run | `pixi run -e dev dry-run <config> <profile>` | None |
+| Lint | `pixi run -e dev lint <config> <profile>` | `lint.yml`; `test.yml`, job `smoke` |
+| Dry run | `pixi run -e dev dry-run <config> ci -- --sdm conda` | `test.yml`, job `smoke` |
 | Test data | `pixi run -e dev setup` | `test.yml` (checkout with LFS) |
-| Integration test | `pixi run -e dev test <config> <profile>` | `test.yml`, job `run-integration-tests` |
+| Integration test | `pixi run -e dev test <config> <profile>` | `test.yml`, job `e2e` (`local-references ci`) |
 | Containerize | `pixi run containerize` | `container-check.yml`, job `dockerfile-sync` |
 | Pin check | `python3 .github/scripts/container_pin.py check` | `container-check.yml`, job `check` |
 | Image list | `bash .github/scripts/check-containers.sh --list` | `container-check.yml`, job `check` |
@@ -38,7 +38,7 @@ The tasks `lint`, `dry-run`, `test` and `test-report` accept two positional argu
 | Argument | Values | Default |
 | :--- | :--- | :--- |
 | `config` | `remote-references`, `local-references`, `adaptive-trim` | `remote-references` (`lint`, `dry-run`), `local-references` (`test`, `test-report`) |
-| `profile` | `laptop`, `hpc` | `laptop` |
+| `profile` | `laptop`, `hpc`, `ci` | `laptop` |
 
 The files are in `.tests/integration/configs/<config>.yaml` and `.tests/integration/profiles/<profile>/`.
 
@@ -58,16 +58,26 @@ Before you push a workflow change, run these commands:
 
 1. Run `pixi run -e dev format`.
 2. Run `pixi run -e dev format-check`.
-3. Run `pixi run -e dev lint`.
-4. Run `pixi run -e dev dry-run` for each config that your change affects.
-5. If you changed a conda env, run `pixi run containerize`.
-6. Run `pixi run -e dev test adaptive-trim laptop`. CI runs this config.
+3. Do the `smoke` checks. Run this loop:
 
-The integration test downloads references and runs containers. It needs Apptainer or Singularity.
+    ```bash
+    for config in remote-references local-references adaptive-trim; do
+      pixi run -e dev lint "$config" laptop
+      pixi run -e dev dry-run "$config" ci -- --sdm conda
+    done
+    ```
+
+4. If you changed a conda env, run `pixi run containerize`.
+5. If you changed a rule, run `pixi run -e dev test local-references laptop`. The `e2e` job runs this config.
+
+The integration test runs containers. It needs Apptainer or Singularity.
+Alternatively, start the `e2e` job in CI. See [Job `e2e`](ci.md#job-e2e).
 
 ## Integration test on Linux
 
-The `default` environment installs Apptainer from conda-forge on `linux-64`.
+Pixi does not install Apptainer. Install Apptainer 1.2.5 or later from your system packages or your cluster modules.
+See [Getting Started](../getting-started/index.md#apptainer).
+Do not use the Apptainer from conda-forge. See [Troubleshooting](troubleshooting.md#apptainer-job-hangs-in-a-container).
 
 On Ubuntu 24.04 and later, AppArmor blocks unprivileged user namespaces.
 Rootless Apptainer needs them. To allow them until the next reboot, run:
@@ -89,7 +99,7 @@ Snakemake calls `singularity` on the host, and a wrapper script sends the call t
 2. Write a Lima template for an Ubuntu VM. Set `arch: x86_64` to run `linux/amd64` images.
 3. In the template, mount your home directory with `writable: true`.
    Snakemake and the containers must see the same paths on the host and in the VM.
-4. In the template, add a `provision` script that installs Apptainer or SingularityCE.
+4. In the template, add a `provision` script that installs Apptainer or SingularityCE from the distribution packages, not from conda.
 5. Create and start the VM, for example `limactl start --name=singularity-amd64 <template>.yaml`.
 6. Make sure that the project directory is inside the mounted directory.
 
@@ -113,7 +123,7 @@ Snakemake calls `singularity` on the host, and a wrapper script sends the call t
 Then run the integration test as usual:
 
 ```bash
-pixi run -e dev test adaptive-trim laptop
+pixi run -e dev test local-references laptop
 ```
 
 The `laptop` profile binds `$PIXI_PROJECT_ROOT` and `$HOME` into the containers.

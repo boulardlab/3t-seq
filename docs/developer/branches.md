@@ -41,7 +41,7 @@ Steps 4 to 6 are in the [Release procedure](release.md).
 ## PRs to `dev`
 
 These workflows run on a PR to `dev`:
-`lint.yml`, `test.yml`, `container-check.yml`, and `build-3t-seq.yml` when the `Dockerfile` changes.
+`lint.yml`, `test.yml` (job `smoke`), `container-check.yml`, and `build-3t-seq.yml` when the `Dockerfile` changes.
 The [CI reference](ci.md) gives the details.
 
 `dev` has no ruleset. GitHub does not block a merge into `dev` when a check fails.
@@ -75,7 +75,7 @@ The ruleset `main: release gate` protects `main`. It has these rules:
 | Rule | Value |
 | :--- | :--- |
 | Target | The default branch (`main`) |
-| Required checks | `check`, `dockerfile-sync`, `run-integration-tests` |
+| Required checks | `check`, `dockerfile-sync`, `smoke` |
 | Branch must be up to date | Yes (strict). The PR must contain the latest `main`. |
 | Required approvals | 1 |
 | Stale approvals | A new push to the PR removes the approvals. |

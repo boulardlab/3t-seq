@@ -56,14 +56,16 @@ Do these steps before the token expires, or when release-please reports `Bad cre
     pixi run -e dev dry-run adaptive-trim laptop
     ```
 
-6. Run `pixi run -e dev test adaptive-trim laptop`.
+6. Start the `e2e` job on `dev`: `gh workflow run test.yml --ref dev`.
+7. Make sure that `e2e` passes. Read its job times. See [Read the job times](ci.md#read-the-job-times).
+   The nightly `e2e` run tests only the default branch, `main`.
 
 ## Step 2: PR from `dev` to `main`
 
 1. Open the PR: `gh pr create --base main --head dev`.
 2. Give the PR a Conventional Commits title, for example `feat: 3t-seq 2.0`.
    The title becomes the subject of the squash commit.
-3. Wait for the checks `check`, `dockerfile-sync` and `run-integration-tests` to pass.
+3. Wait for the checks `check`, `dockerfile-sync` and `smoke` to pass.
 4. If GitHub says that the branch is out of date, click **Update branch**. Wait for the checks again.
 5. Ask a second maintainer to approve the PR.
 6. Select **Squash and merge**.
@@ -94,14 +96,14 @@ The release PR starts these workflows:
 
 - `build-salmonte.yml` builds `ghcr.io/boulardlab/3t-seq/salmonte:X.Y.Z`.
 - `container-check.yml` waits for that image.
-- `test.yml` runs the integration test with the new SalmonTE pin.
+- `test.yml` runs `smoke`, then `images` and `e2e`. `e2e` runs the full pipeline with the new SalmonTE pin.
 
 Then do these steps:
 
 1. Read the new `CHANGELOG.md` section in the release PR.
 2. A squash merge gives a changelog with one entry. Edit the section to add the real release notes.
    Commit the edit to the release PR branch.
-3. Wait for the three required checks to pass.
+3. Wait for the three required checks and `e2e` to pass. `e2e` is not required, but do not merge when it fails.
 
 ## Step 4: Merge the release PR
 

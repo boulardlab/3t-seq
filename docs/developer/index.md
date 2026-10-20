@@ -25,7 +25,7 @@ Use this table to find the checks for your change.
 
 | You change | Do this before you push |
 | :--- | :--- |
-| A rule or a script in `workflow/` | Run `pixi run -e dev format`, then `pixi run -e dev format-check` and `pixi run -e dev lint`. |
+| A rule or a script in `workflow/` | Run `pixi run -e dev format`, then `pixi run -e dev format-check`, `pixi run -e dev lint` and the dry runs. |
 | A conda env in `workflow/envs/` | Run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` together. See [Containers](containers.md). |
 | The SalmonTE image in `assets/docker/salmonTE/` | Read [SalmonTE image](containers.md#salmonte-image). The new image ships with the next release. |
 | The config schema | Read [Config schema](#config-schema). |
@@ -46,10 +46,9 @@ The file `workflow/schemas/config.schema.yaml` is the single source of truth for
   Then document it in [Configuration](../configuration/index.md).
 - When you remove or rename a key, add a row to the [migration guide](../migration/index.md).
 - `AUTO_FETCH_GENOMES` in `common.smk` lists the genomes that the pipeline can download (`mm10`, `mm39`).
-
-!!! note
-    `validate_config()` comes from PR #35. Before #35 merges, the Snakefile calls
-    `snakemake.utils.validate()` and `apply_schema_defaults()`.
+- `workflow/Snakefile` calls `validate_config()`. Do not call `apply_schema_defaults()` directly.
+- Each comparison must set `protocol` (`pe` or `se`). The schema gives no default.
+- `validate_sample_sheets()` checks that the sample sheet columns agree with the protocol.
 
 ## Glossary
 

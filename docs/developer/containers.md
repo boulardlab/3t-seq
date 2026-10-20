@@ -58,7 +58,7 @@ It does not use the conda envs, so its tag is the release version.
 - After the git tag `vX.Y.Z` exists, the workflow does not overwrite `:X.Y.Z`.
 
 A change to `assets/docker/salmonTE/Dockerfile` does not change the pin.
-PRs and integration tests use the old `:X.Y.Z` image until the next release PR.
+PRs and the `e2e` job use the old `:X.Y.Z` image until the next release PR.
 To test a new SalmonTE image earlier, do these steps:
 
 1. Run `gh workflow run build-salmonte.yml --ref <branch>`. Do not give a `version` input.

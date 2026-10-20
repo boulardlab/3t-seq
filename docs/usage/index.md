@@ -12,8 +12,8 @@ remember the flags. Every task accepts two positional arguments:
 | **setup** | `pixi run -e dev setup` | Installs git-lfs and pulls LFS-tracked test data |
 | **lint** | `pixi run lint <config> <profile>` | Validates config YAML against the schema |
 | **dry-run** | `pixi run dry-run <config> <profile>` | Shows jobs that would run without executing them |
-| **test** | `pixi run test <config> <profile>` | Runs the pipeline on the integration test data |
-| **test-report** | `pixi run test-report <config> <profile>` | Generates a Snakemake HTML report after a test run |
+| **test** | `pixi run -e dev test <config> <profile>` | Runs the pipeline on the integration test data |
+| **test-report** | `pixi run -e dev test-report <config> <profile>` | Generates a Snakemake HTML report after a test run |
 
 ### Examples
 
@@ -25,10 +25,10 @@ pixi run lint local-references laptop
 pixi run dry-run local-references laptop
 
 # Run the integration test on a laptop
-pixi run test local-references laptop
+pixi run -e dev test local-references laptop
 
 # Run using remote references (downloads mm10 from Refgenie)
-pixi run test remote-references laptop
+pixi run -e dev test remote-references laptop
 ```
 
 ---
@@ -126,7 +126,7 @@ Snakemake cannot match outputs to rules for the provenance data.
 The integration test shortcut:
 
 ```bash
-pixi run test-report local-references laptop
+pixi run -e dev test-report local-references laptop
 ```
 
 ---

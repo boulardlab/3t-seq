@@ -9,7 +9,7 @@ This document provides comprehensive context and guidelines for AI agents workin
 - **Workflow Engine:** Snakemake (v8.9.0)
 - **Environment Management:** [Pixi](https://pixi.sh)
 - **Languages:** Python, R, Bash
-- **Containerization:** Apptainer/Singularity (configured via Snakemake profiles)
+- **Containerization:** Apptainer/Singularity (configured via Snakemake profiles). Pixi does not install it: use a system or module Apptainer >= 1.2.5, never the conda-forge one (its `squashfuse_ll` hangs on SIF reads, #39).
 
 ## Always prefer using `pixi run <task>` to ensure the correct environment and dependencies are used. The project uses a parameterized task system and multiple environments.
 
@@ -26,19 +26,21 @@ pixi run -e docs docs-serve
 
 | Task | Command | Description |
 | :--- | :--- | :--- |
-| **Setup** | `pixi run setup` | Initializes Git LFS and pulls large test assets (FASTQs, etc.). |
+| **Setup** | `pixi run -e dev setup` | Initializes Git LFS and pulls large test assets (FASTQs, etc.). |
 | **Linting** | `pixi run lint <config> <profile>` | Runs `snakemake --lint`. Defaults: `remote-references`, `laptop`. |
-| **Formatting** | `pixi run format` | Formats Snakemake files using `snakefmt`. |
+| **Formatting** | `pixi run -e dev format` | Formats Snakemake files using `snakefmt`. |
 | **Format check** | `pixi run -e dev format-check` | `snakefmt --check --diff`; what `lint.yml` runs. Does not modify files. |
-| **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). |
-| **Test** | `pixi run test <config> <profile>` | Executes the integration test (depends on `setup`). |
-| **Report** | `pixi run test-report <config> <profile>` | Generates a Snakemake report (depends on `test`). |
+| **Dry Run** | `pixi run dry-run <config> <profile>` | Snakemake dry-run (`-n`). CI `smoke` runs `pixi run -e dev dry-run <config> ci -- --sdm conda` for all three configs. |
+| **Test** | `pixi run -e dev test <config> <profile>` | Executes the integration test. Needs `-e dev`: it depends on `setup`, which only exists in `dev`/`docs`. CI `e2e` runs `local-references ci`. |
+| **Report** | `pixi run -e dev test-report <config> <profile>` | Generates a Snakemake report (depends on `test`). |
 | **Containers** | `pixi run containerize` | Regenerates the `Dockerfile` and updates the 3t-seq image pin in `workflow/Snakefile`. Run after any conda env change and commit both files. |
 | **Pre-build** | `pixi run build-conda-envs` | Pre-creates all Conda environments. |
 
 **Available Arguments (Positional):**
 - `config`: `remote-references`, `local-references`, `adaptive-trim`
-- `profile`: `laptop`, `hpc`
+- `profile`: `laptop`, `hpc`, `ci` (GitHub runner: 4 cores, 2 jobs)
+
+Extra Snakemake arguments go after `--`, e.g. `pixi run -e dev test local-references laptop -- --cores 4`; without it pixi fails with "received more arguments than expected".
 
 ## Repository Structure
 - `workflow/`: Contains the core logic.
@@ -55,8 +57,8 @@ pixi run -e docs docs-serve
 
 ### 1. Execution Flow
 - **Environment First:** Always prefix commands with `pixi run` unless explicitly modifying a Snakefile or Bash script that does not rely on a specific environment setup.
-- **Formatting Prerequisite:** Before any code change, run `pixi run format` to ensure code style consistency.
-- **Validation:** Run `pixi run lint` before attempting to commit any changes that modify workflow logic or core scripts.
+- **Formatting:** Run `pixi run -e dev format` before committing. CI (`lint.yml`) runs `pixi run -e dev format-check`, which fails on any `snakefmt` diff instead of fixing it.
+- **Validation:** Before committing changes to workflow logic or core scripts, run what the required CI job `smoke` runs: `pixi run -e dev lint <config> laptop` and `pixi run -e dev dry-run <config> ci -- --sdm conda` for `remote-references`, `local-references` and `adaptive-trim`.
 - **Documentation:** Keep documentation in sync with feature changes. Any agent modifying source code MUST check the `docs/` directory and update relevant parts. Validate changes with `pixi run -e docs docs-build`.
 
 ### 2. Code Style Guidelines (Python/R/Bash)
@@ -80,7 +82,7 @@ pixi run -e docs docs-serve
 
 #### Configuration Management
 - **Single Source of Truth:** Always define default values in `workflow/schemas/config.schema.yaml`.
-- **Enforcement:** Use `apply_schema_defaults(config, "workflow/schemas/config.schema.yaml")` in `workflow/rules/common.smk` to ensure these defaults are correctly populated at runtime.
+- **Enforcement:** `workflow/Snakefile` calls `validate_config()` (defined in `workflow/rules/common.smk`), which validates against the schema, reports all errors, then applies the defaults via `apply_schema_defaults()` and runs `check_genome_support()`. Do not call `apply_schema_defaults()` separately. Most schema objects set `additionalProperties: false`, so every new key must be declared in the schema.
 - **Resolution:** Use `get_resolved_param()` for parameters that can be defined at both the 'library' and 'global default' levels.
 
 #### File Naming & Formats
@@ -88,20 +90,21 @@ pixi run -e docs docs-serve
 - **Consistency:** Ensure file extensions match the content (e.g., `.fastq.gz` for compressed reads).
 
 #### Cross-Platform Compatibility
-- **macOS Coreutils:** On macOS, the environment is shimmed to use GNU coreutils (e.g., `gln` as `ln`). This is handled automatically by the Pixi activation script (`scripts/macos-coreutils-setup.sh`). Do not manually override system binaries.
-- **Temporary Directories:** Respect the `$TMPDIR` environment variable. Use centralized logic for temporary directory assignment to ensure compatibility with HPC nodes and local machines.
+- **macOS Coreutils:** `pixi.toml` points the osx-arm64 activation at `scripts/macos-coreutils-setup.sh` (shims in `.pixi/macos-shims`), but that script is not in the repository, so pixi warns and no shims are created. Until it exists, use Homebrew `coreutils` with its `gnubin` directory first on `PATH`. Do not manually override system binaries.
+- **Temporary Directories:** In rule `shell:` blocks, use `{resources.tmpdir}` (e.g. `mktemp -d -p "{resources.tmpdir}"`), not `$TMPDIR`: Snakemake runs shells with `set -u` and `$TMPDIR` is often not propagated into containers ("TMPDIR: unbound variable"). Snakemake always sets `resources.tmpdir`; profiles may override it via `default-resources`.
 
 #### Containerization & CI
 The full reference (branch/PR model, each workflow and its failure modes, image tags, the `main` ruleset, release procedure, troubleshooting) is the Developer Guide in `docs/developer/`; start at `docs/developer/index.md`. Keep this section a summary and update the guide when CI or container behaviour changes.
 
-- **Multi-arch Support:** Docker builds must support both `linux/amd64` and `linux/arm64`. Verify that all dependencies in `workflow/envs/*.yaml` are solvable for both architectures.
+- **Multi-arch Support:** `build-3t-seq.yml` and `build-salmonte.yml` build `linux/amd64` and `linux/arm64`. Every dependency in `workflow/envs/*.yaml` must be solvable for both, or the image build fails. CI runs the pipeline (`e2e`) on `linux/amd64` only.
 - **SHA Tagging:** Images pushed to GHCR should be tagged with the commit SHA in addition to the branch/tag name.
+- **Tests in CI:** `test.yml` job `smoke` (lint + conda-only dry-run of all three configs, ~30 s) is a required check on `main`. Job `e2e` (full `local-references` run with the `ci` profile, 90 min limit, Apptainer from `ppa:apptainer/ppa`) runs on release-please PRs, nightly and via `gh workflow run test.yml --ref <branch>`; it writes a per-rule timing table to the job summary. Required checks on `main`: `check`, `dockerfile-sync`, `smoke`.
 - **Pinned Images:** Every `ghcr.io/boulardlab/*` image under `workflow/` must use an immutable tag (never `:latest` or untagged) that exists in GHCR. The `container-check.yml` gate enforces this on PRs to `main`/`dev` and on pushes to `main`.
 - **3t-seq Image (env hash):** Snakemake looks conda envs up inside the `containerized:` image by content hash and fails if one is missing, so the image must match the envs of every commit.
     - The image is tagged `env-<conda_env_hash>`, using the label `snakemake --containerize` writes into the `Dockerfile`. `workflow/Snakefile` pins that tag, managed by `.github/scripts/container_pin.py`.
     - After changing anything in a conda env, run `pixi run containerize` and commit `Dockerfile` + `workflow/Snakefile` together. CI (`container-check.yml`, job `dockerfile-sync`) fails if either is stale.
     - `build-3t-seq.yml` builds each `env-<hash>` once (PRs from this repo, and pushes to `main`/`dev`) and never overwrites it. If the hash already exists, branch/`sha-*`/`latest` tags are pointed at it without rebuilding. `latest` moves only on pushes to `main`. A `v*` tag adds an `:X.Y.Z` alias.
-    - PRs from forks cannot push images. A maintainer must build the hash (push the branch to this repo or run the workflow manually).
+    - PRs from forks cannot push images. A maintainer must build the hash: push the branch to this repo, then run `gh workflow run build-3t-seq.yml --ref <branch>` (a push alone does not trigger the build; push triggers are `main`/`dev` only) or open a same-repo PR from it.
 - **SalmonTE Image (release version):** `workflow/rules/salmonTE.smk` pins `salmonte:X.Y.Z` (`x-release-please-version` markers). `build-salmonte.yml` builds `:X.Y.Z` from the release-please PR before it merges, or manually with the `version` input to bootstrap. It refuses to overwrite once git tag `vX.Y.Z` exists.
 - **Releases:** release-please (`release-please-config.json`, `.release-please-manifest.json`) bumps `pixi.toml` and the SalmonTE pins. It needs the `RELEASE_PLEASE_TOKEN` secret (a PAT or App token), because PRs and tags created with `GITHUB_TOKEN` do not trigger other workflows.
 
