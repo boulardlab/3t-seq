@@ -90,7 +90,7 @@ Extra Snakemake arguments go after `--`, e.g. `pixi run -e dev test local-refere
 - **Consistency:** Ensure file extensions match the content (e.g., `.fastq.gz` for compressed reads).
 
 #### Cross-Platform Compatibility
-- **macOS Coreutils:** `pixi.toml` points the osx-arm64 activation at `scripts/macos-coreutils-setup.sh` (shims in `.pixi/macos-shims`), but that script is not in the repository, so pixi warns and no shims are created. Until it exists, use Homebrew `coreutils` with its `gnubin` directory first on `PATH`. Do not manually override system binaries.
+- **macOS Coreutils:** Pixi puts `$PIXI_PROJECT_ROOT/.pixi/macos-shims` first on `PATH` (osx-arm64). Provide GNU tools there as plain-named symlinks to Homebrew `coreutils`/`gnu-sed` `gnubin` (see `docs/getting-started/index.md`, "Apple Silicon & macOS notes"). Do not manually override system binaries.
 - **Temporary Directories:** In rule `shell:` blocks, use `{resources.tmpdir}` (e.g. `mktemp -d -p "{resources.tmpdir}"`), not `$TMPDIR`: Snakemake runs shells with `set -u` and `$TMPDIR` is often not propagated into containers ("TMPDIR: unbound variable"). Snakemake always sets `resources.tmpdir`; profiles may override it via `default-resources`.
 
 #### Containerization & CI

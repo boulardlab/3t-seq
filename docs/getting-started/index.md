@@ -117,15 +117,29 @@ successfully. Expected runtime: ~10–20 minutes on a laptop.
 3t-seq supports macOS including Apple Silicon (M1/M2/M3). A few things to be aware of:
 
 - **GNU coreutils shims**: macOS ships BSD versions of `ln`, `sed`, etc. that differ from
-  the Linux versions bioinformatics tools expect. `pixi.toml` refers to an activation
-  script (`scripts/macos-coreutils-setup.sh`) for shims in `.pixi/macos-shims`, but that
-  script is not in the repository yet, so pixi prints a warning and creates no shims.
-  Install `coreutils` via Homebrew and put the GNU versions first on your `PATH`:
+  the Linux versions bioinformatics tools expect. Install the GNU versions with Homebrew:
 
   ```bash
-  brew install coreutils
-  export PATH="$(brew --prefix coreutils)/libexec/gnubin:$PATH"
+  brew install coreutils gnu-sed
   ```
+
+  Then make them take precedence over the BSD tools. Choose one option:
+
+  - **Project-local shims (recommended)**: Pixi puts `.pixi/macos-shims` first on `PATH`
+    inside the project environment. Link the GNU tools there under their plain names:
+
+    ```bash
+    mkdir -p .pixi/macos-shims
+    ln -sf "$(brew --prefix coreutils)"/libexec/gnubin/* .pixi/macos-shims/
+    ln -sf "$(brew --prefix gnu-sed)"/libexec/gnubin/sed .pixi/macos-shims/
+    ```
+
+    This changes only `pixi run` commands, not your normal shell.
+  - **Shell-wide**: put the `gnubin` directories first on `PATH` in your shell profile:
+
+    ```bash
+    export PATH="$(brew --prefix coreutils)/libexec/gnubin:$(brew --prefix gnu-sed)/libexec/gnubin:$PATH"
+    ```
 
 - **Singularity / Apptainer**: does not run natively on macOS. Container-based execution
   requires a Linux VM (e.g., [Lima](https://github.com/lima-vm/lima) or
