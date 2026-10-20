@@ -6,6 +6,7 @@ import copy
 from pathlib import Path, PosixPath
 from jsonschema import Draft7Validator, validators
 from snakemake.io import Wildcards
+from snakemake.exceptions import WorkflowError
 
 
 class Struct:
@@ -49,6 +50,234 @@ def apply_schema_defaults(config, schema_path):
     # Use specialized validator to populate defaults recursively
     DefaultValidatingDraft7Validator = extend_with_default(Draft7Validator)
     DefaultValidatingDraft7Validator(schema).validate(config)
+
+
+MIGRATION_GUIDE = (
+    "docs/migration/ (https://github.com/boulardlab/3t-seq/tree/main/docs/migration)"
+)
+
+# Genomes whose references (refgenie FASTA/GTF, UCSC RepeatMasker, GtRNAdb)
+# are fetched automatically. Keep in sync with the genome.label anyOf in the schema.
+AUTO_FETCH_GENOMES = ("mm10", "mm39")
+
+_DERIVED_FOLDER_HINT = (
+    "Output folders are now derived from 'globals.results_folder'; remove this key."
+)
+
+# Config keys removed or moved since v1.1.0, keyed by path ("*" matches a list
+# index). The schema rejects them (additionalProperties: false); this table
+# only turns the generic error into an actionable one.
+REMOVED_CONFIG_KEYS = {
+    ("deseq2",): (
+        "The top-level 'deseq2' block was moved: set test/variable/reference_level "
+        "under 'defaults.deseq2' (or per comparison under 'comparisons[].deseq2'). "
+        "'working_directory' and 'notebook_path' were removed."
+    ),
+    ("globals", "reads_folder"): (
+        "Raw reads are now located through the sample sheet: put paths (absolute, "
+        "or relative to the working directory) in the 'filename' (se) or "
+        "'filename_1' and 'filename_2' (pe) columns."
+    ),
+    ("globals", "qc_folder"): _DERIVED_FOLDER_HINT,
+    ("globals", "log_folder"): _DERIVED_FOLDER_HINT,
+    ("globals", "references_folder"): _DERIVED_FOLDER_HINT,
+    ("globals", "analysis_folder"): _DERIVED_FOLDER_HINT,
+    ("globals", "data_folder"): _DERIVED_FOLDER_HINT,
+    ("globals", "container_folder"): (
+        "Containers are configured through the Snakemake profile; remove this key."
+    ),
+    ("globals", "tmp_folder"): (
+        "Temporary files go under 'globals.results_folder' or $TMPDIR; remove this key."
+    ),
+    ("genome", "fasta_url"): (
+        "Remote FASTA URLs are no longer supported: download the file and set "
+        f"'genome.fasta_path', or use label {' or '.join(AUTO_FETCH_GENOMES)} to fetch it automatically."
+    ),
+    ("genome", "fasta_link"): (
+        "Remote FASTA URLs are no longer supported: download the file and set "
+        f"'genome.fasta_path', or use label {' or '.join(AUTO_FETCH_GENOMES)} to fetch it automatically."
+    ),
+    ("genome", "gtf_url"): (
+        "Remote GTF URLs are no longer supported: download the file and set "
+        f"'genome.gtf_path', or use label {' or '.join(AUTO_FETCH_GENOMES)} to fetch it automatically."
+    ),
+    ("genome", "gaf_url"): "No longer used; remove this key.",
+    ("genome", "rmsk_path"): (
+        "Custom RepeatMasker annotations are no longer supported; it is downloaded "
+        f"automatically for {' or '.join(AUTO_FETCH_GENOMES)}."
+    ),
+    ("genome", "gtrnadb_url"): (
+        "Custom GtRNAdb annotations are no longer supported; they are downloaded "
+        f"automatically for {' or '.join(AUTO_FETCH_GENOMES)}."
+    ),
+    ("genome", "gtrnadb_bed"): (
+        "Custom GtRNAdb annotations are no longer supported; they are downloaded "
+        f"automatically for {' or '.join(AUTO_FETCH_GENOMES)}."
+    ),
+}
+
+# Config keys renamed since v1.1.0 that are still accepted: old -> new.
+DEPRECATED_CONFIG_KEYS = {"sequencing_libraries": "comparisons"}
+
+
+def _format_config_path(path) -> str:
+    """Render a jsonschema error path as e.g. 'comparisons[0].protocol'."""
+    out = ""
+    for part in path:
+        out += f"[{part}]" if isinstance(part, int) else (f".{part}" if out else part)
+    return out or "<config root>"
+
+
+def _describe_config_error(error, config: dict) -> str:
+    """Turn a jsonschema ValidationError into an actionable message.
+
+    Args:
+        error: a jsonschema.ValidationError raised against `config`.
+        config: the validated config, used to name comparisons in messages.
+
+    Returns:
+        A single (possibly multi-line) message string.
+    """
+    path = list(error.absolute_path)
+    where = _format_config_path(path)
+    if path[:1] == ["comparisons"] and len(path) > 1 and isinstance(path[1], int):
+        entry = config["comparisons"][path[1]]
+        name = entry.get("name") if isinstance(entry, dict) else None
+        if name:
+            where += f" (comparison '{name}')"
+
+    if error.validator == "additionalProperties":
+        allowed = error.schema.get("properties", {})
+        extra = [k for k in error.instance if k not in allowed]
+        lines = []
+        for key in extra:
+            normalized = tuple("*" if isinstance(p, int) else p for p in path + [key])
+            hint = REMOVED_CONFIG_KEYS.get(
+                normalized,
+                f"Unknown key. Allowed keys here: {', '.join(sorted(allowed))}.",
+            )
+            lines.append(f"{_format_config_path(path+[key])}: {hint}")
+        return "\n  ".join(lines)
+
+    if error.validator == "required" and path[:1] == ["comparisons"]:
+        if "'protocol'" in error.message:
+            return (
+                f"{where}: missing 'protocol'. Set 'protocol: pe' (paired-end, sample "
+                "sheet columns filename_1/filename_2) or 'protocol: se' (single-end, "
+                "column filename). 1.x inferred it from the sample sheet; 2.0 does not."
+            )
+
+    if error.validator == "anyOf" and path == ["genome"]:
+        return (
+            f"genome.label: '{error.instance.get('label')}' has no automatically "
+            f"fetched references (supported: {', '.join(AUTO_FETCH_GENOMES)}). "
+            "For any other genome set 'genome.fasta_path', 'genome.gtf_path' and "
+            "'genome.annotation_type'."
+        )
+
+    if error.validator == "pattern" and path == ["genome", "label"]:
+        return (
+            f"genome.label: '{error.instance}' is not a safe label. Use 1-64 letters, "
+            "digits, '.', '_' or '-', starting with a letter or digit (it is used in file names)."
+        )
+
+    if error.validator == "dependencies" and path == ["genome"]:
+        return (
+            f"genome: {error.message}. Custom references need 'fasta_path', "
+            "'gtf_path' and 'annotation_type' together."
+        )
+
+    return f"{where}: {error.message}"
+
+
+def check_genome_support(config: dict) -> None:
+    """Fail early when enabled analyses need references not available for the genome.
+
+    Only mm10/mm39 have RepeatMasker and GtRNAdb annotations fetched automatically;
+    SalmonTE ships its own TE index per species, selected from the label prefix.
+
+    Raises:
+        WorkflowError: listing each enabled analysis that cannot run and how to
+            disable it.
+    """
+    label = config["genome"]["label"]
+    if label in AUTO_FETCH_GENOMES:
+        return
+
+    problems = []
+    if not config["disable_TE_analysis"]:
+        problems.append(
+            "STAR-TE analysis needs a RepeatMasker annotation, which is only fetched "
+            f"for {' or '.join(AUTO_FETCH_GENOMES)}. Set 'disable_TE_analysis: true'."
+        )
+    if not config["disable_tRNA_analysis"]:
+        problems.append(
+            "tRNA analysis needs GtRNAdb annotations, which are only fetched for "
+            f"{' or '.join(AUTO_FETCH_GENOMES)}. Set 'disable_tRNA_analysis: true'."
+        )
+    if not config["disable_salmonTE_analysis"] and label[:2] not in SALMONTE_GENOMES:
+        problems.append(
+            "SalmonTE selects its TE index from the label prefix "
+            f"({', '.join(SALMONTE_GENOMES)}); '{label}' matches none. "
+            "Set 'disable_salmonTE_analysis: true'."
+        )
+
+    if problems:
+        raise WorkflowError(
+            f"genome.label '{label}' is not one of {', '.join(AUTO_FETCH_GENOMES)}, "
+            "so these enabled analyses cannot run:\n  - "
+            + "\n  - ".join(problems)
+            + "\nIf your custom references are an mm10/mm39 assembly, use that label instead."
+        )
+
+
+def validate_config(config: dict, schema_path: str) -> None:
+    """Validate the user config, apply schema defaults, and check genome support.
+
+    Renamed 1.x keys listed in DEPRECATED_CONFIG_KEYS are aliased with a
+    deprecation warning; every other schema violation (including removed 1.x
+    keys) is collected and raised together with a pointer to the migration guide.
+
+    Args:
+        config: the Snakemake config dict, modified in place.
+        schema_path: path to workflow/schemas/config.schema.yaml.
+
+    Raises:
+        WorkflowError: if the config does not satisfy the schema, or enabled
+            analyses are unsupported for the configured genome.
+    """
+    for old, new in DEPRECATED_CONFIG_KEYS.items():
+        if old not in config:
+            continue
+        if new in config:
+            raise WorkflowError(
+                f"Config has both '{old}' (1.x name) and '{new}'. Remove '{old}'. "
+                f"See the migration guide: {MIGRATION_GUIDE}"
+            )
+        logger.warning(
+            f"CONFIG DEPRECATION: '{old}' has been renamed to '{new}'. Please update "
+            f"your config file; '{old}' will be removed in a future release. "
+            f"See the migration guide: {MIGRATION_GUIDE}"
+        )
+        config[new] = config.pop(old)
+
+    with open(schema_path, "r") as f:
+        schema = yaml.safe_load(f)
+    validator_cls = validators.validator_for(schema)
+    errors = sorted(
+        validator_cls(schema).iter_errors(config),
+        key=lambda e: [str(p) for p in e.absolute_path],
+    )
+    if errors:
+        messages = [_describe_config_error(e, config) for e in errors]
+        raise WorkflowError(
+            "Invalid config file:\n  "
+            + "\n  ".join(messages)
+            + f"\nSee the 2.0 migration guide: {MIGRATION_GUIDE}"
+        )
+
+    apply_schema_defaults(config, schema_path)
+    check_genome_support(config)
 
 
 def giga_to_byte(g):
@@ -261,6 +490,9 @@ def get_featurecounts_mem_mb(wildcards, input):
     # Base 4GB + 2GB per GB of input BAM (approximate)
     return int(max(4000, input_size_gb * 2000))
 
+
+# genome.label prefix -> SalmonTE reference_genome
+SALMONTE_GENOMES = {"mm": "mm", "hg": "hs", "dr": "dr", "dm": "dm"}
 
 GTRNADB_URLS = {
     "mm10": "http://gtrnadb.ucsc.edu/genomes/eukaryota/Mmusc10/mm10-tRNAs.tar.gz",
@@ -650,21 +882,13 @@ def get_salmonTE_quant_input(wildcards):
 
 def set_salmonTE_genome():
     genome_label = config["genome"]["label"][:2]
-    salmon_label = ""
-    if genome_label == "mm":
-        salmon_label = "mm"
-    elif genome_label == "hg":
-        salmon_label = "hs"
-    elif genome_label == "dr":
-        salmon_label = "dr"
-    elif genome_label == "dm":
-        salmon_label = "dm"
-    else:
+    if genome_label not in SALMONTE_GENOMES:
         raise ValueError(
             f"Unsupported genome label for salmonTE: {config['genome']['label']}. "
-            f"Please use a label starting with mm, hg, dr, or dm."
+            f"Please use a label starting with {', '.join(SALMONTE_GENOMES)}, "
+            "or set 'disable_salmonTE_analysis: true'."
         )
-    return salmon_label
+    return SALMONTE_GENOMES[genome_label]
 
 
 def get_multiqc_inputs(wildcards):
@@ -766,7 +990,9 @@ def get_trimmed_fastq(wildcards):
         ]
     else:
         raise ValueError(
-            "Could not determine protocol type for {0}".format(wildcards.serie)
+            f"Could not determine protocol type for comparison '{wildcards.serie}': "
+            "set 'protocol: pe' or 'protocol: se' on its entry under 'comparisons' "
+            "in the config file."
         )
 
 
@@ -888,6 +1114,18 @@ def validate_sample_sheets():
 
         is_paired = serie in library_names_paired
 
+        required_columns = (
+            ["name", "filename_1", "filename_2"] if is_paired else ["name", "filename"]
+        )
+        missing_columns = [c for c in required_columns if c not in df.columns]
+        if missing_columns:
+            missing_files.append(
+                f"Sample sheet {sheet_path} lacks column(s) {', '.join(missing_columns)} "
+                f"required by 'protocol: {lib.get('protocol')}' of comparison '{serie}' "
+                "in the config file."
+            )
+            continue
+
         for _, row in df.iterrows():
             sample_name = row["name"]
             if is_paired:
@@ -910,8 +1148,6 @@ def validate_sample_sheets():
 
     if missing_files:
         error_msg = "\n" + "\n".join(missing_files)
-        raise WorkflowError(
-            f"Validation failed: The following necessary input read files could not be found:{error_msg}"
-        )
+        raise WorkflowError(f"Sample sheet validation failed:{error_msg}")
 # We don't call it here anymore because library_names_paired isn't populated until Snakefile line 110.
 # It is called from the Snakefile.
