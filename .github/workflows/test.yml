@@ -1,6 +1,6 @@
 name: Run tests
 
-# smoke: fast lint + dry-run of every integration config. Required on PRs.
+# smoke: fast lint, unit tests and dry-run of every integration config. Required on PRs.
 # e2e:   full pipeline on the chr19 test data. Non-blocking; runs on
 #        release-please PRs, nightly and on demand.
 
@@ -45,6 +45,9 @@ jobs:
             pixi run -e dev lint "$config" laptop
             echo "::endgroup::"
           done
+
+      - name: Unit tests
+        run: pixi run -e dev unit-test
 
       # Conda only: with Apptainer the dry-run needs the pulled images.
       - name: Dry-run
