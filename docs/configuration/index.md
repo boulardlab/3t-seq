@@ -53,7 +53,10 @@ Controls which reference genome is used.
       label: mm10
     ```
 
-    Supported labels: `mm10`, `mm39`.
+    Supported labels: `mm10`, `mm39`. Any other label without `fasta_path`/`gtf_path` is
+    rejected with `genome.label: '<label>' has no automatically fetched references
+    (supported: mm10, mm39). For any other genome set 'genome.fasta_path',
+    'genome.gtf_path' and 'genome.annotation_type'.`
 
     | Key | Required | Default | Description |
     | :--- | :--- | :--- | :--- |
@@ -63,9 +66,9 @@ Controls which reference genome is used.
 
 === "Custom local files"
 
-    Keep `label` and add explicit paths. `fasta_path`, `gtf_path` and `annotation_type`
-    are required together. The `label` is still used to fetch RepeatMasker and GtRNAdb
-    annotations.
+    Add explicit paths next to `label`. `fasta_path`, `gtf_path` and `annotation_type`
+    are required together. With custom files `label` can be any name of 1–64 letters,
+    digits, `.`, `_` or `-` (starting with a letter or digit); it is used in file names.
 
     ```yaml
     genome:
@@ -77,7 +80,7 @@ Controls which reference genome is used.
 
     | Key | Required | Default | Description |
     | :--- | :--- | :--- | :--- |
-    | `label` | **Yes** | — | `mm10` or `mm39`. |
+    | `label` | **Yes** | — | Any safe name; `mm10`/`mm39` if the files are one of those assemblies. |
     | `fasta_path` | **Yes** (with gtf) | — | Absolute path to genome FASTA. |
     | `gtf_path` | **Yes** (with fasta) | — | Absolute path to gene annotation GTF. |
     | `annotation_type` | **Yes** (with fasta) | — | `ensembl`, `gencode`, or `mgi`. |
@@ -86,6 +89,21 @@ Controls which reference genome is used.
     !!! warning
         The validator rejects a config that sets only some of `fasta_path`, `gtf_path`
         and `annotation_type`.
+
+    RepeatMasker and GtRNAdb annotations are only fetched for `mm10` and `mm39`. If your
+    files are one of those assemblies, use that label and every analysis runs. With any
+    other label you must set `disable_TE_analysis: true` and `disable_tRNA_analysis: true`,
+    otherwise the pipeline stops at start-up:
+
+    ```text
+    genome.label 'hg38' is not one of mm10, mm39, so these enabled analyses cannot run:
+      - STAR-TE analysis needs a RepeatMasker annotation, which is only fetched for mm10 or mm39. Set 'disable_TE_analysis: true'.
+      - tRNA analysis needs GtRNAdb annotations, which are only fetched for mm10 or mm39. Set 'disable_tRNA_analysis: true'.
+    If your custom references are an mm10/mm39 assembly, use that label instead.
+    ```
+
+    SalmonTE is not affected by this check: it depends on the label prefix and turns
+    itself off with a warning (see [SalmonTE supported genomes](#salmonte-supported-genomes)).
 
 ---
 

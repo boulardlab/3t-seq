@@ -129,7 +129,7 @@ set of alignment parameters, and one DESeq2 contrast.
 
 | Key | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `label` | Yes | — | `mm10` or `mm39`. Downloads references automatically via Refgenie. |
+| `label` | Yes | — | Genome name, used in reference file names. Without `fasta_path`/`gtf_path` it must be `mm10` or `mm39`, whose references are downloaded automatically. With custom files any label of 1–64 letters, digits, `.`, `_` or `-` is accepted (see below). |
 | `fasta_path` | No | Refgenie download | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
 | `gtf_path` | No | Refgenie download | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
 | `annotation_type` | No | `ensembl` | `ensembl`, `gencode`, or `mgi`. Required when using custom FASTA/GTF. |
@@ -137,8 +137,9 @@ set of alignment parameters, and one DESeq2 contrast.
 
 ### Using your own reference files
 
-Keep `label` and add explicit paths. `label` is still used to fetch the RepeatMasker and
-GtRNAdb annotations.
+Add explicit paths next to `label`. If your files are an mm10 or mm39 assembly, keep that
+label: the RepeatMasker and GtRNAdb annotations are still fetched automatically for it,
+so the TE and tRNA analyses run as usual.
 
 ```yaml
 genome:
@@ -151,6 +152,25 @@ genome:
 !!! warning
     `fasta_path`, `gtf_path` and `annotation_type` must be set together. The config
     validator raises an error if only some of them are present.
+
+For any other genome, choose your own label. RepeatMasker and GtRNAdb annotations are only
+fetched for mm10 and mm39, so the STAR-TE and tRNA analyses must be switched off, or the
+pipeline stops at start-up with an error naming both keys:
+
+```yaml
+genome:
+  label: hg38
+  fasta_path: /data/refs/GRCh38.primary_assembly.genome.fa.gz
+  gtf_path: /data/refs/gencode.v44.annotation.gtf.gz
+  annotation_type: gencode
+
+disable_TE_analysis: true
+disable_tRNA_analysis: true
+```
+
+SalmonTE picks its TE index from the first two letters of the label (`mm`, `hg`, `dr`,
+`dm`) and is skipped with a warning for any other prefix; see
+[SalmonTE supported genomes](../configuration/index.md#salmonte-supported-genomes).
 
 ---
 

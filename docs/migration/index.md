@@ -10,8 +10,10 @@ in the order you are likely to hit them.
        `protocol: se` to every comparison.
     3. Delete everything under `globals` except `results_folder`.
     4. Move the top-level `deseq2` block to `defaults.deseq2` (or into each comparison).
-    5. Replace `genome.fasta_url` / `gtf_url` / `gtrnadb_url` with `genome.label` (`mm10`
-       or `mm39`), optionally plus local `fasta_path` / `gtf_path` / `annotation_type`.
+    5. Replace `genome.fasta_url` / `gtf_url` / `gtrnadb_url` with `genome.label: mm10` or
+       `mm39` (references fetched automatically), or with local `fasta_path` / `gtf_path` /
+       `annotation_type`. Any genome other than mm10/mm39 also needs
+       `disable_TE_analysis: true` and `disable_tRNA_analysis: true`.
     6. Turn the sample sheet `filename*` columns into real paths to your FASTQ files.
     7. Write results to a fresh `results_folder`; 1.x outputs are not reused.
 
@@ -102,7 +104,7 @@ All derived folders were removed. The schema rejects any key other than `results
 
 | 1.x | 2.0 | Notes |
 | :--- | :--- | :--- |
-| `label` (free text, e.g. `hg38`) | `label` | Required. Must be `mm10` or `mm39`. References are fetched with Refgenie. |
+| `label` (free text, e.g. `hg38`) | `label` | Required. Without local files it must be `mm10` or `mm39` (references fetched with Refgenie). With `fasta_path` + `gtf_path` any label of 1–64 letters, digits, `.`, `_`, `-` is accepted. |
 | `fasta_url` | `fasta_path` | Local file only. Optional; overrides the Refgenie FASTA. |
 | `gtf_url` | `gtf_path` | Local file only. Optional; overrides the Refgenie GTF. |
 | `annotation_type` (incl. `other`) | `annotation_type` | One of `ensembl` (default), `gencode`, `mgi`. Required together with `fasta_path` / `gtf_path`. |
@@ -111,7 +113,23 @@ All derived folders were removed. The schema rejects any key other than `results
 | — | `selected_chromosomes` | New. Restrict the analysis to a list of chromosomes (pilot runs). |
 
 `fasta_path`, `gtf_path` and `annotation_type` must be given together, and `label` is
-still required when you use them.
+still required when you use them. RepeatMasker and GtRNAdb annotations are only fetched
+for mm10 and mm39, so a 1.x project on another genome (e.g. `hg38` with its own FASTA/GTF)
+must turn off STAR-TE and tRNA analysis, or the pipeline stops at start-up:
+
+```yaml
+genome:
+  label: hg38
+  fasta_path: /data/refs/hg38.fa.gz
+  gtf_path: /data/refs/hg38.gtf.gz
+  annotation_type: gencode
+
+disable_TE_analysis: true
+disable_tRNA_analysis: true
+```
+
+SalmonTE still runs for `hg*` labels (human TE index); see
+[SalmonTE supported genomes](../configuration/index.md#salmonte-supported-genomes).
 
 ### Before / after
 
