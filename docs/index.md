@@ -40,30 +40,34 @@ graph TD
     GENOME --> STAR
 
     %% Post-Alignment
-    STAR --> FILTER[BAM Filtering]
-    FILTER --> MARKDUP[Picard MarkDuplicates]
-    MARKDUP --> BW[BigWig Coverage]
+    STAR --> MARKDUP[Picard MarkDuplicates]
+    STAR --> BW[BigWig Coverage]
 
     %% Specialized Analysis
-    TRIM --> SALMON_TE[SalmonTE]
-    TE_REF --> SALMON_TE
+    RAW --> SALMON_TE[SalmonTE quant + test]
 
-    MARKDUP --> STAR_TE[STAR-TE Analysis]
-    TE_REF --> STAR_TE
+    TRIM --> STAR_TE[STAR-TE Alignment]
+    GENOME --> STAR_TE
+    STAR_TE --> FILTER[TE-only BAM filtering]
+    TE_REF --> FILTER
+    FILTER --> FC[featureCounts]
+    TE_REF --> FC
 
-    MARKDUP --> TRNA[tRNA Quantification]
+    STAR --> TRNA[tRNA Quantification]
     TRNA_REF --> TRNA
 
-    %% Quantification
-    STAR_TE --> DESEQ2[DESeq2 Expression]
+    %% Differential expression
+    STAR --> DESEQ2[DESeq2 Expression]
+    FC --> DESEQ2
     TRNA --> DESEQ2
 
     %% Reporting
     QC_RAW --> MULTIQC[MultiQC]
     QC_TRIM --> MULTIQC
+    TRIM --> MULTIQC
     STAR --> MULTIQC
-    STAR_TE --> MULTIQC
-    MULTIQC --> REPORT((Final Report))
+    MARKDUP --> MULTIQC
+    MULTIQC --> REPORT((MultiQC report per comparison))
 
     %% Styling
     style RAW fill:#f9f,stroke:#333,stroke-width:2px
@@ -71,6 +75,13 @@ graph TD
     style REPORT fill:#bfb,stroke:#333,stroke-width:2px
     style TRIM_DERIVE stroke-dasharray: 5 5
 ```
+
+`TRIM --> MULTIQC` stands for the Trimmomatic statistics; `STAR --> MULTIQC` for the STAR
+logs, gene counts and FastQC of the STAR BAM; `MARKDUP --> MULTIQC` for the duplication
+statistics and FastQC of the duplicate-marked BAM. SalmonTE uses the raw reads and the TE
+index shipped in its container, and runs its own differential expression test. The
+Snakemake HTML report is a separate step (see
+[Running & Reporting](tutorial/running.md#2-detailed-reporting)).
 
 ## Navigation
 
