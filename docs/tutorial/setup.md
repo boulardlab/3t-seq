@@ -138,7 +138,7 @@ set of alignment parameters, and one DESeq2 contrast.
 | `label` | Yes | — | Genome name, used in reference file names. Without `fasta_path`/`gtf_path` it must be `mm10` or `mm39`, whose references are downloaded automatically. With custom files any label of 1–64 letters, digits, `.`, `_` or `-` is accepted (see below). |
 | `fasta_path` | No | Refgenie download | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
 | `gtf_path` | No | Refgenie download | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
-| `annotation_type` | No | `ensembl` | `ensembl`, `gencode`, or `mgi`. Required when using custom FASTA/GTF. |
+| `annotation_type` | With custom files | `ensembl` | `ensembl`, `gencode`, or `mgi`. Must be set explicitly together with `fasta_path` and `gtf_path`; the default only applies to automatically fetched references. |
 | `selected_chromosomes` | No | all | Restrict to a subset of chromosomes (useful for pilot runs). |
 
 ### Using your own reference files
@@ -204,7 +204,7 @@ Run it:
 
 ```bash
 pixi run snakemake \
-    --profile .tests/integration/profiles/laptop \
+    --profile profile/default \
     --configfile config/my_config.yaml
 ```
 
