@@ -6,7 +6,10 @@ Once your data is prepared and you've selected a profile, you're ready to perfor
 
 ## 1. Execution Patterns
 
-A standard Snakemake invocation for 3t-seq follows a predictable pattern. Using the `hpc` profile as an example:
+A standard Snakemake invocation for 3t-seq follows a predictable pattern. Using a Slurm
+profile as an example (`profile/slurm` is your copy of `profile/slurm-example`, see
+[Advanced Profiles](profiles.md#profileslurm-example-slurm-clusters); use
+`profile/default` to run locally):
 
 ```bash
 pixi run snakemake \

@@ -1,89 +1,146 @@
 # Advanced Profiles
 
-In **3t-seq**, we separate your **biological setup** (what files to process) from your **computational strategy** (how to run them). The primary way to manage this is through the `--profile` flag.
+In **3t-seq**, we separate your **biological setup** (what files to process, the
+`--configfile`) from your **computational strategy** (how to run them, the `--profile`).
 
 ---
 
-## 1. The `--profile` Flag as a Configuration Hub
+## 1. What a profile holds
 
-The `--profile` flag is much more than a simple resource setting. It acts as a **comprehensive encapsulation hub** for all your command-line parameters.
+A Snakemake profile is a folder with a `config.yaml` whose keys are Snakemake command-line
+options written in YAML (`jobs: 100` is `--jobs 100`). A profile typically sets:
 
-Think of a profile as a pre-packaged "Run Configuration" that points Snakemake to:
+- **Execution**: run jobs locally or submit them through Slurm (`executor: slurm`).
+- **Concurrency**: how many cores and how many jobs at the same time.
+- **Software deployment**: Conda environments and the Apptainer container
+  (`software-deployment-method: [conda, apptainer]`), plus extra container options.
+- **Resources**: default and per-rule resources, such as the Slurm account and partition.
 
-- **Resource Limits**: How many CPUs and how much RAM to use.
-- **Execution Strategy**: Whether to run locally, via Slurm, or SGE.
-- **Environment Management**: Automatic use of Conda or Apptainer (Singularity).
-- **Default Configs**: Bundling specific `--config` or `--configfile` flags into the profile folder itself.
+Rules in 3t-seq set their own `threads`, `mem_mb` and `runtime`, scaled to the input size,
+so a profile only needs the site-specific settings.
 
 ---
 
-## 2. Built-in Profiles: Laptop vs. HPC Slurm
+## 2. Profiles shipped with the repository
 
-We provide two primary profiles as starting points:
+| Profile | Use it for |
+| :--- | :--- |
+| `profile/default` | Local runs on a workstation or a single node. |
+| `profile/slurm-example` | Template for a Slurm cluster; copy it and fill in account and partition. |
 
-### The `laptop` Profile
+### `profile/default`: local runs
 
-Designed for small-scale pilot runs or local debugging.
+```yaml
+cores: 2
+local-cores: 2
+jobs: 1
+restart-times: 0
+printshellcmds: True
+use-conda: True
+use-singularity: True
+singularity-args: "--no-home"
+```
 
-- **Resource Limits**: Pins `--cores` to a safe number (e.g., 4 or 8) so your machine remains responsive.
-- **Isolation**: Automatically handles **bind mounts** for containers, allowing them to write results to your local folder.
-- **Usage**:
+It runs one job at a time on 2 cores. Raise `cores` (or pass `--cores N`) on a bigger
+machine. `use-conda` and `use-singularity` are the older spellings of
+`software-deployment-method: [conda, apptainer]`; Snakemake 8 still accepts them.
 
-  ```bash
-  pixi run snakemake --profile .tests/integration/profiles/laptop --configfile my_config.yaml
-  ```
+```bash
+pixi run snakemake --profile profile/default --configfile my_config.yaml
+```
 
-### The `hpc` (Slurm) Profile
+### `profile/slurm-example`: Slurm clusters
 
-Designed for scaling up to hundreds of samples on a High-Performance Computing cluster.
-
-- **Orchestration**: Communicates with the **Slurm scheduler** to submit jobs with appropriate resources.
-- **Concurrency**: Allows many jobs to run in parallel (e.g., `--jobs 100`).
-- **Resilience**: Configured with automatic re-tries for intermittent cluster failures.
-- **Usage**:
-
-  ```bash
-  pixi run snakemake --profile profile/slurm --configfile my_config.yaml
-  ```
-
-`profile/slurm` stands for your own Slurm profile. Start from the example shipped with the
-repository and fill in your Slurm account and partition (`profile/slurm/` is git-ignored):
+The example uses the Slurm executor plugin (`snakemake-executor-plugin-slurm`, installed
+with the Pixi environment). Copy it to `profile/slurm/`, which is git-ignored, and replace
+the placeholders:
 
 ```bash
 cp -r profile/slurm-example profile/slurm
 ```
 
-Snakemake 8 selects Slurm with `executor: slurm` (the plugin ships with the Pixi
-environment). Profiles written for 3t-seq 1.x with `slurm: True` no longer work; see
+The settings that matter:
+
+```yaml
+executor: slurm          # submit every job through Slurm
+jobs: 100                # up to 100 jobs queued or running at once
+software-deployment-method:
+  - conda
+  - apptainer
+apptainer-args: "--no-home --bind /scratch"   # bind the file systems holding your data
+latency-wait: 120        # wait for files on slow shared file systems
+retries: 2               # resubmit failed jobs; heavy rules get more time and memory
+default-resources:
+  slurm_account: your_account
+  slurm_partition: your_partition
+```
+
+The file also sets `printshellcmds`, `show-failed-logs`, conservative
+`max-jobs-per-second` / `max-status-checks-per-second`, and shows commented
+`set-resources` / `set-threads` examples, e.g. to send the STAR rules to a large-memory
+partition.
+
+```bash
+pixi run snakemake --profile profile/slurm --configfile my_config.yaml
+```
+
+Run Snakemake itself on a login node or in a long-running, low-resource job (e.g. inside
+`tmux`); it only submits and monitors jobs.
+
+!!! note "Bind mounts"
+    Jobs run inside the 3t-seq container. Apptainer mounts the working directory by
+    default; any other location your FASTQ files, references or results live in (e.g.
+    `/scratch`, a group share) must be added with `--bind` in `apptainer-args`.
+
+Profiles written for 3t-seq 1.x with `slurm: True` no longer work in Snakemake 8; see
 [Migrating from 1.x](../migration/index.md#profiles).
 
 ---
 
-## 3. Profiles as CLI Encapsulation
+## 3. Your own profiles
 
-**Reproducibility** is at the heart of 3t-seq. Typing out long, complex commands with dozens of `--config` flags is error-prone and hard to share.
-
-Instead, we recommend **encapsulating these settings into a profile**. You can create a folder (e.g., `profile/my_experiment/`) and add a `config.yaml` inside it:
+Put any command-line options you would otherwise retype into a profile of your own, e.g.
+`profile/my_cluster/config.yaml` based on `profile/slurm-example`:
 
 ```yaml
-# profile/my_experiment/config.yaml
+# profile/my_cluster/config.yaml
 executor: slurm
 jobs: 50
+software-deployment-method:
+  - conda
+  - apptainer
+apptainer-args: "--no-home --bind /scratch --bind /g/mylab"
+latency-wait: 120
 default-resources:
   slurm_account: "my_lab_account"
-  runtime: 240
+  slurm_partition: "htc"
 ```
-
-Now, instead of a long CLI string, you simply run:
 
 ```bash
-pixi run snakemake --profile profile/my_experiment --configfile my_samples.yaml
+pixi run snakemake --profile profile/my_cluster --configfile my_samples.yaml
 ```
+
+Keep the analysis settings (comparisons, genome, DESeq2) in the `--configfile`; the
+profile should only describe how and where jobs run.
+
+---
+
+## 4. Test profiles
+
+`.tests/integration/profiles/` holds the profiles used by the Pixi tasks (`pixi run test`,
+`dry-run`, `lint`) on the bundled test dataset. They are passed with `--workflow-profile`
+and are not meant for your own data:
+
+| Profile | Settings |
+| :--- | :--- |
+| `laptop` | 2 cores, 1 job, Conda + Apptainer, binds `$PIXI_PROJECT_ROOT` and `$HOME`. Default for all tasks. |
+| `ci` | 4 cores, 2 jobs; used on GitHub Actions runners. |
+| `hpc` | 2 cores, Conda + Apptainer; no Slurm settings. |
 
 ---
 
 ## Next Steps
 
-Now that you understand the power of profiles, learn how to execute the pipeline and generate meaningful reports:
+Now that you understand profiles, learn how to execute the pipeline and generate reports:
 
-- [**Running & Reporting**](running.md): Execution patterns and how to generate the master report.
+- [**Running & Reporting**](running.md): execution patterns and the Snakemake report.

@@ -35,7 +35,10 @@ pixi run -e dev test remote-references laptop
 
 ## Direct Snakemake invocation
 
-For production runs or custom flags, call Snakemake directly through Pixi:
+For production runs or custom flags, call Snakemake directly through Pixi. The examples
+below use `profile/slurm`, your copy of `profile/slurm-example`; use `profile/default` to
+run locally (see [Advanced Profiles](../tutorial/profiles.md)). `config/my_config.yaml`
+stands for your own config file; `config/examples/` has templates to start from.
 
 ```bash
 pixi run snakemake \
@@ -167,7 +170,7 @@ Validation failed: The following necessary input read files could not be found
 STAR needs ~32 GB of RAM to load the mm10 genome index. On a laptop the `laptop` profile
 limits memory, which may cause STAR to fail on large inputs.
 
-- For full genomes, use an HPC cluster with the `hpc`/`slurm` profile.
+- For full genomes, run on a cluster with a Slurm profile based on `profile/slurm-example`.
 - For local testing, use `selected_chromosomes: [chr19]` in the `genome` section to
   restrict to a single chromosome.
 
