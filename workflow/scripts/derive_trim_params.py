@@ -5,6 +5,8 @@ import os
 import sys
 from pathlib import Path
 
+from trimmomatic_steps import merge_steps
+
 def parse_fastqc_data(zip_path):
     """Extracts key modules from FastQC zip."""
     data = {}
@@ -118,29 +120,11 @@ def derive_params(fastqc_data_list, is_paired, extra_params=""):
     base_steps = ["LEADING:3", "TRAILING:3"]
     
     # 5. Merge and Assemble
-    # If user provided extra_params, we respect them. 
-    # We replace our derived steps if the user provided the same "KEY:".
-    
+    # User extra_params replace derived steps of the same type; see
+    # trimmomatic_steps.merge_steps for the order and the CROP/MINLEN cap.
     derived_steps = [illuminaclip, quality_step] + base_steps + [minlen_step]
-    
-    if extra_params:
-        user_modules = extra_params.split()
-        user_module_types = [m.split(':')[0] for m in user_modules]
-        
-        final_steps = []
-        # Add user modules first
-        final_steps.extend(user_modules)
-        
-        # Add derived modules only if user didn't provide them
-        for d in derived_steps:
-            d_type = d.split(':')[0]
-            if d_type not in user_module_types:
-                final_steps.append(d)
-        
-        command_string = " ".join(final_steps)
-    else:
-        command_string = " ".join(derived_steps)
-        
+    command_string = merge_steps(derived_steps, extra_params)
+
     return command_string
 
 def main():

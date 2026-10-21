@@ -121,7 +121,7 @@ set of alignment parameters, and one DESeq2 contrast.
 | `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
 | `deseq2.reference_level` | No | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. Strongly recommended. |
 | `strandedness` | No | `0` | `0` unstranded, `1` forward-stranded, `2` reverse-stranded. |
-| `trimmomatic` | No | TruSeq3 defaults | Fixed string or `{adaptive: true}` for automatic parameter derivation. |
+| `trimmomatic` | No | TruSeq3 defaults | Fixed string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | No | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra flags passed to STAR. |
 | `bamCoverage` | No | `--binSize 50 --normalizeUsing None` | Extra flags for deeptools bamCoverage. |
 

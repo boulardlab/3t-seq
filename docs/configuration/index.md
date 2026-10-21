@@ -136,7 +136,7 @@ A per-comparison value always takes precedence over the global default.
 | Key | Default | Description |
 | :--- | :--- | :--- |
 | `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. |
-| `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{adaptive: true}` for automatic parameter derivation. |
+| `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra CLI flags passed to the STAR aligner. |
 | `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. |
 
@@ -174,6 +174,22 @@ disable_TE_analysis: false        # set true to skip STAR-TE and SalmonTE
 disable_salmonTE_analysis: false  # set true to skip SalmonTE only
 disable_tRNA_analysis: false      # set true to skip tRNA quantification
 ```
+
+### SalmonTE supported genomes
+
+SalmonTE ships TE indexes for a few species only. The pipeline picks the index from the
+first two letters of `genome.label`:
+
+| `genome.label` prefix | Species | SalmonTE `--reference_genome` |
+| :--- | :--- | :--- |
+| `mm` (e.g. `mm10`, `mm39`) | Mouse | `mm` |
+| `hg` (e.g. `hg38`) | Human | `hs` |
+| `dr` | Zebrafish | `dr` |
+| `dm` | Fruit fly | `dm` |
+
+With any other label, SalmonTE and its outputs are skipped and the pipeline logs one
+warning at start-up (`SalmonTE DISABLED: ...`); the rest of the pipeline runs normally.
+Set `disable_salmonTE_analysis: true` to skip SalmonTE without the warning.
 
 ---
 
