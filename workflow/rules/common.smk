@@ -197,8 +197,8 @@ def _describe_config_error(error, config: dict) -> str:
 def check_genome_support(config: dict) -> None:
     """Fail early when enabled analyses need references not available for the genome.
 
-    Only mm10/mm39 have RepeatMasker and GtRNAdb annotations fetched automatically;
-    SalmonTE ships its own TE index per species, selected from the label prefix.
+    Only mm10/mm39 have RepeatMasker and GtRNAdb annotations fetched automatically.
+    SalmonTE is handled by disable_unsupported_salmonTE() instead.
 
     Raises:
         WorkflowError: listing each enabled analysis that cannot run and how to
@@ -219,12 +219,6 @@ def check_genome_support(config: dict) -> None:
             "tRNA analysis needs GtRNAdb annotations, which are only fetched for "
             f"{' or '.join(AUTO_FETCH_GENOMES)}. Set 'disable_tRNA_analysis: true'."
         )
-    if not config["disable_salmonTE_analysis"] and label[:2] not in SALMONTE_GENOMES:
-        problems.append(
-            "SalmonTE selects its TE index from the label prefix "
-            f"({', '.join(SALMONTE_GENOMES)}); '{label}' matches none. "
-            "Set 'disable_salmonTE_analysis: true'."
-        )
 
     if problems:
         raise WorkflowError(
@@ -235,8 +229,36 @@ def check_genome_support(config: dict) -> None:
         )
 
 
+def get_salmonTE_genome(label: str) -> str | None:
+    """Return the SalmonTE reference genome for a genome label, or None if unsupported."""
+    return SALMONTE_GENOMES.get(label[:2])
+
+
+def disable_unsupported_salmonTE(config: dict) -> None:
+    """Turn SalmonTE off, with one warning, when it has no index for the genome.
+
+    An explicit 'disable_salmonTE_analysis: true' stays silent.
+    """
+    if config["disable_salmonTE_analysis"]:
+        return
+    label = config["genome"]["label"]
+    if get_salmonTE_genome(label) is not None:
+        return
+
+    config["disable_salmonTE_analysis"] = True
+    if workflow.is_main_process:
+        logger.warning(
+            f"SalmonTE DISABLED: genome.label '{label}' does not start with a prefix "
+            f"SalmonTE has a TE index for ({', '.join(SALMONTE_GENOMES)}), so all "
+            "SalmonTE rules and outputs are skipped. Set "
+            "'disable_salmonTE_analysis: true' to silence this warning."
+        )
+
+
 def validate_config(config: dict, schema_path: str) -> None:
     """Validate the user config, apply schema defaults, and check genome support.
+
+    SalmonTE is disabled with a warning, not an error, for unsupported genomes.
 
     Renamed 1.x keys listed in DEPRECATED_CONFIG_KEYS are aliased with a
     deprecation warning; every other schema violation (including removed 1.x
@@ -281,6 +303,7 @@ def validate_config(config: dict, schema_path: str) -> None:
         )
 
     apply_schema_defaults(config, schema_path)
+    disable_unsupported_salmonTE(config)
     check_genome_support(config)
 
 
@@ -495,7 +518,9 @@ def get_featurecounts_mem_mb(wildcards, input):
     return int(max(4000, input_size_gb * 2000))
 
 
-# genome.label prefix -> SalmonTE reference_genome
+# genome.label prefix -> SalmonTE --reference_genome. SalmonTE ships TE indexes
+# for these species only; any other label disables SalmonTE with a warning.
+# Keep in sync with the supported list in docs/configuration/index.md.
 SALMONTE_GENOMES = {"mm": "mm", "hg": "hs", "dr": "dr", "dm": "dm"}
 
 GTRNADB_URLS = {
@@ -887,14 +912,13 @@ def get_salmonTE_quant_input(wildcards):
 
 
 def set_salmonTE_genome():
-    genome_label = config["genome"]["label"][:2]
-    if genome_label not in SALMONTE_GENOMES:
+    genome = get_salmonTE_genome(config["genome"]["label"])
+    if genome is None:
+        # unreachable: disable_unsupported_salmonTE() turns SalmonTE off first
         raise ValueError(
-            f"Unsupported genome label for salmonTE: {config['genome']['label']}. "
-            f"Please use a label starting with {', '.join(SALMONTE_GENOMES)}, "
-            "or set 'disable_salmonTE_analysis: true'."
+            f"Unsupported genome label for salmonTE: {config['genome']['label']}."
         )
-    return SALMONTE_GENOMES[genome_label]
+    return genome
 
 
 def get_multiqc_inputs(wildcards):
