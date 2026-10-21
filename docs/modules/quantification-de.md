@@ -10,35 +10,50 @@ Differential expression analysis identifies transcripts that change significantl
 
 ```mermaid
 graph LR
-    A[BAM Files] --> B[featureCounts]
-    B --> C[DESeq2 Analysis]
-    C --> D[Differential Expression Reports]
+    S[STAR ReadsPerGene.out.tab] --> G[DESeq2 genes]
+    F[featureCounts on TE-only BAMs] --> T[DESeq2 TEs]
+    C[tRNA count matrix] --> R[DESeq2 tRNAs]
+    G --> V[datavzrd reports]
+    T --> V
+    R --> V
 ```
 
-## Gene Quantification (featureCounts)
+## Gene Quantification (STAR)
 
-[featureCounts](https://subread.sourceforge.net/featureCounts.html) is used to quantify the abundance of gene transcripts from mapped BAM files.
+Gene counts come from STAR itself (`--quantMode GeneCounts`, see [Alignment](alignment.md)):
+the gene DESeq2 step reads each sample's `ReadsPerGene.out.tab`. No separate counting
+tool runs for genes.
 
-- **Accurate**: Handles overlapping features.
-- **Efficient**: High performance with large genomes.
+!!! note "Strandedness"
+    The gene DESeq2 step uses column 2 of `ReadsPerGene.out.tab` (unstranded counts)
+    whatever `strandedness` is set to. `strandedness` is currently only passed to
+    featureCounts for the STAR-TE counts.
+
+[featureCounts](https://subread.sourceforge.net/featureCounts.html) (Subread 2.1.1) is
+only used for TEs; see [TE Analysis](te-analysis.md). tRNA counts are described in
+[tRNA Analysis](trna-analysis.md).
 
 ## Differential Expression (DESeq2)
 
-[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) is a leading Biocunductor package for differential expression analysis.
+[DESeq2](https://bioconductor.org/packages/release/bioc/html/DESeq2.html) is a leading Bioconductor package for differential expression analysis.
 
-### Features
+### Model
 
-- **Shrinkage Estimation**: Accurately estimates dispersion and fold changes.
-- **Statistical Tests**: Robust identification of differentially expressed genes.
-- **Normalization**: Corrects for differences in library size and sequencing depth.
+For single-copy genes (`workflow/scripts/deseq2_v1.R`):
+
+- **Filtering**: genes with a total count not above the number of samples are dropped.
+- **Design**: `~ <variable>`, with `reference_level` as the base level of the factor.
+- **Test**: `Wald` (default), or `LRT` against the reduced model `~ 1`.
+- **Results**: `results()` for the first non-intercept coefficient (`results.csv`), and
+  log2 fold changes shrunk with `lfcShrink(type = "apeglm")` (`results.shrink.csv`).
+- **Normalization**: DESeq2's size factors correct for library size.
 
 ### Result Visualization
 
-DESeq2 results are visualized through:
+The datavzrd report of each DESeq2 run shows the results table with:
 
 - **Volcano Plots**: Highlight significantly changing genes.
 - **MA Plots**: Visualize the relationship between expression level and fold change.
-- **PCA Plots**: Assess the similarity between biological replicates.
 
 ## Parameters & Defaults
 
@@ -65,7 +80,7 @@ it passes validation, and the run stops when the DESeq2 jobs are set up with
 | `results/analysis/tables/deseq2/<comparison>/` | Gene DESeq2 results (`results.csv`, `results.shrink.csv`). |
 | `results/analysis/rdata/deseq2/<comparison>/` | Gene DESeq2 object (`dds.rds`). |
 | `results/analysis/datavzrd/<comparison>/` | Interactive gene results report. |
-| `results/qc/multiqc/` | Integrated reports from the entire pipeline. |
+| `results/qc/multiqc/<comparison>/multiqc_report.html` | MultiQC report of the comparison. |
 
 TE and tRNA results are written next to their quantification; see
 [Results layout](../usage/index.md#results-layout).
