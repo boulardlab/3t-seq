@@ -26,6 +26,8 @@ Use this table to find the checks for your change.
 | You change | Do this before you push |
 | :--- | :--- |
 | A rule or a script in `workflow/` | Run `pixi run -e dev format`, then `pixi run -e dev format-check`, `pixi run -e dev lint` and the dry runs. |
+| A Python helper in `workflow/scripts/` | Add or update its test in `.tests/unit/`. Run `pixi run -e dev unit-test`. See [Unit tests](local-checks.md#unit-tests). |
+| The list of supported genomes | Read [Supported genomes](#supported-genomes). |
 | A conda env in `workflow/envs/` | Run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` together. See [Containers](containers.md). |
 | The SalmonTE image in `assets/docker/salmonTE/` | Read [SalmonTE image](containers.md#salmonte-image). The new image ships with the next release. |
 | The config schema | Read [Config schema](#config-schema). |
@@ -45,10 +47,30 @@ The file `workflow/schemas/config.schema.yaml` is the single source of truth for
 - When you add a config key, add it to the schema with a `default`.
   Then document it in [Configuration](../configuration/index.md).
 - When you remove or rename a key, add a row to the [migration guide](../migration/index.md).
-- `AUTO_FETCH_GENOMES` in `common.smk` lists the genomes that the pipeline can download (`mm10`, `mm39`).
 - `workflow/Snakefile` calls `validate_config()`. Do not call `apply_schema_defaults()` directly.
 - Each comparison must set `protocol` (`pe` or `se`). The schema gives no default.
 - `validate_sample_sheets()` checks that the sample sheet columns agree with the protocol.
+
+## Supported genomes
+
+Two constants in `workflow/rules/common.smk` define the supported genomes.
+Each constant has one copy that you must also change.
+
+| Constant | Meaning | Also change |
+| :--- | :--- | :--- |
+| `AUTO_FETCH_GENOMES` | Genome labels with automatic references (refgenie, RepeatMasker, GtRNAdb): `mm10`, `mm39` | The `genome.label` `anyOf` in `workflow/schemas/config.schema.yaml` |
+| `SALMONTE_GENOMES` | Label prefix → SalmonTE `--reference_genome` (`mm`, `hg`, `dr`, `dm`) | The "SalmonTE supported genomes" table in [Configuration](../configuration/index.md#salmonte-supported-genomes) |
+
+- `check_genome_support()` stops the run when an enabled analysis needs `AUTO_FETCH_GENOMES` and the label is not in it.
+- `disable_unsupported_salmonTE()` turns SalmonTE off with a warning when the label prefix is not in `SALMONTE_GENOMES`.
+
+## Helper modules in `workflow/scripts/`
+
+Put Python code that rules share in a module in `workflow/scripts/`, for example `trimmomatic_steps.py`.
+
+- `workflow/rules/common.smk` adds `workflow/scripts/` to `sys.path`. Thus, `.smk` files can import the module by name.
+- A script that a rule starts as `python workflow/scripts/<script>.py` finds the module in its own directory.
+- Give each helper module a unit test in `.tests/unit/`. See [Unit tests](local-checks.md#unit-tests).
 
 ## Glossary
 

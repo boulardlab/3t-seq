@@ -7,6 +7,7 @@ The full rules are in the [Developer Guide](docs/developer/index.md).
 2. Create a branch from `dev`, for example `fix/42-short-name`.
 3. Write commit messages as [Conventional Commits](https://www.conventionalcommits.org/), for example `fix: ...` or `feat: ...`.
 4. Run the local checks. See [Local checks](docs/developer/local-checks.md).
+   If you changed a Python helper in `workflow/scripts/`, add a test in `.tests/unit/` and run `pixi run -e dev unit-test`.
 5. If you changed a conda env, run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` together.
 6. Update the documentation in `docs/` if your change affects users.
 7. Open a PR to `dev`, not to `main`.

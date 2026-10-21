@@ -89,13 +89,16 @@ These are the same jobs. The ruleset uses the jobs from the direct `container-ch
 `smoke` is fast (about 30 seconds) and does not run the pipeline. It runs on PRs and on pushes to `main`.
 
 1. It runs `pixi run -e dev lint <config> laptop` for the three configs.
-2. It runs `pixi run -e dev dry-run <config> ci -- --sdm conda` for the three configs.
+2. It runs the unit tests: `pixi run -e dev unit-test`.
+3. It runs `pixi run -e dev dry-run <config> ci -- --sdm conda` for the three configs.
 
 The dry run uses conda only, because a dry run with Apptainer needs the pulled images.
 
 **Failures:**
 
 - *`lint` reports warnings.* Run `pixi run -e dev lint <config> laptop`. Correct each warning.
+- *A unit test fails.* Run `pixi run -e dev unit-test` on your computer. Correct the helper or the test.
+  See [Unit tests](local-checks.md#unit-tests).
 - *The dry run fails.* Most often, the config is not valid or a rule input is missing.
   Run `pixi run -e dev dry-run <config> ci -- --sdm conda` on your computer. Read the error.
 - *Pixi stops before Snakemake starts.* Read [Troubleshooting](troubleshooting.md).

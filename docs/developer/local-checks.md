@@ -8,7 +8,7 @@ All checks use [pixi](https://pixi.sh) tasks from `pixi.toml`.
 | Environment | Use it for |
 | :--- | :--- |
 | `default` | `containerize`, `build-conda-envs` |
-| `dev` | `format`, `format-check`, `lint`, `dry-run`, `setup`, `test`, `test-report` |
+| `dev` | `format`, `format-check`, `lint`, `unit-test`, `dry-run`, `setup`, `test`, `test-report` |
 | `docs` | `docs-build`, `docs-serve` |
 
 Select the environment with `-e`, for example `pixi run -e dev lint`.
@@ -24,6 +24,7 @@ Select the environment with `-e`, for example `pixi run -e dev lint`.
 | Format | `pixi run -e dev format` | None. This task changes files. |
 | Format check | `pixi run -e dev format-check` | `lint.yml` |
 | Lint | `pixi run -e dev lint <config> <profile>` | `lint.yml`; `test.yml`, job `smoke` |
+| Unit tests | `pixi run -e dev unit-test` | `test.yml`, job `smoke` |
 | Dry run | `pixi run -e dev dry-run <config> ci -- --sdm conda` | `test.yml`, job `smoke` |
 | Test data | `pixi run -e dev setup` | `test.yml` (checkout with LFS) |
 | Integration test | `pixi run -e dev test <config> <profile>` | `test.yml`, job `e2e` (`local-references ci`) |
@@ -58,9 +59,10 @@ Before you push a workflow change, run these commands:
 
 1. Run `pixi run -e dev format`.
 2. Run `pixi run -e dev format-check`.
-3. Do the `smoke` checks. Run this loop:
+3. Do the `smoke` checks. Run these commands:
 
     ```bash
+    pixi run -e dev unit-test
     for config in remote-references local-references adaptive-trim; do
       pixi run -e dev lint "$config" laptop
       pixi run -e dev dry-run "$config" ci -- --sdm conda
@@ -72,6 +74,17 @@ Before you push a workflow change, run these commands:
 
 The integration test runs containers. It needs Apptainer or Singularity.
 Alternatively, start the `e2e` job in CI. See [Job `e2e`](ci.md#job-e2e).
+
+## Unit tests
+
+The unit tests are in `.tests/unit/`. They test the Python helper modules in `workflow/scripts/`.
+They do not need test data, conda envs or containers.
+
+- To run all unit tests, run `pixi run -e dev unit-test`. The task runs `pytest -q .tests/unit`.
+- To run one file, run `pixi run -e dev pytest -q .tests/unit/<file>.py`.
+- When you add or change a helper in `workflow/scripts/`, add a test in `.tests/unit/test_<module>.py`.
+- In a test, load the module from `workflow/scripts/`, and put that directory first on `sys.path`.
+  Copy the `load()` function from `.tests/unit/test_trimmomatic_steps.py`.
 
 ## Integration test on Linux
 
