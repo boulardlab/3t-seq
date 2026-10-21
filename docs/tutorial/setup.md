@@ -119,11 +119,17 @@ set of alignment parameters, and one DESeq2 contrast.
 | `sample_sheet` | Yes | — | Path to the CSV file. |
 | `deseq2.test` | No | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
-| `deseq2.reference_level` | No | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. Strongly recommended. |
+| `deseq2.reference_level` | **Yes**, here or in `defaults.deseq2` | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. |
 | `strandedness` | No | `0` | `0` unstranded, `1` forward-stranded, `2` reverse-stranded. |
 | `trimmomatic` | No | TruSeq3 defaults | Fixed string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | No | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra flags passed to STAR. |
 | `bamCoverage` | No | `--binSize 50 --normalizeUsing None` | Extra flags for deeptools bamCoverage. |
+
+!!! warning "`reference_level` is required"
+    The schema does not enforce `deseq2.reference_level` yet, so a config without it
+    passes validation. The run then stops when the DESeq2 and SalmonTE jobs are set up,
+    with `Parameter 'deseq2.reference_level' could not be resolved for comparison '<name>'. Please define it in your config under 'defaults' or within the 'comparisons' entry.`
+    Set it for every comparison, or once under `defaults.deseq2`.
 
 ### The `genome` section
 

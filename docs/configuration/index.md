@@ -31,10 +31,13 @@ comparisons:
   - name: my_experiment
     protocol: pe
     sample_sheet: samples.csv
+    deseq2:
+      reference_level: WT
 ```
 
 This processes a paired-end dataset using mm10 references downloaded automatically,
-with all defaults applied.
+with all other defaults applied. `deseq2.reference_level` has no default and must be set
+(see [DESeq2 settings](#deseq2-settings)).
 
 ---
 
@@ -153,7 +156,12 @@ A per-comparison value always takes precedence over the global default.
 | :--- | :--- | :--- |
 | `deseq2.test` | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | `genotype` | Sample-sheet column used to define contrast groups. Must match an existing column name. |
-| `deseq2.reference_level` | *(none)* | The baseline level of `variable` (fold-change denominator). Strongly recommended — without it DESeq2 picks an arbitrary reference. |
+| `deseq2.reference_level` | *(none)*, **required** | The baseline level of `variable` (fold-change denominator). Must be set per comparison or in `defaults.deseq2`. |
+
+!!! warning "`reference_level` is required"
+    The schema does not enforce `deseq2.reference_level` yet, so a config without it
+    passes validation. The run then stops when the DESeq2 and SalmonTE jobs are set up,
+    with `Parameter 'deseq2.reference_level' could not be resolved for comparison '<name>'. Please define it in your config under 'defaults' or within the 'comparisons' entry.`
 
 ### Alignment overrides
 
@@ -185,7 +193,7 @@ defaults:
 | `strandedness` | `0` | Applied to all comparisons that don't set their own `strandedness`. |
 | `deseq2.test` | `Wald` | Default test type. |
 | `deseq2.variable` | `genotype` | Default contrast variable. |
-| `deseq2.reference_level` | *(none)* | Default reference level. |
+| `deseq2.reference_level` | *(none)* | Default reference level. Required here unless every comparison sets its own. |
 
 ---
 

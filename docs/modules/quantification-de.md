@@ -42,11 +42,19 @@ DESeq2 results are visualized through:
 
 ## Parameters & Defaults
 
+Each value is taken from the comparison (`comparisons[].deseq2`), then from
+`defaults.deseq2`, then from the schema default. The same settings apply to the gene, TE
+and tRNA DESeq2 runs and to SalmonTE.
+
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
 | `deseq2.test` | `Wald` | Statistical test (`Wald` or `LRT`). |
 | `deseq2.variable` | `genotype` | The column in the sample sheet to use for analysis. |
-| `deseq2.reference_level` | - | The baseline level of the `variable` (e.g., `WT`). |
+| `deseq2.reference_level` | none, **required** | The baseline level of the `variable` (e.g., `WT`). |
+
+`reference_level` has no default and the schema does not enforce it yet: a config without
+it passes validation, and the run stops when the DESeq2 jobs are set up with
+`Parameter 'deseq2.reference_level' could not be resolved for comparison '<name>'. Please define it in your config under 'defaults' or within the 'comparisons' entry.`
 
 ---
 
