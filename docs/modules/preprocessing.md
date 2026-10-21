@@ -7,17 +7,21 @@ The preprocessing module ensures that sequencing data is of high quality and fre
 ```mermaid
 graph LR
     A[Raw FASTQ] --> B[FastQC Raw]
-    B --> C[Adaptive Trimming]
+    A --> C["Trimmomatic (optionally adaptive)"]
+    B -.->|adaptive: true| C
     C --> D[FastQC Trimmed]
-    D --> E[Processed FASTQ]
+    C --> E[Trimmed FASTQ]
 ```
 
 ## Quality Control (FastQC)
 
 The pipeline automatically executes [FastQC](https://www.bioinformatics.babraham.ac.uk/projects/fastqc/) on every raw fastq file.
 
-- Results are stored in `qc/fastqc-raw/`.
-- Key metrics (Sequence Quality, Adapter Content) are used to drive the downstream trimming process.
+- Results are stored in `results/qc/fastqc-raw/<comparison>/`.
+- The reports go to MultiQC. Only with `trimmomatic.adaptive: true` are their metrics
+  (adapter content, per-base quality, read length) also used to
+  [derive the trimming steps](../algorithms/adaptive-trimming.md); otherwise they are
+  QC only.
 
 ## Trimming (Trimmomatic)
 
@@ -25,7 +29,9 @@ The pipeline automatically executes [FastQC](https://www.bioinformatics.babraham
 
 `trimmomatic` is set per comparison and takes one of three forms. If it is omitted, the
 built-in default runs: `ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36`
-(`TruSeq3-SE.fa` for single-end libraries).
+(`TruSeq3-SE.fa` for single-end libraries). The plain string `trimmomatic: default` is
+the same as omitting the key, and `trimmomatic: adaptive` is short for
+`{adaptive: true}`.
 
 | Form | Example | Steps passed to Trimmomatic |
 | :--- | :--- | :--- |
@@ -72,7 +78,9 @@ comparisons:
 
 | Location | Description |
 | :--- | :--- |
-| `results/trim/` | Contains the trimmed FASTQ files. |
-| `results/qc/fastqc-raw/` | FastQC reports for the raw input data. |
-| `results/qc/fastqc-trimmed/` | FastQC reports for the data after trimming. |
-| `results/trim/_shared/` | Deduplicated shared trimmed files (internal). |
+| `results/trim/<comparison>/` | Trimmed reads: `<sample>.fastq.gz` (se) or `<sample>_1.fastq.gz`, `<sample>_2.fastq.gz` and `<sample>_{1,2}.unpaired.fastq.gz` (pe), plus `<sample>.summary.txt` and `<sample>.stats.txt`. These are symlinks into `_shared/`. |
+| `results/trim/_shared/<trim_hash>/` | The actual files, shared by identical samples across comparisons, and `<sample>.adaptive_params.json` in adaptive mode (see [Deduplication](../algorithms/deduplication.md)). |
+| `results/qc/fastqc-raw/<comparison>/` | FastQC of the raw reads: `<sample>_raw_fastqc.{html,zip}` (se) or `<sample>_raw_1_fastqc.*`, `<sample>_raw_2_fastqc.*` (pe). |
+| `results/qc/fastqc-trimmed/<comparison>/` | FastQC of the trimmed reads: `<sample>_trimmed_fastqc.*` (se) or `<sample>_trimmed_1_fastqc.*`, `<sample>_trimmed_2_fastqc.*` (pe). |
+
+`results/` stands for `globals.results_folder`.
