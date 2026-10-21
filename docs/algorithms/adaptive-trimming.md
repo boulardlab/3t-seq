@@ -48,11 +48,11 @@ comparisons:
 ```
 
 !!! note "Precedence"
-    User-provided modules in `extra_params` always take precedence over derived ones. For example, if you provide `MINLEN:50`, the adaptive `MINLEN` calculation will be skipped for that sample.
+    A step in `extra_params` replaces derived steps of the same type. For example, if you provide `MINLEN:50`, the adaptive `MINLEN` calculation is skipped for that sample. `ILLUMINACLIP` always runs first and `MINLEN` last; if you set `CROP:N` but no `MINLEN`, the derived `MINLEN` is lowered to N. See [how `extra_params` is merged](../modules/preprocessing.md#how-extra_params-is-merged).
 
 ## When to Use It
 
-Adaptive trimming is enabled by default. It is particularly recommended for:
+Adaptive trimming is off by default; enable it with `adaptive: true`. It is particularly recommended for:
 
 - Samples with variable quality across batches.
 - Pilot studies where adapter content or quality decay is unknown.
