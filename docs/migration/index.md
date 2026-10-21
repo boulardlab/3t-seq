@@ -54,12 +54,18 @@ themselves). See [Advanced Profiles](../tutorial/profiles.md) for complete examp
 
 ## 2. Config file: old → new keys
 
+Every key that was removed (all `globals.*` folders, `genome.fasta_url`, `fasta_link`,
+`gtf_url`, `gaf_url`, `rmsk_path`, `gtrnadb_url`, `gtrnadb_bed`, and the top-level
+`deseq2` block) is a hard error, not a warning. All of them are reported together in one
+`Invalid config file:` error at start-up, each with a hint on what replaces it; see
+[§5](#5-check-the-migrated-config) for an example.
+
 ### Top level
 
 | 1.x | 2.0 | Notes |
 | :--- | :--- | :--- |
-| `sequencing_libraries` | `comparisons` | The old key is still accepted and renamed at start-up with a `CONFIG DEPRECATION` warning. It will be removed in a future release. |
-| `deseq2` (top level) | `defaults.deseq2` | A top-level `deseq2` block is **silently ignored** in 2.0. Move it. |
+| `sequencing_libraries` | `comparisons` | The old key is still accepted and renamed at start-up with a `CONFIG DEPRECATION` warning. It will be removed in a future release. A config with both `sequencing_libraries` and `comparisons` is rejected. |
+| `deseq2` (top level) | `defaults.deseq2` | A top-level `deseq2` block is **rejected** at start-up. Move it to `defaults.deseq2` or into `comparisons[].deseq2`. |
 | `deseq2.working_directory` | — | Removed. |
 | — | `defaults` | New. Global fallbacks for `strandedness`, `starTE_random`, `starTE_multihit`, `deseq2`. |
 | — | `disable_salmonTE_analysis` | New. Skip SalmonTE while keeping STAR-TE. |
@@ -68,7 +74,8 @@ themselves). See [Advanced Profiles](../tutorial/profiles.md) for complete examp
 
 ### `globals`
 
-All derived folders were removed. The schema rejects any key other than `results_folder`.
+All derived folders were removed. The schema rejects any key other than `results_folder`
+(including `data_folder`, `container_folder` and `tmp_folder`).
 
 | 1.x | 2.0 |
 | :--- | :--- |
@@ -107,9 +114,10 @@ All derived folders were removed. The schema rejects any key other than `results
 | `label` (free text, e.g. `hg38`) | `label` | Required. Without local files it must be `mm10` or `mm39` (references fetched with Refgenie). With `fasta_path` + `gtf_path` any label of 1–64 letters, digits, `.`, `_`, `-` is accepted. |
 | `fasta_url` | `fasta_path` | Local file only. Optional; overrides the Refgenie FASTA. |
 | `gtf_url` | `gtf_path` | Local file only. Optional; overrides the Refgenie GTF. |
-| `annotation_type` (incl. `other`) | `annotation_type` | One of `ensembl` (default), `gencode`, `mgi`. Required together with `fasta_path` / `gtf_path`. |
-| `gtrnadb_url` | — | Removed. Derived from `label`. |
-| `rmsk_path` | — | Removed. RepeatMasker annotation is fetched automatically. |
+| `annotation_type` (incl. `other`) | `annotation_type` | One of `ensembl` (default), `gencode`, `mgi`; `other` is no longer accepted, pick the closest format. Required together with `fasta_path` / `gtf_path`. |
+| `gtrnadb_url`, `gtrnadb_bed` | — | Removed (error if present). GtRNAdb is fetched automatically for `mm10`/`mm39`. |
+| `rmsk_path` | — | Removed (error if present). RepeatMasker annotation is fetched automatically for `mm10`/`mm39`. |
+| `fasta_link`, `gaf_url` | — | Removed (error if present). |
 | — | `selected_chromosomes` | New. Restrict the analysis to a list of chromosomes (pilot runs). |
 
 `fasta_path`, `gtf_path` and `annotation_type` must be given together, and `label` is
