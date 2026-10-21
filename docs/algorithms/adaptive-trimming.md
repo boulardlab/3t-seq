@@ -16,7 +16,8 @@ The pipeline first runs a "raw" FastQC pass on the input FASTQ files. The result
 
 - **Adapter Content**: Detection of Illumina Universal, Nextera, or Small RNA adapters.
 - **Per-base Quality**: Specifically targeting the \(10^{th}\) percentile (\(p_{10}\)) quality score. In simpler terms, the pipeline looks at the "worst 10%" of your sequence data to gauge how poor the quality gets, which helps it decide how aggressive the trimming needs to be.
-- **Read Length**: The maximum observed read length in the library.
+- **Read Length**: The maximum read length, from the `Sequence length` line of FastQC's
+  Basic Statistics (50 if it cannot be read).
 
 ### 2. Parameter Derivation
 
@@ -24,14 +25,17 @@ Using the extracted statistics, the pipeline dynamically assembles a Trimmomatic
 
 | Feature | Logic | Default / Derived |
 | :--- | :--- | :--- |
-| **Adapter Clipping** | Detects the most prevalent adapter type to ensure all synthetic sequences are removed. | `TruSeq3` or `NexteraPE` |
-| **Quality Trimming** | Uses standard window trimming by default, but switches to a more aggressive, information-preserving method (`MAXINFO`) if the worst 10% of data has a quality score below 15. | Switches to `MAXINFO:40:0.5` if average \(p_{10} < 15\). |
+| **Adapter Clipping** | Takes the adapter with the highest Adapter Content peak across all mates. If it is Nextera and above 0.1 %, uses Nextera adapters; in every other case (Illumina Universal, Small RNA, or no adapter above 0.1 %) uses TruSeq3. | `ILLUMINACLIP:<file>:2:30:10` with `TruSeq3-PE.fa` / `TruSeq3-SE.fa`, or `NexteraPE-PE.fa` (also for single-end) |
+| **Quality Trimming** | Averages the \(p_{10}\) of every base position over all mates (20 if FastQC has no quality data). Uses window trimming, or the information-preserving `MAXINFO` when the average is below 15. | `SLIDINGWINDOW:4:20` (the non-adaptive default is `4:15`); `MAXINFO:40:0.5` if average \(p_{10} < 15\). |
 | **Minimum Length** | Calculates a safe cutoff for downstream alignment. | \(\max(36, 0.35 \times \text{max_length})\) |
 | **Base Trimming** | Ensures low-quality ends are removed. | `LEADING:3` and `TRAILING:3` |
 
 ### 3. Execution
 
-The derived parameters are saved as a JSON metadata file and passed to Trimmomatic. This ensure that each sample in your experiment receives the optimal level of processing.
+The derived parameters are saved per sample to
+`<results_folder>/trim/_shared/<trim_hash>/<sample>.adaptive_params.json` and passed to
+Trimmomatic. This ensures that each sample in your experiment receives its own level of
+processing.
 
 ---
 
@@ -52,7 +56,8 @@ comparisons:
 
 ## When to Use It
 
-Adaptive trimming is off by default; enable it with `adaptive: true`. It is particularly recommended for:
+Adaptive trimming is off by default; enable it with `trimmomatic: {adaptive: true}`, or
+the shorthand `trimmomatic: adaptive`. It is particularly recommended for:
 
 - Samples with variable quality across batches.
 - Pilot studies where adapter content or quality decay is unknown.
