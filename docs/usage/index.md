@@ -2,18 +2,28 @@
 
 ## Pixi tasks
 
-Pixi wraps the most common Snakemake invocations as named tasks so you don't have to
-remember the flags. Every task accepts two positional arguments:
-`<config-name>` (the config file stem under `.tests/integration/configs/`) and
-`<profile-name>` (a profile folder name).
+Pixi wraps the Snakemake invocations used on the bundled integration test as named
+tasks, so you don't have to remember the flags. They all run on `.tests/integration/`;
+for your own data call Snakemake directly (see below).
+
+`lint`, `dry-run`, `test` and `test-report` take two optional positional arguments:
+
+- `<config>`: a config stem under `.tests/integration/configs/`: `remote-references`,
+  `local-references` or `adaptive-trim`.
+- `<profile>`: a test profile under `.tests/integration/profiles/`: `laptop`, `hpc` or
+  `ci` (see [Test profiles](../tutorial/profiles.md#4-test-profiles)).
+
+Defaults: `remote-references laptop` for `lint` and `dry-run`, `local-references laptop`
+for `test` and `test-report`. Extra Snakemake options go after `--`, e.g.
+`pixi run -e dev test local-references laptop -- --cores 4`.
 
 | Task | Command | What it does |
 | :--- | :--- | :--- |
-| **setup** | `pixi run -e dev setup` | Installs git-lfs and pulls LFS-tracked test data |
+| **setup** | `pixi run -e dev setup` | Runs `git lfs install && git lfs pull` (git-lfs comes with the `dev` environment) to fetch the test data |
 | **lint** | `pixi run lint <config> <profile>` | Runs `snakemake --lint` (code-quality checks on the workflow) with a test config |
 | **dry-run** | `pixi run dry-run <config> <profile>` | Shows jobs that would run without executing them |
-| **test** | `pixi run -e dev test <config> <profile>` | Runs the pipeline on the integration test data |
-| **test-report** | `pixi run -e dev test-report <config> <profile>` | Generates a Snakemake HTML report after a test run |
+| **test** | `pixi run -e dev test <config> <profile>` | Runs `setup`, then the pipeline on the integration test data |
+| **test-report** | `pixi run -e dev test-report <config> <profile>` | Runs `test` (a no-op if results are up to date), then writes the Snakemake report to `.tests/integration/report.zip` |
 
 ### Examples
 
@@ -96,7 +106,9 @@ cannot be configured. `<comparison>` is the `name` of an entry under `comparison
 ├── analysis/
 │   ├── tables/deseq2/<comparison>/       gene DESeq2 results (results.csv, results.shrink.csv)
 │   ├── rdata/deseq2/<comparison>/        DESeq2 object (dds.rds)
-│   └── datavzrd/<comparison>/            interactive gene results report
+│   ├── rdata/deseq2/ann.rds              gene annotation used by DESeq2 (from the GTF)
+│   ├── datavzrd/<comparison>/            interactive gene results report
+│   └── pictures/ notebooks/              created at start-up, currently left empty
 ├── references/
 │   ├── <label>/                          processed FASTA and GTF
 │   ├── STAR/                             STAR index
@@ -118,15 +130,17 @@ explained in [Deduplication](../algorithms/deduplication.md).
 
 ```bash
 pixi run snakemake \
-    --report report.html \
+    --report report.zip \
     --profile profile/slurm \
     --configfile config/my_config.yaml
 ```
 
+Unzip `report.zip` and open `report.html`; see
+[Running & Reporting](../tutorial/running.md#2-detailed-reporting) for what it contains.
 Use the **same profile and configfile** as the run that produced the results, otherwise
 Snakemake cannot match outputs to rules for the provenance data.
 
-The integration test shortcut:
+The integration test shortcut, which writes `.tests/integration/report.zip`:
 
 ```bash
 pixi run -e dev test-report local-references laptop
@@ -186,8 +200,10 @@ To fix them:
 
 ### STAR runs out of memory
 
-STAR needs ~32 GB of RAM to load the mm10 genome index. On a laptop the `laptop` profile
-limits memory, which may cause STAR to fail on large inputs.
+The STAR rules request 32 GB for the genome index plus 4 GB per GB of compressed FASTQ
+input (at least 5 GB), so at least 37 GB per alignment job. On a cluster these values are
+passed to Slurm. Locally they are only enforced if you pass `--resources mem_mb=...`;
+otherwise STAR fails when the machine runs out of memory.
 
 - For full genomes, run on a cluster with a Slurm profile based on `profile/slurm-example`.
 - For local testing, use `selected_chromosomes: [chr19]` in the `genome` section to
@@ -195,8 +211,8 @@ limits memory, which may cause STAR to fail on large inputs.
 
 ### Pipeline appears stuck
 
-Check the log files — every rule writes to `results/log/<date>/`. On a cluster you can
-also inspect the Slurm queue:
+Check the log files: every rule writes to `<results_folder>/log/<YYYY-MM-DD>/`, dated by
+the day the run started. On a cluster you can also inspect the Slurm queue:
 
 ```bash
 squeue -u $USER
