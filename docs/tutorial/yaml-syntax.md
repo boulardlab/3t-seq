@@ -31,7 +31,8 @@ parent:
 The most basic element of a YAML file is a key followed by a colon, a space, and a value.
 
 ```yaml
-label: "mm10"
+# Generic YAML, not 3t-seq config keys
+name: "my_sample"
 threads: 8
 enable_feature: true
 ```
@@ -43,11 +44,15 @@ enable_feature: true
 Lists are used when an order matters or when you have multiple values for a single key (like a list of libraries). They start with a dash `-` followed by a space.
 
 ```yaml
-selected_chromosomes:
-  - chr1
-  - chr2
-  - chrX
+genome:
+  selected_chromosomes:
+    - chr1
+    - chr2
+    - chrX
 ```
+
+In 3t-seq, `selected_chromosomes` lives under `genome`; the indentation puts the list
+inside it.
 
 ---
 
@@ -59,6 +64,8 @@ Dictionaries are sets of key-value pairs nested under a parent key.
 genome:
   label: "mm10"
   fasta_path: "refs/genome.fa"
+  gtf_path: "refs/genes.gtf"
+  annotation_type: "ensembl"
 ```
 
 ---
