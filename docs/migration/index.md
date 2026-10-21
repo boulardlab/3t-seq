@@ -222,8 +222,10 @@ name,filename_1,filename_2,genotype
 SRX5795112_SRR9016958,reads/GSE130735/SRX5795112_SRR9016958_1,reads/GSE130735/SRX5795112_SRR9016958_2,WT
 ```
 
-In 2.0 every read file listed in every sample sheet is checked before any job starts;
-missing files are reported together in a single `Validation failed` error.
+In 2.0 every sample sheet and every read file it lists is checked before any job starts.
+Missing sample sheets, missing columns (for the comparison's `protocol`) and read files
+that cannot be found are reported together in a single `Sample sheet validation failed:`
+error; see [Troubleshooting](../usage/index.md#sample-sheet-files-not-found).
 
 Every other column is free-form metadata. The column named in `deseq2.variable`
 (default `genotype`) defines the contrast. See
@@ -251,6 +253,15 @@ Validate the config and look at the job plan before launching a full run:
 pixi run snakemake --configfile config/my_config.yaml --profile profile/default -n
 ```
 
-A schema error mentioning `Additional properties are not allowed` under `globals`
-means a 1.x folder key is still present; see
-[Troubleshooting](../usage/index.md#troubleshooting).
+Every 1.x key that was removed is reported in one `Invalid config file:` error, with a
+hint per key, for example:
+
+```text
+Invalid config file:
+  deseq2: The top-level 'deseq2' block was moved: set test/variable/reference_level under 'defaults.deseq2' (or per comparison under 'comparisons[].deseq2'). 'working_directory' and 'notebook_path' were removed.
+  genome.gtrnadb_url: Custom GtRNAdb annotations are no longer supported; they are downloaded automatically for mm10 or mm39.
+  globals.qc_folder: Output folders are now derived from 'globals.results_folder'; remove this key.
+See the 2.0 migration guide: docs/migration/ (https://github.com/boulardlab/3t-seq/tree/main/docs/migration)
+```
+
+See [Troubleshooting](../usage/index.md#troubleshooting) for other errors.
