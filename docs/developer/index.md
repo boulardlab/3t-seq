@@ -28,7 +28,7 @@ Use this table to find the checks for your change.
 | A rule or a script in `workflow/` | Run `pixi run -e dev format`, then `pixi run -e dev format-check`, `pixi run -e dev lint` and the dry runs. |
 | A Python helper in `workflow/scripts/` | Add or update its test in `.tests/unit/`. Run `pixi run -e dev unit-test`. See [Unit tests](local-checks.md#unit-tests). |
 | The list of supported genomes | Read [Supported genomes](#supported-genomes). |
-| A conda env in `workflow/envs/` | Run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` together. See [Containers](containers.md). |
+| A conda env in `workflow/env/` | Run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` together. See [Containers](containers.md). |
 | The SalmonTE image in `assets/docker/salmonTE/` | Read [SalmonTE image](containers.md#salmonte-image). The new image ships with the next release. |
 | The config schema | Read [Config schema](#config-schema). |
 | A file in `docs/` or `mkdocs.yml` | Run `pixi run -e docs docs-build`. |
@@ -87,7 +87,7 @@ This guide uses these terms with one meaning only.
 | Job | One job in a workflow, for example `dockerfile-sync`. A job reports one check on a PR. |
 | Gate | A job that must pass before a PR can merge into `main`. |
 | Ruleset | The GitHub rules for a branch. The ruleset for `main` is `main: release gate`. |
-| Conda env | A YAML file in `workflow/envs/` that a rule uses. |
+| Conda env | A YAML file in `workflow/env/` that a rule uses. |
 | Env hash | The hash of all conda envs. Snakemake writes it into the `Dockerfile` as the label `io.github.snakemake.conda_env_hash`. |
 | Image | A container image in `ghcr.io/boulardlab/`. |
 | Tag | An image tag (`:env-<hash>`, `:2.0.0`) or a git tag (`v2.0.0`). The text always says which. |

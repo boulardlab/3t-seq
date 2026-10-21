@@ -48,7 +48,7 @@ Extra Snakemake arguments go after `--`, e.g. `pixi run -e dev test local-refere
     - `Snakefile`: Main entry point.
     - `rules/`: Modular Snakemake rules.
     - `scripts/`: R and Python scripts called by rules.
-    - `envs/`: Conda environment definitions for specific rules.
+    - `env/`: Conda environment definitions for specific rules.
 - `config/`: Default configuration files and schema definitions.
 - `.tests/`: Integration and unit tests.
     - `integration/`: Small dataset for end-to-end testing.
@@ -72,7 +72,7 @@ Extra Snakemake arguments go after `--`, e.g. `pixi run -e dev test local-refere
     - **Efficiency:** Prioritize time/space complexity for data processing pipelines.
 - **R:**
     - **Style:** Follow standard R style conventions for vectorization and function definitions.
-    - **Dependencies:** Explicitly define R dependencies in `envs/` or relevant Snakefile sections.
+    - **Dependencies:** Explicitly define R dependencies in `env/` or relevant Snakefile sections.
 - **Bash:**
     - **Quoting:** Always quote file paths and arguments containing spaces.
     - **Scripting:** Scripts must be idempotent where possible. Use clear, descriptive variable names.
@@ -100,7 +100,7 @@ Extra Snakemake arguments go after `--`, e.g. `pixi run -e dev test local-refere
 #### Containerization & CI
 The full reference (branch/PR model, each workflow and its failure modes, image tags, the `main` ruleset, release procedure, troubleshooting) is the Developer Guide in `docs/developer/`; start at `docs/developer/index.md`. Keep this section a summary and update the guide when CI or container behaviour changes.
 
-- **Multi-arch Support:** `build-3t-seq.yml` and `build-salmonte.yml` build `linux/amd64` and `linux/arm64`. Every dependency in `workflow/envs/*.yaml` must be solvable for both, or the image build fails. CI runs the pipeline (`e2e`) on `linux/amd64` only.
+- **Multi-arch Support:** `build-3t-seq.yml` and `build-salmonte.yml` build `linux/amd64` and `linux/arm64`. Every dependency in `workflow/env/*.yml` must be solvable for both, or the image build fails. CI runs the pipeline (`e2e`) on `linux/amd64` only.
 - **SHA Tagging:** Images pushed to GHCR should be tagged with the commit SHA in addition to the branch/tag name.
 - **Tests in CI:** `test.yml` job `smoke` (lint, unit tests and conda-only dry-run of all three configs, ~30 s) is a required check on `main`. Job `e2e` (full `local-references` run with the `ci` profile, 90 min limit, Apptainer from `ppa:apptainer/ppa`) runs on release-please PRs, nightly and via `gh workflow run test.yml --ref <branch>`; it writes a per-rule timing table to the job summary. Required checks on `main`: `check`, `dockerfile-sync`, `smoke`.
 - **Pinned Images:** Every `ghcr.io/boulardlab/*` image under `workflow/` must use an immutable tag (never `:latest` or untagged) that exists in GHCR. The `container-check.yml` gate enforces this on PRs to `main`/`dev` and on pushes to `main`.

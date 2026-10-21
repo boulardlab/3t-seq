@@ -107,7 +107,7 @@ For fork PRs, read [Fork PRs](branches.md#fork-prs).
 Dockerfile or its pin is stale. Run `pixi run containerize` and commit both files.
 ```
 
-**Cause.** A conda env in `workflow/envs/` changed. The committed `Dockerfile` or the pin in `workflow/Snakefile` is old.
+**Cause.** A conda env in `workflow/env/` changed. The committed `Dockerfile` or the pin in `workflow/Snakefile` is old.
 Another cause is a manual edit of one of these files.
 
 **Action.**

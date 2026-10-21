@@ -91,12 +91,14 @@ The release PR changes these files:
 - `.release-please-manifest.json`: the new version.
 - `pixi.toml`: the `version` line.
 - `workflow/rules/salmonTE.smk`: the SalmonTE pins, `salmonte:X.Y.Z`.
+- `version.txt`: the new version. The `simple` release type writes this file. The first release PR creates it.
 
 The release PR starts these workflows:
 
 - `build-salmonte.yml` builds `ghcr.io/boulardlab/3t-seq/salmonte:X.Y.Z`.
 - `container-check.yml` waits for that image.
-- `test.yml` runs `smoke`, then `images` and `e2e`. `e2e` runs the full pipeline with the new SalmonTE pin.
+- `test.yml` runs `smoke` and `images` in parallel. `e2e` starts after `images` passes.
+  `e2e` runs the full pipeline with the new SalmonTE pin.
 
 Then do these steps:
 
@@ -109,6 +111,7 @@ Then do these steps:
 
 1. Ask a maintainer who is not the token owner to approve the release PR.
    Alternatively, an admin can bypass the rule.
+   Ask for approval only after the last edit. A push to the release PR removes the approvals.
 2. Squash-merge the release PR.
 3. Wait for `release-please.yml` on `main`. It creates the git tag `vX.Y.Z` and the GitHub release.
 4. Copy the release notes into the GitHub release body if they are missing.

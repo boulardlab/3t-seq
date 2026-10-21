@@ -54,7 +54,8 @@ A fork PR has two limits:
 
 - **Approval to run CI.** The repository setting is "Require approval for first-time contributors".
   A maintainer must approve the workflow runs of a first-time contributor.
-- **No images.** `build-3t-seq.yml` and `build-salmonte.yml` skip fork PRs.
+- **No images.** `build-3t-seq.yml` skips fork PRs.
+  `build-salmonte.yml` builds only for release PRs from this repository.
   A fork cannot push images to `ghcr.io/boulardlab`.
 
 When a fork PR changes a conda env, the image for the new env hash does not exist.

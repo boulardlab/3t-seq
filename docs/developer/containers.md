@@ -23,18 +23,20 @@ The `check` job in `container-check.yml` enforces this rule.
 
 Snakemake finds each conda env inside the image by its content hash.
 When you change a conda env, its hash changes.
-If the pinned image does not contain the new env, Snakemake stops with this error:
+If the pinned image does not contain the new env, Snakemake stops with an error similar to this one:
 
 ```text
 Unable to find environment in container image
 ```
+
+The text of the error can be different in other Snakemake versions.
 
 The `env-<hash>` tag changes when any conda env changes.
 Thus, each commit pins an image that contains exactly its conda envs.
 
 ### Procedure: change a conda env
 
-1. Edit the file in `workflow/envs/`.
+1. Edit the file in `workflow/env/`.
 2. Run `pixi run containerize`.
 3. Make sure that `git diff` shows changes in `Dockerfile` and `workflow/Snakefile`.
 4. Commit the env file, `Dockerfile` and `workflow/Snakefile` in the same commit.
@@ -70,9 +72,9 @@ To test a new SalmonTE image earlier, do these steps:
 
 | Event | 3t-seq image | SalmonTE image |
 | :--- | :--- | :--- |
-| PR to `dev` or `main` that changes `Dockerfile` (branch in this repo) | Builds `env-<hash>` if it does not exist | No |
+| PR to `dev` or `main` that changes `Dockerfile` or the workflow file (branch in this repo) | Builds `env-<hash>` if it does not exist. Otherwise, retags the existing image. | No |
 | Release PR to `main` | Only if `Dockerfile` changed | Builds `:X.Y.Z` |
-| Push to `dev` or `main` | Builds or retags, only when `Dockerfile` changes | Builds, only when `assets/docker/salmonTE/Dockerfile` changes |
+| Push to `dev` or `main` | Builds or retags, only when `Dockerfile` or the workflow file changes | Builds, only when `assets/docker/salmonTE/Dockerfile` or the workflow file changes |
 | Push of git tag `vX.Y.Z` | Adds tag `:X.Y.Z` to `env-<hash>` | Builds `:X.Y.Z` only if it is missing |
 | Manual run (`workflow_dispatch`) | Builds or retags for the selected ref | Builds the selected ref, or `:<version>` |
 | Fork PR | No | No |
@@ -87,7 +89,7 @@ It points the other tags at the existing image.
 | `env-<hash>` | 3t-seq | The first build of that env hash | No. CI never overwrites it. |
 | `X.Y.Z` | 3t-seq | Push of git tag `vX.Y.Z` | No. CI skips it when it exists. |
 | `X.Y.Z` | SalmonTE | Release PR or manual run | Yes, until git tag `vX.Y.Z` exists. Then no. |
-| `<branch>`, `<branch>-<short-sha>` | Both | Push or manual run on a branch | Yes. It follows the branch. |
+| `<branch>`, `<branch>-<short-sha>` | Both | Push or manual run on a branch. PR builds do not set these tags. | Yes. It follows the branch. |
 | `sha-<sha>` | Both | Each build or retag | No in practice. One commit gives one tag. |
 | `latest` | Both | Push or manual run on `main` | Yes. |
 

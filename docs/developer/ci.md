@@ -180,8 +180,10 @@ Run `pixi run containerize`. Commit `Dockerfile` and `workflow/Snakefile` togeth
 
 On a PR, `check-containers.sh` waits for the build workflows of the PR head commit.
 It checks the images every 60 seconds, for a maximum of 210 minutes.
-It stops earlier when a build fails, or when no build runs after 3 minutes.
-On a push to `main`, it checks one time and does not wait.
+It checks the build status only after 3 minutes.
+After that time, it stops when a build fails or when no build runs.
+It waits only on a PR. This includes the call from `test.yml` job `images` for a release PR.
+On a push to `main`, a manual run or the nightly run, it checks one time and does not wait.
 
 **Failures:**
 
