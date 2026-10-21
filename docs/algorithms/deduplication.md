@@ -1,6 +1,6 @@
 # Sequence Alignment and Trimming Deduplication
 
-To optimize performance and reduce storage usage, the 3t-seq pipeline implements a deduplication mechanism for expensive processing steps, specifically read trimming and sequence alignment.
+To optimize performance and reduce storage usage, the 3t-seq pipeline implements a deduplication mechanism for expensive processing steps: read trimming, STAR alignment, STAR-TE alignment and Picard MarkDuplicates.
 
 ## Overview
 
@@ -8,14 +8,21 @@ The pipeline uses **content-based hashing** to uniquely identify every processin
 
 ## The Hashing Mechanism
 
-The pipeline computes a hierarchy of these **SHA256 barcodes/hashes** for every sample in the `SAMPLE_HASHES` registry before the workflow starts.
+The pipeline computes a hierarchy of these hashes for every sample in the `SAMPLE_HASHES`
+registry before the workflow starts. Each hash is the SHA256 of the inputs below
+serialized as JSON with sorted keys, truncated to the first 16 hex characters
+(`calculate_content_hash` in `workflow/rules/common.smk`).
 
 ### 1. Trimming Hash
 
 This is the root of the dependency tree. It is derived from:
 
-- **Input Files**: Absolute paths to the raw FASTQ files.
-- **Processing Parameters**: The specific **Trimmomatic** settings (e.g., adaptive vs. fixed string).
+- **Input Files**: The paths of the raw FASTQ files as resolved from the sample sheet
+  (relative paths made absolute against the working directory, extension added if it
+  was omitted).
+- **Processing Parameters**: The comparison's `trimmomatic` value as written in the
+  config: `default` when omitted, the plain string, or the object (`trimmomatic: adaptive`
+  counts as `{adaptive: true}`).
 - **Protocol**: Whether the library is **Single-End** or **Paired-End**.
 
 ### 2. Alignment Hash
@@ -28,35 +35,50 @@ The alignment hash ensures that any upstream changes propagate correctly. It dep
 
 ### 3. Analysis Hashes
 
-Higher-level analysis hashes (like `starTE` or `MarkDup`) are derived from the upstream **Alignment Hash** and module-specific settings:
+Two more hashes cover the STAR-TE alignments and duplicate marking:
 
-- **starTE**: Alignment Hash + Strandedness + starTE-specific parameters.
-- **MarkDup**: Alignment Hash + Picard settings.
+- **starTE**: the **Trimming Hash**, the genome configuration (label, FASTA, GTF), the
+  resolved `strandedness`, `starTE_random` and `starTE_multihit` settings, and a fixed
+  version tag. It does not depend on the Alignment Hash, so changing `star` does not
+  re-run STAR-TE.
+- **MarkDup**: the **Alignment Hash** plus a fixed tag (`picard_v1_fixed`); Picard has no
+  configurable settings.
 
 ## Shared Result Cache (`_shared/`)
 
 Results for hashed tasks are stored in a centralized directory structure:
 
 ```text
-results/
-├── trim/
-│   └── _shared/
-│       └── <trim_hash>/
-│           └── <sample>.fastq.gz
+<results_folder>/
+├── trim/_shared/<trim_hash>/
+│   ├── <sample>.fastq.gz                       (se)
+│   ├── <sample>_1.fastq.gz, <sample>_2.fastq.gz (pe)
+│   ├── <sample>_1.unpaired.fastq.gz, <sample>_2.unpaired.fastq.gz (pe)
+│   ├── <sample>.summary.txt, <sample>.stats.txt
+│   └── <sample>.adaptive_params.json           (adaptive trimming only)
 └── alignments/
-    └── star/
-        └── _shared/
-            └── <align_hash>/
-                └── <sample>.Aligned.sortedByCoord.out.bam
+    ├── star/_shared/<align_hash>/
+    │   └── <sample>.Aligned.sortedByCoord.out.bam, ReadsPerGene.out.tab, ...
+    ├── star_markdup/_shared/<markdup_hash>/
+    │   └── <sample>.markdup.bam, <sample>.markdup.stats.txt
+    └── starTE/_shared/<starte_hash>/{random,multihit}/
+        └── <sample>.Aligned.out.bam, <sample>.Log.final.out
 ```
 
 ### Preservation of Per-Series Structure
 
-Instead of recalculating results, the pipeline checks if the corresponding barcode exists in the `_shared/` folder. If found, it creates a **symbolic link** from your library's folder to the shared file.
+Each comparison folder holds **symbolic links** into `_shared/`. The `symlink_*` rules
+always create them with `ln -sfr`; there is no explicit lookup. What avoids recomputation
+is Snakemake itself: the `*_shared` rule that writes `_shared/<hash>/...` only runs when
+that file is missing or out of date, so a second comparison with the same hash just gets
+new links.
 
 Think of a symbolic link as a shortcut on your desktop, or a "see page 42" reference in a lab notebook. It looks and acts like the actual file, but takes up zero extra hard-drive space.
 
-`results/alignments/star/GSE123456/sample1.bam` -> `../_shared/<hash>/sample1.bam`
+```text
+<results_folder>/alignments/star/<comparison>/<sample>.Aligned.sortedByCoord.out.bam
+    -> ../_shared/<align_hash>/<sample>.Aligned.sortedByCoord.out.bam
+```
 
 ## Benefits
 
