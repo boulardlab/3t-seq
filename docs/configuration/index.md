@@ -2,13 +2,19 @@
 
 This page is an exhaustive reference for every parameter in `config.yaml`.
 The pipeline validates your config against a JSON Schema
-before any jobs run — so typos and missing required fields are caught early.
+(`workflow/schemas/config.schema.yaml`) every time the workflow starts, before any job
+runs, so typos and missing required fields are caught early. All problems are reported
+together in one `Invalid config file:` error. The sample sheets and the FASTQ files they
+list are checked right after.
 
-Run the validator manually at any time with:
+To check a config without running anything, do a dry-run with it:
 
 ```bash
-pixi run lint local-references laptop
+pixi run snakemake --profile profile/default --configfile my_config.yaml -n
 ```
+
+`pixi run lint` is a different check: it runs `snakemake --lint` on the workflow code with
+one of the bundled test configs and does not look at your config.
 
 ---
 

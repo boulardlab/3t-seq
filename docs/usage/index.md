@@ -10,7 +10,7 @@ remember the flags. Every task accepts two positional arguments:
 | Task | Command | What it does |
 | :--- | :--- | :--- |
 | **setup** | `pixi run -e dev setup` | Installs git-lfs and pulls LFS-tracked test data |
-| **lint** | `pixi run lint <config> <profile>` | Validates config YAML against the schema |
+| **lint** | `pixi run lint <config> <profile>` | Runs `snakemake --lint` (code-quality checks on the workflow) with a test config |
 | **dry-run** | `pixi run dry-run <config> <profile>` | Shows jobs that would run without executing them |
 | **test** | `pixi run -e dev test <config> <profile>` | Runs the pipeline on the integration test data |
 | **test-report** | `pixi run -e dev test-report <config> <profile>` | Generates a Snakemake HTML report after a test run |
@@ -18,7 +18,7 @@ remember the flags. Every task accepts two positional arguments:
 ### Examples
 
 ```bash
-# Validate your config before committing to a long run
+# Lint the workflow code (developers)
 pixi run lint local-references laptop
 
 # See the job plan without running anything
@@ -142,8 +142,9 @@ pixi run -e dev test-report local-references laptop
 WorkflowError: Config file is not valid
 ```
 
-Run `pixi run lint <config> <profile>` to get a human-readable list of what's wrong.
-Common causes:
+Re-check after editing with a dry-run
+(`pixi run snakemake --profile profile/default --configfile config/my_config.yaml -n`);
+`pixi run lint` does not read your config. Common causes:
 
 - Missing required key (`globals.results_folder`, `genome.label`, or `comparisons`).
 - `fasta_path` provided without `gtf_path` (or vice versa).
