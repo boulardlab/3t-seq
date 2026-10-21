@@ -34,7 +34,7 @@ globals:
 # and fall back to pipeline defaults defined in the schema if omitted.
 comparisons:
   - name: GSE130735
-    protocol: pe              # required for paired-end data; omit for single-end
+    protocol: pe              # required: pe (paired-end) or se (single-end)
     sample_sheet: sample-sheet.csv
     # Optional comparison-level overrides:
     deseq2:

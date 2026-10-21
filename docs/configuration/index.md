@@ -117,7 +117,7 @@ comparisons:
 | Key | Required | Description |
 | :--- | :--- | :--- |
 | `name` | **Yes** | Label for this comparison. Used to name output subdirectories. |
-| `protocol` | For paired-end | Set `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`). Any other value, or omitting it, means single-end (`filename` column). |
+| `protocol` | **Yes** | `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`) or `se` for single-end data (`filename` column). No other value is accepted, and there is no default. |
 | `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). |
 
 ### DESeq2 settings

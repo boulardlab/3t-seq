@@ -6,8 +6,8 @@ in the order you are likely to hit them.
 
 !!! summary "TL;DR"
     1. Install [Pixi](https://pixi.sh) and run everything through `pixi run`.
-    2. Rename `sequencing_libraries` → `comparisons` and add `protocol: pe` to every
-       paired-end comparison.
+    2. Rename `sequencing_libraries` → `comparisons` and add `protocol: pe` or
+       `protocol: se` to every comparison.
     3. Delete everything under `globals` except `results_folder`.
     4. Move the top-level `deseq2` block to `defaults.deseq2` (or into each comparison).
     5. Replace `genome.fasta_url` / `gtf_url` / `gtrnadb_url` with `genome.label` (`mm10`
@@ -84,7 +84,7 @@ All derived folders were removed. The schema rejects any key other than `results
 | :--- | :--- | :--- |
 | `name` | `name` | Required. |
 | `sample_sheet` | `sample_sheet` | Required. Relative paths resolve against the Snakemake working directory. |
-| — | `protocol` | **Set `protocol: pe` for paired-end data.** 1.x detected paired-end from a `filename_2` column; 2.0 reads it from the config, and any comparison without `protocol: pe` is processed as single-end. |
+| — | `protocol` | **Required: `pe` or `se`.** 1.x detected paired-end from a `filename_2` column; 2.0 reads it from the config, and a comparison without `protocol` fails validation. |
 | `trimmomatic` (required) | `trimmomatic` (optional) | String, or `{adaptive: true, extra_params: "..."}` for [adaptive trimming](../algorithms/adaptive-trimming.md). Default: `ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:2:30:10 LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36` (`TruSeq3-SE.fa` for single-end). |
 | `star` (required) | `star` (optional) | Default: `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40`. |
 | `bamCoverage` (required) | `bamCoverage` (optional) | Default: `--binSize 50 --normalizeUsing None`. |
@@ -190,7 +190,7 @@ The column names are the same as in 1.x; what changed is what the values mean.
 | Read files | `filename_1` / `filename_2` (paired) or `filename` (single): bare file stems, extensions forbidden | same columns, but each value is a **path** to the FASTQ file |
 | Where reads live | `<reads_folder>/<library name>/<stem>.fastq.gz` | absolute path, or relative to the Snakemake working directory (`--directory`, default: current directory) |
 | Extension | must be omitted | optional; `.fastq.gz`, `.fq.gz`, `.fastq`, `.fq` are tried automatically |
-| Paired vs single | detected from the presence of `filename_2` | set by `protocol: pe` in the config |
+| Paired vs single | detected from the presence of `filename_2` | set by `protocol: pe` or `protocol: se` in the config (required) |
 
 To convert a 1.x sheet, prefix every stem with the old `<reads_folder>/<library name>/`:
 

@@ -115,7 +115,7 @@ set of alignment parameters, and one DESeq2 contrast.
 | Key | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
 | `name` | Yes | — | Label for this comparison. Used to name output subdirectories. |
-| `protocol` | For paired-end | single-end | Set `pe` for paired-end data (`filename_1`/`filename_2`). Any other value, or omitting it, means single-end (`filename`). |
+| `protocol` | Yes | — | `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`) or `se` for single-end data (`filename` column). No other value is accepted. |
 | `sample_sheet` | Yes | — | Path to the CSV file. |
 | `deseq2.test` | No | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
