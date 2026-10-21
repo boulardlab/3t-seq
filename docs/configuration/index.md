@@ -145,7 +145,24 @@ comparisons:
 | :--- | :--- | :--- |
 | `name` | **Yes** | Label for this comparison. Used to name output subdirectories. |
 | `protocol` | **Yes** | `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`) or `se` for single-end data (`filename` column). No other value is accepted, and there is no default. |
-| `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). |
+| `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). See [Sample sheet](#sample-sheet) below. |
+
+### Sample sheet
+
+A CSV file with one row per sample. Required columns depend on `protocol`:
+
+| `protocol` | Required columns |
+| :--- | :--- |
+| `pe` | `name`, `filename_1`, `filename_2` |
+| `se` | `name`, `filename` |
+
+Every other column is metadata; the one named in `deseq2.variable` defines the contrast.
+Read paths are absolute or relative to the Snakemake working directory (`--directory`,
+default: where you launch Snakemake), not to the sample sheet. The extension is optional:
+the pipeline tries the value as given, then with `.fastq.gz`, `.fq.gz`, `.fastq` and
+`.fq` appended. All sample sheets and read files are checked at start-up; see
+[Troubleshooting](../usage/index.md#sample-sheet-files-not-found) and
+[Preparing Your Own Data](../tutorial/setup.md#1-the-sample-sheet).
 
 ### DESeq2 settings
 
@@ -194,16 +211,22 @@ defaults:
 | `deseq2.test` | `Wald` | Default test type. |
 | `deseq2.variable` | `genotype` | Default contrast variable. |
 | `deseq2.reference_level` | *(none)* | Default reference level. Required here unless every comparison sets its own. |
+| `starTE_random`, `starTE_multihit` | see [Expert parameters](#expert-parameters) | STAR-TE multi-mapping settings. |
+
+Only these keys can be set under `defaults`. `trimmomatic`, `star` and `bamCoverage` are
+per comparison only; the schema rejects them under `defaults`.
 
 ---
 
 ## Module flags
 
-Disable optional analysis modules to save computation time.
+Disable optional analysis modules to save computation time. The three flags are
+independent: to skip all TE analysis, set both `disable_TE_analysis` and
+`disable_salmonTE_analysis`.
 
 ```yaml
-disable_TE_analysis: false        # set true to skip STAR-TE and SalmonTE
-disable_salmonTE_analysis: false  # set true to skip SalmonTE only
+disable_TE_analysis: false        # set true to skip STAR-TE (alignment, featureCounts, DESeq2)
+disable_salmonTE_analysis: false  # set true to skip SalmonTE
 disable_tRNA_analysis: false      # set true to skip tRNA quantification
 ```
 
@@ -222,6 +245,15 @@ first two letters of `genome.label`:
 With any other label, SalmonTE and its outputs are skipped and the pipeline logs one
 warning at start-up (`SalmonTE DISABLED: ...`); the rest of the pipeline runs normally.
 Set `disable_salmonTE_analysis: true` to skip SalmonTE without the warning.
+
+---
+
+## Keys from 3t-seq 1.x
+
+`sequencing_libraries` is still accepted as the old name of `comparisons`, with a
+`CONFIG DEPRECATION` warning; a config with both keys is rejected. Keys removed in 2.0
+(the `globals.*_folder` keys, `genome.fasta_url` and the other remote-reference keys,
+the top-level `deseq2` block) are errors. See [Migrating from 1.x](../migration/index.md).
 
 ---
 
@@ -250,11 +282,23 @@ documentation for context.
 
     ```yaml
     tRNA_quantification:
-      method: standard          # or "mim-tRNA-seq"
-      mimseq_params:
-        max_mismatches: 2       # default
-        cluster_identity: 0.8   # default
-        min_cov: 10             # default
+      method: standard          # default; or "mim-tRNA-seq"
+      mimseq_params:            # used only with mim-tRNA-seq
+        max_mismatches: 2
+        cluster_identity: 0.8
+        min_cov: 10
     ```
 
     Use `mim-tRNA-seq` only if your libraries were prepared with the mim-tRNA-seq protocol.
+
+    !!! warning "`mimseq_params` defaults"
+        The values the run uses depend on whether `mimseq_params` is present:
+
+        | Config | `max_mismatches` | `cluster_identity` | `min_cov` |
+        | :--- | :--- | :--- | :--- |
+        | `mimseq_params` omitted | `0.1` | `0.95` | `10` |
+        | `mimseq_params: {}` (or some keys set) | `2` | `0.8` | `10` |
+
+        With the block present, the schema defaults fill in missing keys; without it the
+        rule's own fallbacks apply. Set the three values explicitly to be sure which ones
+        are used.
