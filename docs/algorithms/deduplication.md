@@ -24,6 +24,11 @@ This is the root of the dependency tree. It is derived from:
   config: `default` when omitted, the plain string, or the object (`trimmomatic: adaptive`
   counts as `{adaptive: true}`).
 - **Protocol**: Whether the library is **Single-End** or **Paired-End**.
+- **Adaptive pool** (adaptive trimming only): the sorted raw read paths of every sample
+  in the comparison. [Adaptive trimming](adaptive-trimming.md) derives one parameter set
+  from all of them, so a sample shared by two adaptive comparisons with different sample
+  sets is trimmed once per comparison, each time with that comparison's parameters.
+  Identical comparisons still share the result.
 
 ### 2. Alignment Hash
 
@@ -55,7 +60,7 @@ Results for hashed tasks are stored in a centralized directory structure:
 │   ├── <sample>_1.fastq.gz, <sample>_2.fastq.gz (pe)
 │   ├── <sample>_1.unpaired.fastq.gz, <sample>_2.unpaired.fastq.gz (pe)
 │   ├── <sample>.summary.txt, <sample>.stats.txt
-│   └── <sample>.adaptive_params.json           (adaptive trimming only)
+│   └── <sample>.adaptive_params.json           (adaptive trimming only; same content for every sample of the comparison)
 └── alignments/
     ├── star/_shared/<align_hash>/
     │   └── <sample>.Aligned.sortedByCoord.out.bam, ReadsPerGene.out.tab, ...
