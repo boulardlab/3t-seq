@@ -743,6 +743,18 @@ def populate_sample_registry():
         lib_starTE_random = get_resolved_param(w, "starTE_random", default={})
         lib_starTE_multihit = get_resolved_param(w, "starTE_multihit", default={})
 
+        # Adaptive parameters are derived from the FastQC of the whole comparison,
+        # so the pool of raw inputs is part of the trim hash: a sample shared by
+        # two adaptive comparisons with different sample sets is trimmed per pool.
+        adaptive_pool = None
+        if isinstance(trim_params, dict) and trim_params.get("adaptive"):
+            filename_cols = ["filename_1", "filename_2"] if is_paired else ["filename"]
+            adaptive_pool = sorted(
+                str(resolve_raw_read_path(serie, r.get(col)))
+                for _, r in df.iterrows()
+                for col in filename_cols
+            )
+
         for _, row in df.iterrows():
             sample_name = row["name"]
 
@@ -756,6 +768,8 @@ def populate_sample_registry():
                 inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
 
             trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
+            if adaptive_pool is not None:
+                trim_data["adaptive_pool"] = adaptive_pool
             trim_hash = calculate_content_hash(trim_data)
 
             # --- Alignment Hash (STAR) ---
