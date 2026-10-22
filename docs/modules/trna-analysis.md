@@ -63,15 +63,11 @@ Set `disable_tRNA_analysis: true` to skip the module.
 | Parameter | Default | Description |
 | :--- | :--- | :--- |
 | `tRNA_quantification.method` | `standard` | `standard` or `mim-tRNA-seq`. |
-| `tRNA_quantification.mimseq_params.max_mismatches` | see below | `mimseq --max-mismatches`. |
-| `tRNA_quantification.mimseq_params.cluster_identity` | see below | `mimseq --cluster-id`, applied when the index is built. |
+| `tRNA_quantification.mimseq_params.max_mismatches` | `0.1` | `mimseq --max-mismatches`: a fraction of read length (< 1) or a number of mismatches (>= 1). |
+| `tRNA_quantification.mimseq_params.cluster_identity` | `0.95` | `mimseq --cluster-id`, applied when the index is built. |
 | `tRNA_quantification.mimseq_params.min_cov` | `10` | `mimseq --min-cov`. |
 
-The `mimseq_params` defaults currently depend on whether the block is present: without
-it the run uses `max_mismatches: 0.1` and `cluster_identity: 0.95`; with it (even empty)
-missing keys get `2` and `0.8`. See the
-[configuration reference](../configuration/index.md#expert-parameters) and set the
-values explicitly.
+Keys left out of `mimseq_params`, or the whole block, take these defaults.
 
 ---
 
