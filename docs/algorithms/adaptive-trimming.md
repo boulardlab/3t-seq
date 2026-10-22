@@ -12,7 +12,9 @@ The adaptive trimming process consists of three main phases:
 
 ### 1. Quality Profiling
 
-The pipeline first runs a "raw" FastQC pass on the input FASTQ files. The results are parsed to extract:
+The pipeline first runs a "raw" FastQC pass on the input FASTQ files. The reports of
+**all samples of the comparison** (both mates for paired-end) are parsed together to
+extract:
 
 - **Adapter Content**: Detection of Illumina Universal, Nextera, or Small RNA adapters.
 - **Per-base Quality**: Specifically targeting the \(10^{th}\) percentile (\(p_{10}\)) quality score. In simpler terms, the pipeline looks at the "worst 10%" of your sequence data to gauge how poor the quality gets, which helps it decide how aggressive the trimming needs to be.
@@ -25,17 +27,20 @@ Using the extracted statistics, the pipeline dynamically assembles a Trimmomatic
 
 | Feature | Logic | Default / Derived |
 | :--- | :--- | :--- |
-| **Adapter Clipping** | Takes the adapter with the highest Adapter Content peak across all mates. If it is Nextera and above 0.1 %, uses Nextera adapters; in every other case (Illumina Universal, Small RNA, or no adapter above 0.1 %) uses TruSeq3. | `ILLUMINACLIP:<file>:2:30:10` with `TruSeq3-PE.fa` / `TruSeq3-SE.fa`, or `NexteraPE-PE.fa` (also for single-end) |
-| **Quality Trimming** | Averages the \(p_{10}\) of every base position over all mates (20 if FastQC has no quality data). Uses window trimming, or the information-preserving `MAXINFO` when the average is below 15. | `SLIDINGWINDOW:4:20` (the non-adaptive default is `4:15`); `MAXINFO:40:0.5` if average \(p_{10} < 15\). |
+| **Adapter Clipping** | Takes the adapter with the highest Adapter Content peak across all reports. If it is Nextera and above 0.1 %, uses Nextera adapters; in every other case (Illumina Universal, Small RNA, or no adapter above 0.1 %) uses TruSeq3. | `ILLUMINACLIP:<file>:2:30:10` with `TruSeq3-PE.fa` / `TruSeq3-SE.fa`, or `NexteraPE-PE.fa` (also for single-end) |
+| **Quality Trimming** | Averages the \(p_{10}\) of every base position over all reports (20 if FastQC has no quality data). Uses window trimming, or the information-preserving `MAXINFO` when the average is below 15. | `SLIDINGWINDOW:4:20` (the non-adaptive default is `4:15`); `MAXINFO:40:0.5` if average \(p_{10} < 15\). |
 | **Minimum Length** | Calculates a safe cutoff for downstream alignment. | \(\max(36, 0.35 \times \text{max_length})\) |
 | **Base Trimming** | Ensures low-quality ends are removed. | `LEADING:3` and `TRAILING:3` |
 
 ### 3. Execution
 
-The derived parameters are saved per sample to
-`<results_folder>/trim/_shared/<trim_hash>/<sample>.adaptive_params.json` and passed to
-Trimmomatic. This ensures that each sample in your experiment receives its own level of
-processing.
+Because the statistics are pooled, every sample of a comparison gets the same
+parameters. They are written to
+`<results_folder>/trim/_shared/<trim_hash>/<sample>.adaptive_params.json` for each sample
+and passed to Trimmomatic. To trim groups of samples differently, put them in separate
+comparisons. The trim hash includes the comparison's pool of inputs, so a sample shared
+with another adaptive comparison is trimmed separately there, with that comparison's
+parameters.
 
 ---
 
