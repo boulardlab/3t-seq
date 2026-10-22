@@ -17,19 +17,16 @@ Pixi, git-lfs, and the pipeline dependencies.
 ```bash
 git clone https://github.com/boulardlab/3t-seq.git
 cd 3t-seq
-pixi run -e dev setup   # pull LFS test data
-pixi install            # install all tools
+pixi run -e dev setup   # install the dev environment, pull LFS test data
 ```
 
 !!! tip "Using the `dev` branch"
-      When cloning the repository, the `main` branch is checked out by default.
-      Many of the feature described here are available only in the `dev` branch.
-
-      To switch to the `dev` branch, use:
+    When cloning the repository, the `main` branch is checked out by default.
+    Some features described here may only be available on the `dev` branch.
+    To clone it instead:
 
     ```bash
-    cd 3t-seq
-    git checkout origin/dev
+    git clone -b dev https://github.com/boulardlab/3t-seq.git
     ```
 
 ---
@@ -43,9 +40,14 @@ The integration test lives under `.tests/integration/`.
 ├── sample-sheet.csv          ← the 4-sample manifest
 ├── configs/
 │   ├── local-references.yaml ← config used for the test
-│   └── ...
+│   ├── remote-references.yaml
+│   ├── adaptive-trim.yaml
+│   └── *-default-params.yaml ← same, with tool parameters left at their defaults
 ├── profiles/
-│   └── laptop/               ← resource settings for local execution
+│   ├── laptop/               ← local execution: 2 cores, 1 job (default)
+│   ├── ci/                   ← GitHub Actions runner: 4 cores, 2 jobs
+│   └── hpc/
+├── references/               ← chr19 FASTA and GFF3 (via git-lfs)
 └── GSE130735-subset/         ← chr19-subset FASTQ files (via git-lfs)
 ```
 
@@ -101,7 +103,8 @@ genome:
 ```
 
 1. A label for this comparison — used to name output subdirectories.
-2. `pe` = paired-end; `se` = single-end. Must match the columns in your sample sheet.
+2. Required: `pe` = paired-end (columns `filename_1`/`filename_2`); `se` = single-end
+   (column `filename`). It is not inferred from the sample sheet.
 3. Path to the sample sheet, relative to the Snakemake working directory.
 4. Fixed Trimmomatic parameters. Omit this key to use the defaults, or set `adaptive: true`
    to let the pipeline derive parameters automatically from FastQC output.
@@ -110,7 +113,9 @@ genome:
 7. The level of `variable` used as the baseline (denominator) of the fold-change. Here WT
    is the reference, so positive LFC means higher in KO.
 8. Where all output files will be written.
-9. Genome label. The pipeline downloads references automatically for `mm10` and `mm39`.
+9. Genome label. Without `fasta_path`/`gtf_path` the pipeline downloads references for
+   `mm10` and `mm39`. Here the local files are an mm10 subset, so the label stays `mm10`
+   and the RepeatMasker and GtRNAdb annotations are still fetched for it.
 10. For the test we override with local chr19-only files so the run completes quickly.
 11. Restrict analysis to chr19 — drastically speeds up the integration test.
 
@@ -124,22 +129,26 @@ From the repository root:
 pixi run -e dev test local-references laptop
 ```
 
-This expands to:
+It first runs the `setup` task (git-lfs pull), then:
 
 ```bash
-pixi run snakemake \
-    --profile .tests/integration/profiles/laptop \
+snakemake \
+    --directory .tests/integration \
+    --conda-frontend conda \
+    --workflow-profile .tests/integration/profiles/laptop \
     --configfile .tests/integration/configs/local-references.yaml \
-    --directory .tests/integration
+    --snakefile workflow/Snakefile
 ```
 
-- `--profile` sets resource limits and executor (local, 4 cores by default).
+- `--directory` sets the working directory, so relative paths in the config and sample
+  sheet resolve against `.tests/integration/`.
+- `--workflow-profile` loads the `laptop` test profile: local execution, 2 cores, 1 job at
+  a time, Conda + Apptainer.
 - `--configfile` points to the config above.
-- `--directory` sets the working directory, so relative paths in the sample sheet resolve
-  correctly.
 
-Snakemake will print a job plan, then start executing. Expected runtime on a laptop: 10–20
-minutes.
+Snakemake will print a job plan, then start executing. On the GitHub Actions runner used
+by CI (4 cores, `ci` profile) the pipeline takes about 5 minutes with the container image
+already cached; the first run also downloads the container images.
 
 !!! tip "Dry run first"
     See exactly what will be executed without running anything:
@@ -160,6 +169,9 @@ results/
 ├── alignments/
 │   ├── star/GSE130735-subset/                          ← BAM files
 │   └── starTE/GSE130735-subset/DESeq2/                 ← TE differential expression
+├── salmonTE/
+│   ├── quant/GSE130735-subset/                         ← SalmonTE TE quantification
+│   └── de_analysis/GSE130735-subset/                   ← SalmonTE differential expression
 ├── analysis/
 │   ├── tables/deseq2/GSE130735-subset/                 ← gene DESeq2 results
 │   └── datavzrd/GSE130735-subset/                      ← interactive gene report
@@ -177,10 +189,11 @@ summary of read counts, mapping rates, and duplication metrics.
 ## 5. Generate a Snakemake Report
 
 ```bash
-pixi run test-report local-references laptop
+pixi run -e dev test-report local-references laptop
 ```
 
-This creates a `report.zip` in `.tests/integration/`. Unzip it and open `report.html` for
+This re-runs the `test` task first (nothing is redone if the results are up to date),
+then creates a `report.zip` in `.tests/integration/`. Unzip it and open `report.html` for
 an interactive provenance report that includes tool versions, rule parameters, and QC plots.
 
 ---

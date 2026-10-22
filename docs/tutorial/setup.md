@@ -119,26 +119,36 @@ set of alignment parameters, and one DESeq2 contrast.
 | `sample_sheet` | Yes | — | Path to the CSV file. |
 | `deseq2.test` | No | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | No | `genotype` | Sample-sheet column used to define groups. |
-| `deseq2.reference_level` | No | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. Strongly recommended. |
+| `deseq2.reference_level` | **Yes**, here or in `defaults.deseq2` | *(none)* | Baseline level of `variable`. Defines the denominator of the fold-change. |
 | `strandedness` | No | `0` | `0` unstranded, `1` forward-stranded, `2` reverse-stranded. |
 | `trimmomatic` | No | TruSeq3 defaults | Fixed string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | No | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra flags passed to STAR. |
 | `bamCoverage` | No | `--binSize 50 --normalizeUsing None` | Extra flags for deeptools bamCoverage. |
 
+!!! warning "`reference_level` is required"
+    Set it for every comparison, or once under `defaults.deseq2`. A comparison without it
+    is rejected at start-up:
+
+    ```text
+    Invalid config file:
+      comparisons '<name>': deseq2.reference_level is not set. Set it to the control level of deseq2.variable, under 'defaults.deseq2' or in the comparison's 'deseq2'.
+    ```
+
 ### The `genome` section
 
 | Key | Required | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `label` | Yes | — | `mm10` or `mm39`. Downloads references automatically via Refgenie. |
+| `label` | Yes | — | Genome name, used in reference file names. Without `fasta_path`/`gtf_path` it must be `mm10` or `mm39`, whose references are downloaded automatically. With custom files any label of 1–64 letters, digits, `.`, `_` or `-` is accepted (see below). |
 | `fasta_path` | No | Refgenie download | Absolute path to a local FASTA. Requires `gtf_path` and `annotation_type`. |
 | `gtf_path` | No | Refgenie download | Absolute path to a local GTF. Requires `fasta_path` and `annotation_type`. |
-| `annotation_type` | No | `ensembl` | `ensembl`, `gencode`, or `mgi`. Required when using custom FASTA/GTF. |
+| `annotation_type` | With custom files | `ensembl` | `ensembl`, `gencode`, or `mgi`. Must be set explicitly together with `fasta_path` and `gtf_path`; the default only applies to automatically fetched references. |
 | `selected_chromosomes` | No | all | Restrict to a subset of chromosomes (useful for pilot runs). |
 
 ### Using your own reference files
 
-Keep `label` and add explicit paths. `label` is still used to fetch the RepeatMasker and
-GtRNAdb annotations.
+Add explicit paths next to `label`. If your files are an mm10 or mm39 assembly, keep that
+label: the RepeatMasker and GtRNAdb annotations are still fetched automatically for it,
+so the TE and tRNA analyses run as usual.
 
 ```yaml
 genome:
@@ -151,6 +161,25 @@ genome:
 !!! warning
     `fasta_path`, `gtf_path` and `annotation_type` must be set together. The config
     validator raises an error if only some of them are present.
+
+For any other genome, choose your own label. RepeatMasker and GtRNAdb annotations are only
+fetched for mm10 and mm39, so the STAR-TE and tRNA analyses must be switched off, or the
+pipeline stops at start-up with an error naming both keys:
+
+```yaml
+genome:
+  label: hg38
+  fasta_path: /data/refs/GRCh38.primary_assembly.genome.fa.gz
+  gtf_path: /data/refs/gencode.v44.annotation.gtf.gz
+  annotation_type: gencode
+
+disable_TE_analysis: true
+disable_tRNA_analysis: true
+```
+
+SalmonTE picks its TE index from the first two letters of the label (`mm`, `hg`, `dr`,
+`dm`) and is skipped with a warning for any other prefix; see
+[SalmonTE supported genomes](../configuration/index.md#salmonte-supported-genomes).
 
 ---
 
@@ -178,7 +207,7 @@ Run it:
 
 ```bash
 pixi run snakemake \
-    --profile .tests/integration/profiles/laptop \
+    --profile profile/default \
     --configfile config/my_config.yaml
 ```
 

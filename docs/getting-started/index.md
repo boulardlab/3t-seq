@@ -88,9 +88,15 @@ On macOS, see [Apple Silicon & macOS notes](#apple-silicon-macos-notes).
 2. Pull the LFS assets and install all dependencies:
 
     ```bash
-    pixi run -e dev setup   # pulls git-lfs test data
-    pixi install            # installs all software
+    pixi run -e dev setup   # installs the dev environment, pulls git-lfs test data
+    pixi install            # installs the default environment (Snakemake and plugins)
     ```
+
+    `pixi install` only installs the `default` environment. The `dev` environment (needed by
+    `setup`, `test` and the other `-e dev` tasks) is installed the first time you use
+    `-e dev`, or explicitly with `pixi install -e dev`. The analysis tools themselves come
+    from per-rule Conda environments inside the 3t-seq container, which Snakemake pulls on
+    the first run.
 
 ---
 
@@ -104,7 +110,10 @@ pixi run -e dev test local-references laptop
 
 This processes a 4-sample chr19 subset of the [GSE130735](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE130735)
 mouse lung dataset (WT vs KO, paired-end) and checks that all pipeline stages complete
-successfully. Expected runtime: ~10–20 minutes on a laptop.
+successfully. On the GitHub Actions runner used by CI (4 cores, `ci` profile) the
+pipeline step takes about 5 minutes with the container image already cached; the first
+run on a new machine also downloads the 3t-seq and SalmonTE container images, which
+takes longer.
 
 !!! tip "Step-by-step walkthrough"
     The [Tutorial](../tutorial/quickstart.md) walks through this exact test run in detail —
@@ -143,6 +152,5 @@ successfully. Expected runtime: ~10–20 minutes on a laptop.
 
 - **Singularity / Apptainer**: does not run natively on macOS. Container-based execution
   requires a Linux VM (e.g., [Lima](https://github.com/lima-vm/lima) or
-  [Colima](https://github.com/abiosoft/colima)). Most containers are built for `linux/amd64`;
-  running them on Apple Silicon adds architecture emulation overhead and may cause instability
-  with Java-based tools.
+  [Colima](https://github.com/abiosoft/colima)). The 3t-seq and SalmonTE images are built
+  for both `linux/amd64` and `linux/arm64`, so an arm64 VM runs them without emulation.

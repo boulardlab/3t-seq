@@ -2,13 +2,19 @@
 
 This page is an exhaustive reference for every parameter in `config.yaml`.
 The pipeline validates your config against a JSON Schema
-before any jobs run — so typos and missing required fields are caught early.
+(`workflow/schemas/config.schema.yaml`) every time the workflow starts, before any job
+runs, so typos and missing required fields are caught early. All problems are reported
+together in one `Invalid config file:` error. The sample sheets and the FASTQ files they
+list are checked right after.
 
-Run the validator manually at any time with:
+To check a config without running anything, do a dry-run with it:
 
 ```bash
-pixi run lint local-references laptop
+pixi run snakemake --profile profile/default --configfile my_config.yaml -n
 ```
+
+`pixi run lint` is a different check: it runs `snakemake --lint` on the workflow code with
+one of the bundled test configs and does not look at your config.
 
 ---
 
@@ -25,10 +31,13 @@ comparisons:
   - name: my_experiment
     protocol: pe
     sample_sheet: samples.csv
+    deseq2:
+      reference_level: WT
 ```
 
 This processes a paired-end dataset using mm10 references downloaded automatically,
-with all defaults applied.
+with all other defaults applied. `deseq2.reference_level` has no default and must be set
+(see [DESeq2 settings](#deseq2-settings)).
 
 ---
 
@@ -53,7 +62,10 @@ Controls which reference genome is used.
       label: mm10
     ```
 
-    Supported labels: `mm10`, `mm39`.
+    Supported labels: `mm10`, `mm39`. Any other label without `fasta_path`/`gtf_path` is
+    rejected with `genome.label: '<label>' has no automatically fetched references
+    (supported: mm10, mm39). For any other genome set 'genome.fasta_path',
+    'genome.gtf_path' and 'genome.annotation_type'.`
 
     | Key | Required | Default | Description |
     | :--- | :--- | :--- | :--- |
@@ -63,9 +75,9 @@ Controls which reference genome is used.
 
 === "Custom local files"
 
-    Keep `label` and add explicit paths. `fasta_path`, `gtf_path` and `annotation_type`
-    are required together. The `label` is still used to fetch RepeatMasker and GtRNAdb
-    annotations.
+    Add explicit paths next to `label`. `fasta_path`, `gtf_path` and `annotation_type`
+    are required together. With custom files `label` can be any name of 1–64 letters,
+    digits, `.`, `_` or `-` (starting with a letter or digit); it is used in file names.
 
     ```yaml
     genome:
@@ -77,7 +89,7 @@ Controls which reference genome is used.
 
     | Key | Required | Default | Description |
     | :--- | :--- | :--- | :--- |
-    | `label` | **Yes** | — | `mm10` or `mm39`. |
+    | `label` | **Yes** | — | Any safe name; `mm10`/`mm39` if the files are one of those assemblies. |
     | `fasta_path` | **Yes** (with gtf) | — | Absolute path to genome FASTA. |
     | `gtf_path` | **Yes** (with fasta) | — | Absolute path to gene annotation GTF. |
     | `annotation_type` | **Yes** (with fasta) | — | `ensembl`, `gencode`, or `mgi`. |
@@ -86,6 +98,21 @@ Controls which reference genome is used.
     !!! warning
         The validator rejects a config that sets only some of `fasta_path`, `gtf_path`
         and `annotation_type`.
+
+    RepeatMasker and GtRNAdb annotations are only fetched for `mm10` and `mm39`. If your
+    files are one of those assemblies, use that label and every analysis runs. With any
+    other label you must set `disable_TE_analysis: true` and `disable_tRNA_analysis: true`,
+    otherwise the pipeline stops at start-up:
+
+    ```text
+    genome.label 'hg38' is not one of mm10, mm39, so these enabled analyses cannot run:
+      - STAR-TE analysis needs a RepeatMasker annotation, which is only fetched for mm10 or mm39. Set 'disable_TE_analysis: true'.
+      - tRNA analysis needs GtRNAdb annotations, which are only fetched for mm10 or mm39. Set 'disable_tRNA_analysis: true'.
+    If your custom references are an mm10/mm39 assembly, use that label instead.
+    ```
+
+    SalmonTE is not affected by this check: it depends on the label prefix and turns
+    itself off with a warning (see [SalmonTE supported genomes](#salmonte-supported-genomes)).
 
 ---
 
@@ -118,7 +145,24 @@ comparisons:
 | :--- | :--- | :--- |
 | `name` | **Yes** | Label for this comparison. Used to name output subdirectories. |
 | `protocol` | **Yes** | `pe` for paired-end data (sample sheet columns `filename_1`/`filename_2`) or `se` for single-end data (`filename` column). No other value is accepted, and there is no default. |
-| `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). |
+| `sample_sheet` | **Yes** | Path to the CSV file (relative to `--directory`, or absolute). See [Sample sheet](#sample-sheet) below. |
+
+### Sample sheet
+
+A CSV file with one row per sample. Required columns depend on `protocol`:
+
+| `protocol` | Required columns |
+| :--- | :--- |
+| `pe` | `name`, `filename_1`, `filename_2` |
+| `se` | `name`, `filename` |
+
+Every other column is metadata; the one named in `deseq2.variable` defines the contrast.
+Read paths are absolute or relative to the Snakemake working directory (`--directory`,
+default: where you launch Snakemake), not to the sample sheet. The extension is optional:
+the pipeline tries the value as given, then with `.fastq.gz`, `.fq.gz`, `.fastq` and
+`.fq` appended. All sample sheets and read files are checked at start-up; see
+[Troubleshooting](../usage/index.md#sample-sheet-files-not-found) and
+[Preparing Your Own Data](../tutorial/setup.md#1-the-sample-sheet).
 
 ### DESeq2 settings
 
@@ -129,16 +173,25 @@ A per-comparison value always takes precedence over the global default.
 | :--- | :--- | :--- |
 | `deseq2.test` | `Wald` | Statistical test: `Wald` or `LRT`. |
 | `deseq2.variable` | `genotype` | Sample-sheet column used to define contrast groups. Must match an existing column name. |
-| `deseq2.reference_level` | *(none)* | The baseline level of `variable` (fold-change denominator). Strongly recommended — without it DESeq2 picks an arbitrary reference. |
+| `deseq2.reference_level` | *(none)*, **required** | The baseline level of `variable` (fold-change denominator). Must be set per comparison or in `defaults.deseq2`. |
+
+!!! warning "`reference_level` is required"
+    A comparison whose `deseq2.reference_level` is set neither in its own `deseq2` nor in
+    `defaults.deseq2` is rejected at start-up:
+
+    ```text
+    Invalid config file:
+      comparisons '<name>': deseq2.reference_level is not set. Set it to the control level of deseq2.variable, under 'defaults.deseq2' or in the comparison's 'deseq2'.
+    ```
 
 ### Alignment overrides
 
 | Key | Default | Description |
 | :--- | :--- | :--- |
-| `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. |
+| `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. Currently only used by featureCounts for the STAR-TE counts; gene counts use STAR's unstranded column. |
 | `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra CLI flags passed to the STAR aligner. |
-| `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. |
+| `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. For `mm10`/`mm39` the effective genome size is added unless you set `--effectiveGenomeSize`; any other genome needs it for `--normalizeUsing RPGC` (see [Alignment](../modules/alignment.md#coverage-tracks-deeptools)). |
 
 ---
 
@@ -161,17 +214,23 @@ defaults:
 | `strandedness` | `0` | Applied to all comparisons that don't set their own `strandedness`. |
 | `deseq2.test` | `Wald` | Default test type. |
 | `deseq2.variable` | `genotype` | Default contrast variable. |
-| `deseq2.reference_level` | *(none)* | Default reference level. |
+| `deseq2.reference_level` | *(none)* | Default reference level. Required here unless every comparison sets its own. |
+| `starTE_random`, `starTE_multihit` | see [Expert parameters](#expert-parameters) | STAR-TE multi-mapping settings. |
+
+Only these keys can be set under `defaults`. `trimmomatic`, `star` and `bamCoverage` are
+per comparison only; the schema rejects them under `defaults`.
 
 ---
 
 ## Module flags
 
-Disable optional analysis modules to save computation time.
+Disable optional analysis modules to save computation time. The three flags are
+independent: to skip all TE analysis, set both `disable_TE_analysis` and
+`disable_salmonTE_analysis`.
 
 ```yaml
-disable_TE_analysis: false        # set true to skip STAR-TE and SalmonTE
-disable_salmonTE_analysis: false  # set true to skip SalmonTE only
+disable_TE_analysis: false        # set true to skip STAR-TE (alignment, featureCounts, DESeq2)
+disable_salmonTE_analysis: false  # set true to skip SalmonTE
 disable_tRNA_analysis: false      # set true to skip tRNA quantification
 ```
 
@@ -190,6 +249,15 @@ first two letters of `genome.label`:
 With any other label, SalmonTE and its outputs are skipped and the pipeline logs one
 warning at start-up (`SalmonTE DISABLED: ...`); the rest of the pipeline runs normally.
 Set `disable_salmonTE_analysis: true` to skip SalmonTE without the warning.
+
+---
+
+## Keys from 3t-seq 1.x
+
+`sequencing_libraries` is still accepted as the old name of `comparisons`, with a
+`CONFIG DEPRECATION` warning; a config with both keys is rejected. Keys removed in 2.0
+(the `globals.*_folder` keys, `genome.fasta_url` and the other remote-reference keys,
+the top-level `deseq2` block) are errors. See [Migrating from 1.x](../migration/index.md).
 
 ---
 
@@ -218,11 +286,12 @@ documentation for context.
 
     ```yaml
     tRNA_quantification:
-      method: standard          # or "mim-tRNA-seq"
-      mimseq_params:
-        max_mismatches: 2       # default
-        cluster_identity: 0.8   # default
+      method: standard          # default; or "mim-tRNA-seq"
+      mimseq_params:            # used only with mim-tRNA-seq
+        max_mismatches: 0.1     # default; < 1 is a fraction of read length
+        cluster_identity: 0.95  # default
         min_cov: 10             # default
     ```
 
     Use `mim-tRNA-seq` only if your libraries were prepared with the mim-tRNA-seq protocol.
+    Keys you leave out of `mimseq_params` (or the whole block) take the defaults above.

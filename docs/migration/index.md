@@ -10,8 +10,10 @@ in the order you are likely to hit them.
        `protocol: se` to every comparison.
     3. Delete everything under `globals` except `results_folder`.
     4. Move the top-level `deseq2` block to `defaults.deseq2` (or into each comparison).
-    5. Replace `genome.fasta_url` / `gtf_url` / `gtrnadb_url` with `genome.label` (`mm10`
-       or `mm39`), optionally plus local `fasta_path` / `gtf_path` / `annotation_type`.
+    5. Replace `genome.fasta_url` / `gtf_url` / `gtrnadb_url` with `genome.label: mm10` or
+       `mm39` (references fetched automatically), or with local `fasta_path` / `gtf_path` /
+       `annotation_type`. Any genome other than mm10/mm39 also needs
+       `disable_TE_analysis: true` and `disable_tRNA_analysis: true`.
     6. Turn the sample sheet `filename*` columns into real paths to your FASTQ files.
     7. Write results to a fresh `results_folder`; 1.x outputs are not reused.
 
@@ -52,12 +54,18 @@ themselves). See [Advanced Profiles](../tutorial/profiles.md) for complete examp
 
 ## 2. Config file: old → new keys
 
+Every key that was removed (all `globals.*` folders, `genome.fasta_url`, `fasta_link`,
+`gtf_url`, `gaf_url`, `rmsk_path`, `gtrnadb_url`, `gtrnadb_bed`, and the top-level
+`deseq2` block) is a hard error, not a warning. All of them are reported together in one
+`Invalid config file:` error at start-up, each with a hint on what replaces it; see
+[§5](#5-check-the-migrated-config) for an example.
+
 ### Top level
 
 | 1.x | 2.0 | Notes |
 | :--- | :--- | :--- |
-| `sequencing_libraries` | `comparisons` | The old key is still accepted and renamed at start-up with a `CONFIG DEPRECATION` warning. It will be removed in a future release. |
-| `deseq2` (top level) | `defaults.deseq2` | A top-level `deseq2` block is **silently ignored** in 2.0. Move it. |
+| `sequencing_libraries` | `comparisons` | The old key is still accepted and renamed at start-up with a `CONFIG DEPRECATION` warning. It will be removed in a future release. A config with both `sequencing_libraries` and `comparisons` is rejected. |
+| `deseq2` (top level) | `defaults.deseq2` | A top-level `deseq2` block is **rejected** at start-up. Move it to `defaults.deseq2` or into `comparisons[].deseq2`. |
 | `deseq2.working_directory` | — | Removed. |
 | — | `defaults` | New. Global fallbacks for `strandedness`, `starTE_random`, `starTE_multihit`, `deseq2`. |
 | — | `disable_salmonTE_analysis` | New. Skip SalmonTE while keeping STAR-TE. |
@@ -66,7 +74,8 @@ themselves). See [Advanced Profiles](../tutorial/profiles.md) for complete examp
 
 ### `globals`
 
-All derived folders were removed. The schema rejects any key other than `results_folder`.
+All derived folders were removed. The schema rejects any key other than `results_folder`
+(including `data_folder`, `container_folder` and `tmp_folder`).
 
 | 1.x | 2.0 |
 | :--- | :--- |
@@ -102,16 +111,33 @@ All derived folders were removed. The schema rejects any key other than `results
 
 | 1.x | 2.0 | Notes |
 | :--- | :--- | :--- |
-| `label` (free text, e.g. `hg38`) | `label` | Required. Must be `mm10` or `mm39`. References are fetched with Refgenie. |
+| `label` (free text, e.g. `hg38`) | `label` | Required. Without local files it must be `mm10` or `mm39` (references fetched with Refgenie). With `fasta_path` + `gtf_path` any label of 1–64 letters, digits, `.`, `_`, `-` is accepted. |
 | `fasta_url` | `fasta_path` | Local file only. Optional; overrides the Refgenie FASTA. |
 | `gtf_url` | `gtf_path` | Local file only. Optional; overrides the Refgenie GTF. |
-| `annotation_type` (incl. `other`) | `annotation_type` | One of `ensembl` (default), `gencode`, `mgi`. Required together with `fasta_path` / `gtf_path`. |
-| `gtrnadb_url` | — | Removed. Derived from `label`. |
-| `rmsk_path` | — | Removed. RepeatMasker annotation is fetched automatically. |
+| `annotation_type` (incl. `other`) | `annotation_type` | One of `ensembl` (default), `gencode`, `mgi`; `other` is no longer accepted, pick the closest format. Required together with `fasta_path` / `gtf_path`. |
+| `gtrnadb_url`, `gtrnadb_bed` | — | Removed (error if present). GtRNAdb is fetched automatically for `mm10`/`mm39`. |
+| `rmsk_path` | — | Removed (error if present). RepeatMasker annotation is fetched automatically for `mm10`/`mm39`. |
+| `fasta_link`, `gaf_url` | — | Removed (error if present). |
 | — | `selected_chromosomes` | New. Restrict the analysis to a list of chromosomes (pilot runs). |
 
 `fasta_path`, `gtf_path` and `annotation_type` must be given together, and `label` is
-still required when you use them.
+still required when you use them. RepeatMasker and GtRNAdb annotations are only fetched
+for mm10 and mm39, so a 1.x project on another genome (e.g. `hg38` with its own FASTA/GTF)
+must turn off STAR-TE and tRNA analysis, or the pipeline stops at start-up:
+
+```yaml
+genome:
+  label: hg38
+  fasta_path: /data/refs/hg38.fa.gz
+  gtf_path: /data/refs/hg38.gtf.gz
+  annotation_type: gencode
+
+disable_TE_analysis: true
+disable_tRNA_analysis: true
+```
+
+SalmonTE still runs for `hg*` labels (human TE index); see
+[SalmonTE supported genomes](../configuration/index.md#salmonte-supported-genomes).
 
 ### Before / after
 
@@ -204,8 +230,10 @@ name,filename_1,filename_2,genotype
 SRX5795112_SRR9016958,reads/GSE130735/SRX5795112_SRR9016958_1,reads/GSE130735/SRX5795112_SRR9016958_2,WT
 ```
 
-In 2.0 every read file listed in every sample sheet is checked before any job starts;
-missing files are reported together in a single `Validation failed` error.
+In 2.0 every sample sheet and every read file it lists is checked before any job starts.
+Missing sample sheets, missing columns (for the comparison's `protocol`) and read files
+that cannot be found are reported together in a single `Sample sheet validation failed:`
+error; see [Troubleshooting](../usage/index.md#sample-sheet-files-not-found).
 
 Every other column is free-form metadata. The column named in `deseq2.variable`
 (default `genotype`) defines the contrast. See
@@ -233,6 +261,15 @@ Validate the config and look at the job plan before launching a full run:
 pixi run snakemake --configfile config/my_config.yaml --profile profile/default -n
 ```
 
-A schema error mentioning `Additional properties are not allowed` under `globals`
-means a 1.x folder key is still present; see
-[Troubleshooting](../usage/index.md#troubleshooting).
+Every 1.x key that was removed is reported in one `Invalid config file:` error, with a
+hint per key, for example:
+
+```text
+Invalid config file:
+  deseq2: The top-level 'deseq2' block was moved: set test/variable/reference_level under 'defaults.deseq2' (or per comparison under 'comparisons[].deseq2'). 'working_directory' and 'notebook_path' were removed.
+  genome.gtrnadb_url: Custom GtRNAdb annotations are no longer supported; they are downloaded automatically for mm10 or mm39.
+  globals.qc_folder: Output folders are now derived from 'globals.results_folder'; remove this key.
+See the 2.0 migration guide: docs/migration/ (https://github.com/boulardlab/3t-seq/tree/main/docs/migration)
+```
+
+See [Troubleshooting](../usage/index.md#troubleshooting) for other errors.
