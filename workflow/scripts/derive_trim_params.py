@@ -11,10 +11,12 @@ def parse_fastqc_data(zip_path):
     """Extracts key modules from FastQC zip."""
     data = {}
     with zipfile.ZipFile(zip_path, 'r') as z:
-        # FastQC names the folder inside the zip the same as the zip filename without .zip
-        folder_name = Path(zip_path).stem
-        data_file = f"{folder_name}/fastqc_data.txt"
-        
+        # The folder inside the zip is named after the FASTQ, not the (renamed) zip
+        data_files = [n for n in z.namelist() if n.endswith("/fastqc_data.txt")]
+        if len(data_files) != 1:
+            raise ValueError(f"{zip_path}: expected one fastqc_data.txt, found {len(data_files)}")
+        data_file = data_files[0]
+
         with z.open(data_file) as f:
             content = f.read().decode('utf-8')
             
