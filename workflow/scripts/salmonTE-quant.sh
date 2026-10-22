@@ -13,21 +13,23 @@ fi
 T=$(mktemp -d -p $TMPDIR)
 
 
-I=""
-for F in ${snakemake_input}; do
-    BN=$(basename $F)
+# All input FASTQs: "${snakemake_input}" alone is only the first one, which made
+# SalmonTE quantify a single file as a single-end dataset.
+I=()
+for F in "${snakemake_input[@]}"; do
+    BN=$(basename "$F")
     if [[ $BN == *.gz ]]; then
-        O=$T/${BN%.gz}
+        O="$T/${BN%.gz}"
         O=${O/txt/fq}
-        gunzip -c $F > $O
-        I="$I $O"
+        gunzip -c "$F" > "$O"
+        I+=("$O")
     else
-        I="$I $F"
+        I+=("$F")
     fi
 done
 
 python /opt/SalmonTE/SalmonTE.py quant \
---reference=${snakemake_params[reference_genome]} \
---outpath=${snakemake_output[outfolder]} \
---num_threads=${snakemake[threads]} $I |& \
-tee ${snakemake_log}
+--reference="${snakemake_params[reference_genome]}" \
+--outpath="${snakemake_output[outfolder]}" \
+--num_threads="${snakemake[threads]}" "${I[@]}" |& \
+tee "${snakemake_log[0]}"
