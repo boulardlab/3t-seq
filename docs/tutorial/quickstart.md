@@ -121,7 +121,7 @@ genome:
 From the repository root:
 
 ```bash
-pixi run test local-references laptop
+pixi run -e dev test local-references laptop
 ```
 
 This expands to:
