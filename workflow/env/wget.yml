@@ -1,6 +1,7 @@
 channels:
   - conda-forge
   - anaconda
+  - bioconda
 dependencies:
   - wget=1.21.4
   - gzip

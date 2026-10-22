@@ -1,6 +1,5 @@
 **/.snakemake
 **/results
-**/references
 **/.cache
 **/.conda
 **/.java
@@ -24,3 +23,6 @@ profile/slurm-francesco/
 report.zip
 snakemake_run
 snakemake_test
+TODO
+**/report*
+site/

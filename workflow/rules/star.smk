@@ -1,29 +1,15 @@
-rule validate_genome_and_annotation:
-    input:
-        genome_fasta_file=fasta_path,
-        genome_annotation_file=gtf_path,
-    output:
-        touch(references_folder.joinpath("genome-and-annotation-validated.done")),
-    cache: True
-    conda:
-        "../env/bash.yml"
-    threads: 1
-    resources:
-        runtime=20,
-        mem_mb=1024,
-    log:
-        log_folder.joinpath("star/validata_genome_and_annotation.log"),
-    script:
-        "../scripts/validate_genome_and_annotation.sh"
+localrules:
+    symlink_star,
 
 
 rule star_genome_preparation:
     input:
-        references_folder.joinpath("genome-and-annotation-validated.done"),
         genome_fasta_file=fasta_path,
         genome_annotation_file=gtf_path,
     output:
         directory(references_folder.joinpath("STAR")),
+    log:
+        log_folder.joinpath("star/genome_preparation.log"),
     cache: True
     conda:
         "../env/alignment.yml"
@@ -31,19 +17,24 @@ rule star_genome_preparation:
     resources:
         runtime=120,
         mem_mb=256000,
-    log:
-        log_folder.joinpath("star/genome_preparation.log"),
     shell:
         """
         set -e 
-        
+
+        TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
+
+        # STAR manual: genomeSAindexNbases = min(14, log2(GenomeLength)/2 - 1).
+        # 14 for mammalian genomes; smaller for subsets such as a single chromosome.
+        SA_NBASES=$(awk '!/^>/ {{ n += length($0) }} END {{ v = int(log(n) / log(2) / 2 - 1); print (v > 14 ? 14 : v) }}' {input.genome_fasta_file})
+
         STAR --runMode genomeGenerate \
-        --outTmpDir $(mktemp -d -u) \
+        --outTmpDir $TMP_FOLDER \
         --runThreadN {threads} \
         --genomeDir {output} \
         --genomeFastaFiles {input.genome_fasta_file} \
         --sjdbGTFfile {input.genome_annotation_file} \
-        --sjdbOverhang 100         
+        --sjdbOverhang 100 \
+        --genomeSAindexNbases $SA_NBASES
         
         if [ -f {output}/Log.out ]; then
           cp {output}/Log.out {log}
@@ -53,43 +44,54 @@ rule star_genome_preparation:
         """
 
 
-rule star:
+rule star_shared:
+    """Deduplicated STAR alignment."""
     input:
-        references_folder.joinpath("genome-and-annotation-validated.done"),
-        fastq=get_star_input,
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash])
+        ),
         star_index_folder=references_folder.joinpath("STAR"),
         genome_annotation_file=gtf_path,
     output:
-        multiext(
-            str(star_folder.joinpath("{serie}", "{sample}")),
-            ".Aligned.sortedByCoord.out.bam",
-            ".Aligned.toTranscriptome.out.bam",
-            ".ReadsPerGene.out.tab",
-            ".SJ.out.tab",
-            ".Signal.Unique.str1.out.wig",
-            ".Signal.Unique.str2.out.wig",
-            ".Signal.UniqueMultiple.str1.out.wig",
-            ".Signal.UniqueMultiple.str2.out.wig",
+        protected(
+            multiext(
+                str(star_folder.joinpath("_shared", "{align_hash}", "{sample}")),
+                ".Aligned.sortedByCoord.out.bam",
+                ".Aligned.toTranscriptome.out.bam",
+                ".ReadsPerGene.out.tab",
+                ".SJ.out.tab",
+                ".Signal.Unique.str1.out.wig",
+                ".Signal.Unique.str2.out.wig",
+                ".Signal.UniqueMultiple.str1.out.wig",
+                ".Signal.UniqueMultiple.str2.out.wig",
+                ".Log.final.out",
+            )
         ),
-    threads: 8
-    resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
-    params:
-        alignments_folder=star_folder,
-        tmp_folder=tmp_folder,
-        others=lambda wildcards: get_params(wildcards, "star"),
-        mem_bytes=giga_to_byte(32),
-    # shadow:
-    #     "full"
+    log:
+        log_folder.joinpath("star/{align_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    log:
-        star_folder.joinpath("{serie}", "{sample}.Log.final.out"),
+    threads: 32
+    resources:
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
+    params:
+        out_prefix=lambda wildcards: str(
+            star_folder.joinpath("_shared", wildcards.align_hash, wildcards.sample)
+        )
+        + ".",
+        tmp_folder=tmp_folder,
+        params_others=lambda wildcards: get_params(
+            Struct(**HASH_TO_PARAMS["alignment"][wildcards.align_hash]),
+            "star",
+            default="--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40",
+        ),
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
 
          STAR --quantMode TranscriptomeSAM GeneCounts \
          --outTmpDir $TMP_FOLDER \
@@ -100,21 +102,100 @@ rule star:
          --twopassMode Basic \
          --genomeDir {input.star_index_folder} \
          --readFilesCommand zcat \
-         --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/{wildcards.sample}. \
+         --outFileNamePrefix {params.out_prefix} \
          --readFilesIn {input.fastq} \
-         --limitBAMsortRAM {params.mem_bytes} \
+         --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
          --genomeLoad NoSharedMemory \
          --outSAMunmapped Within \
          --outReadsUnmapped FastX \
          --outBAMsortingThreadN {threads} \
          --bamRemoveDuplicatesType UniqueIdentical \
          --quantTranscriptomeBAMcompression -1 \
-         --outBAMcompression -1 \
-         --outWigType wiggle \
-         {params.others}
+         --outBAMcompression -1 --outWigType wiggle \
+         {params.params_others}
 
          [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
+
+rule symlink_star:
+    """Links shared STAR results back to per-serie folders."""
+    input:
+        bam=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Aligned.sortedByCoord.out.bam",
+        ),
+        transcriptome_bam=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Aligned.toTranscriptome.out.bam",
+        ),
+        gene_counts=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".ReadsPerGene.out.tab",
+        ),
+        sj=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".SJ.out.tab",
+        ),
+        wig1=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.Unique.str1.out.wig",
+        ),
+        wig2=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.Unique.str2.out.wig",
+        ),
+        wig1_mult=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.UniqueMultiple.str1.out.wig",
+        ),
+        wig2_mult=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Signal.UniqueMultiple.str2.out.wig",
+        ),
+        log_final=lambda wildcards: get_shared_star_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "alignment"),
+            wildcards.sample,
+            ".Log.final.out",
+        ),
+    output:
+        bam=star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
+        transcriptome_bam=star_folder.joinpath(
+            "{serie}/{sample}.Aligned.toTranscriptome.out.bam"
+        ),
+        gene_counts=star_folder.joinpath("{serie}/{sample}.ReadsPerGene.out.tab"),
+        sj=star_folder.joinpath("{serie}/{sample}.SJ.out.tab"),
+        wig1=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str1.out.wig"),
+        wig2=star_folder.joinpath("{serie}/{sample}.Signal.Unique.str2.out.wig"),
+        wig1_mult=star_folder.joinpath(
+            "{serie}/{sample}.Signal.UniqueMultiple.str1.out.wig"
+        ),
+        wig2_mult=star_folder.joinpath(
+            "{serie}/{sample}.Signal.UniqueMultiple.str2.out.wig"
+        ),
+        log_final=star_folder.joinpath("{serie}/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/star/{serie}/{sample}.log"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.transcriptome_bam} {output.transcriptome_bam}
+        ln -sfr {input.gene_counts} {output.gene_counts}
+        ln -sfr {input.sj} {output.sj}
+        ln -sfr {input.wig1} {output.wig1}
+        ln -sfr {input.wig2} {output.wig2}
+        ln -sfr {input.wig1_mult} {output.wig1_mult}
+        ln -sfr {input.wig2_mult} {output.wig2_mult}
+        ln -sfr {input.log_final} {output.log_final}
+        """
 
 
 rule fastqc_star:
@@ -132,22 +213,22 @@ rule fastqc_star:
             subcategory="Aligned reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=fastqc_star_folder,
-    threads: 2
-    resources:
-        runtime=20,
-        mem_mb=4000,
-    conda:
-        "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc_star/{serie}/{sample}.log"),
+    conda:
+        "../env/qc.yml"
+    threads: 2
+    resources:
+        runtime=get_fastqc_runtime,
+        mem_mb=4000,
+    params:
+        fastqc_folder=fastqc_star_folder,
     shell:
         """
 
-        set -e 
+        set -e
 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input}
+        fastqc -t {threads} -noextract -o {params.fastqc_folder}/{wildcards.serie} {input} > {log} 2>&1
 
         """
 
@@ -157,47 +238,17 @@ rule index_bam:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam"),
     output:
         star_folder.joinpath("{serie}/{sample}.Aligned.sortedByCoord.out.bam.bai"),
-    threads: 4
-    resources:
-        runtime=30,
-        mem_mb=8000,
     log:
         log_folder.joinpath("index-bam/{serie}/{sample}.log"),
     conda:
         "../env/samtools.yml"
+    threads: 4
+    resources:
+        runtime=30,
+        mem_mb=8000,
     shell:
         """
 
         samtools index -@{threads} {input}
 
-        """
-
-
-rule multiqc_star:
-    input:
-        unpack(get_multiqc_star_inputs),
-    output:
-        report(
-            multiqc_star_folder.joinpath("{serie}", "multiqc_report.html"),
-            category="MultiQC",
-            subcategory="Alignment",
-            labels={"serie": "{serie}"},
-        ),
-    params:
-        fastqc_folder=fastqc_star_folder,
-        star_folder=star_folder,
-        multiqc_folder=multiqc_star_folder,
-    log:
-        log_folder.joinpath("multiqc-star", "multiqc-{serie}.log"),
-    threads: 1
-    resources:
-        runtime=10,
-        mem_mb=2048,
-    conda:
-        # paths to singularity images cannot be PosixPath
-        "../env/qc.yml"
-    shell:
-        """
-        set -e 
-        multiqc --fullnames --dirs --export -f -o {params.multiqc_folder}/{wildcards.serie} {params.fastqc_folder}/{wildcards.serie} {params.star_folder}/{wildcards.serie} |& tee {log}
         """

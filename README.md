@@ -4,114 +4,147 @@
 
 ## Overview
 
-This is a Snakemake workflow for the integrated analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
+This is a Snakemake workflow for the end-to-end analysis of single copy genes, transposable elements and tRNAs. It performs standard quality control checks and genome alignment in three different ways specialized either for single copy genes or transposable elements. It then quantifies gene expression depending on how the alignement step was performed. Finally it performs differential gene expression analysis yielding lists of genes significantly deregulated between two given conditions.
 
 <p align="center">
 <img src="docs/figures/3t-wf.png" width="500">
 </p>
 
+> [!IMPORTANT]
+> **Upgrading from 1.x?** Version 2.0 changes the config file, the sample sheet and how the pipeline is installed and run. Follow the [migration guide](docs/migration/index.md) before re-using a 1.x project.
+
+## Quickstart
+3t-seq uses [Pixi](https://pixi.sh) to manage its dependencies automatically.
+
+### 1. Prerequisites
+- **Install Pixi**: If you haven't already, install Pixi by following the instructions on [pixi.sh](https://pixi.sh).
+- **Clone the repository**:
+   ```bash
+   git clone https://github.com/boulardlab/3t-seq.git
+   cd 3t-seq
+   ```
+
+> [!TIP]
+> If you want the latest features or are contributing to the project, you can clone the `dev` branch directly:
+> ```bash
+> git clone -b dev https://github.com/boulardlab/3t-seq.git
+> ```
+
+
+### 2. Setup & Verification
+Before running the pipeline or tests, ensure that Git LFS (Large File Storage) data is pulled:
+```bash
+pixi run -e dev setup
+```
+This command will install Git LFS in the local environment and pull the necessary test data.
+
+### 3. Running the Pipeline
+To verify your installation immediately with a small integration test:
+```bash
+pixi run -e dev test
+```
+
 ## Requirements
 
-
-- [Conda](https://conda.io/)
-- [Snakemake](https://snakemake.readthedocs.io/en/stable/)
-- [Apptainer](https://apptainer.org/docs/user/latest/)
+- [Pixi](https://pixi.sh/) (Recommended for automated environment management)
+- [Apptainer](https://apptainer.org/docs/user/latest/) (For containerized tool execution)
 
 ## Usage
 
-### 1. Download the latest version of the pipeline
+### 1. Configure samples and parameters
 
-For example, to download version 1.0.0:
-
-```bash
-curl -LJO "https://github.com/boulardlab/3t-seq/archive/v1.0.0.zip"
-unzip "3t-seq-1.0.0.zip"
-```
-
-### 2. Create a conda environment
+Copy the commented template and fill it in, then write a sample sheet:
 
 ```bash
-conda create -n snakemake-latest -c bioconda -c conda-forge snakemake singularity
-conda activate snakemake-latest
+cp config/config.yaml config/my_config.yaml
 ```
 
-### 3. Configure samples and parameters
+The [`config/` folder](config/) contains a README with common patterns and a worked example in [`config/examples/`](config/examples/); the [Full Configuration Guide](docs/configuration/index.md) provides exhaustive details.
 
-Edit the `config.yaml` file to specify your sample information and analysis parameters. The [`config/` folder](config/) contains a detailed description of this file.
+### 2. Execute the pipeline
 
-### 4. Execute the pipeline
-
-In the `3et-seq` folder:
-
+Run the pipeline with the default local profile. The workflow has no built-in config file, so always pass `--configfile`:
 ```bash
-snakemake --profile profile/default
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml
 ```
 
-### 5. View results
+*Note: 3t-seq uses predefined environments (`default`, `dev`, `docs`). The `pixi run` command automatically handles all dependencies.*
 
-After the pipeline completes, you can find the results in the `results/` directory.
+### 3. Generate 3t-seq HTML report
 
-### 6. Generate 3t-seq HTML report
-
-After successful execution, an interactive HTML report collecting execution statistics, FastQC and MultiQC reports, DESeq2 results, MA plot and Volcano plots for single copy gene, retrotransposons and tRNAs can be generated as follow:
-
+After successful execution, generate an interactive HTML report:
 ```bash
-snakemake --profile profile/default --report report.zip
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml --report report.zip
 ```
-
-A `report.zip` archive will be generated in the current working directory. The archive will contain the HTML file. This file can be shared and does not need internet connection to be opened.
 
 ## Configuration
 
-Adjust parameters in the `config.yaml` file to match your experimental setup. See `config/README.md` for further instructions.
+Adjust parameters in your config file to match your experimental setup. See [`config/README.md`](config/README.md) for further instructions.
 
+### Automatic Resource Allocation
+
+3t-seq automatically calculates the necessary computing resources (threads, memory, and runtime) based on the size of your input FASTQ files and the known requirements of tools like STAR and featureCounts.
+
+- **Memory**: STAR is allocated base memory for the genome index (~32GB for mouse) plus dynamic memory for sorting proportional to input size.
+- **Runtime**: Scaled linearly with the size of the compressed input reads.
+- **Threads**: Optimized for different pipeline stages (8 threads for alignment, 4 for quantification).
+
+### Custom Genome References
+
+By default, references for `genome.label` (`mm10` or `mm39`) are downloaded automatically via Refgenie. To use your own FASTA and GTF files instead, keep the `label` and add `fasta_path`, `gtf_path` and `annotation_type` (all three are required together):
+
+```yaml
+genome:
+  label: mm10
+  fasta_path: /absolute/path/to/your/genome.fa
+  gtf_path: /absolute/path/to/your/annotation.gtf
+  annotation_type: ensembl # "ensembl", "gencode" or "mgi"
+```
+
+The pipeline will automatically apply necessary pre-processing to these files (like enforcing `chr` nomenclature and subsetting chromosomes) just like it does with Refgenie downloads. The `label` is still used to fetch the matching RepeatMasker and GtRNAdb annotations.
 
 ### Sample sheet preparation
 
 The sample sheet is a csv file that describe samples metadata:
 
-- The `sample` column reports a human readable name for each sample.
-- For pe libraries, `filename_1` and `filename_2` columns report file names for each of the two
-sequencing reads mates. For se libraries, `filename` is sufficient. **The pipeline will use these columns to determine if a given dataset was sequenced with pe or se method**.
-- The `genotype` column reports the variable of interest. The name of this column is flexible and can be anything as long as you specify what's this name in the config file (in the `deseq2` section).
+- The `name` column reports a human readable name for each sample.
+- For paired-end libraries, `filename_1` and `filename_2` hold the paths to the two read mates; for single-end libraries, `filename` holds the path to the reads. Paths are absolute or relative to the Snakemake working directory, and the `.fastq.gz` / `.fq.gz` extension is optional.
+- Whether a library is paired-end is set in the config, not in the sample sheet: add `protocol: pe` to each paired-end entry under `comparisons`.
+- The `genotype` column reports the variable of interest. The name of this column is flexible and can be anything as long as you set it as `deseq2.variable` in the config file.
 
 
 ## Directory Structure
 
-The pipeline will generate an ouput folder tree like so
+All outputs are written below `globals.results_folder`:
 
-<p align="center">
-  <img src="docs/figures/folder-tree-tikz.png">
-</p>
+```text
+<results_folder>/
+├── qc/              FastQC and MultiQC reports
+├── trim/            trimmed reads
+├── alignments/      STAR (genes), deduplicated and STAR-TE alignments, TE counts and DESeq2
+├── salmonTE/        SalmonTE quantification and differential expression
+├── tRNA_coverage/   tRNA coverage, counts and DESeq2
+├── analysis/        gene DESeq2 tables, R objects and datavzrd reports
+├── references/      processed genome, annotations and indices
+├── log/             job logs, one folder per run date
+└── tmp/             scratch space
+```
+
+See [Results layout](docs/usage/index.md#results-layout) for the full tree.
 
 ## Run tests
 
-The `tests/` folder contains a small test dataset and example configuration file needed to run the 3t-seq pipeline on it. 
-
-Provided a working Snakemake installation is available, the example dataset can be run as follow:
+The repository includes an integration test suite. You can run it using the pre-defined Pixi tasks:
 
 ```bash
-snakemake \
-  --directory tests \
-  --configfile tests/config.yaml \
-  --profile tests/profile \
-  --snakefile workflow/Snakefile
+# Run the integration test
+pixi run -e dev test
+
+# Generate a report for the test run
+pixi run -e dev test-report
 ```
 
-Results will then be available in `tests/results`.
-
-An example 3t-seq HTML report could be generated with the following command:
-
-```bash
-snakemake \
-  --directory tests \
-  --configfile tests/config.yaml \
-  --profile tests/profile \
-  --snakefile workflow/Snakefile \
-  --report report.zip
-```
-
-The `report.zip` file will be generated in `tests/report.zip`. 
+For more advanced testing options, see the [Usage documentation](docs/usage/index.md#pixi-tasks).
 
 ## References
 

@@ -1,5 +1,42 @@
 # Changelog
 
+<!--
+  2.0.0 release notes, hand-curated. release-please inserts its generated
+  "## [2.0.0]" section right above "### Bug Fixes (2.0.0)
+
+* **Trimmomatic settings were ignored:** every form of `trimmomatic` (string, object, adaptive) fell back to the built-in default, so e.g. `CROP:50` had no effect and adaptive trimming never ran ([#17](https://github.com/boulardlab/3t-seq/issues/17), [#48](https://github.com/boulardlab/3t-seq/issues/48)).
+* **Adaptive trimming** runs from any working directory and reads FastQC archives renamed by the workflow ([#51](https://github.com/boulardlab/3t-seq/issues/51)).
+* **tRNA coverage:** the chromosome filter matched by prefix (`chr1` also selected `chr10`–`chr19`), duplicating tRNA rows ([#52](https://github.com/boulardlab/3t-seq/issues/52)).
+* **bamCoverage:** the mouse effective genome size is only added for `mm10`/`mm39`; RPGC on other genomes needs an explicit `--effectiveGenomeSize` ([#54](https://github.com/boulardlab/3t-seq/issues/54)).
+* **mim-tRNA-seq defaults** are defined once in the schema (`max_mismatches` 0.1, `cluster_identity` 0.95, `min_cov` 10); before, an empty `mimseq_params` gave 2 / 0.8.
+* **SalmonTE:** condition file with sample sheets that have a `condition` column ([#8](https://github.com/boulardlab/3t-seq/issues/8)); automatically disabled with a warning for genomes without a SalmonTE index ([#4](https://github.com/boulardlab/3t-seq/issues/4)).
+* **`profile/default`** uses the Snakemake 8 keys `software-deployment-method` and `apptainer-args` ([#55](https://github.com/boulardlab/3t-seq/issues/55)).
+
+## [1.1.0]", i.e. below this block.
+  When the release-please PR is open: move this block into the 2.0.0 section of
+  that PR's CHANGELOG.md (and the GitHub release body), then delete it from
+  here, so the 2.0.0 notes appear exactly once.
+-->
+### ⚠ BREAKING CHANGES (2.0.0)
+
+2.0.0 is not config-compatible with 1.x. See the [migration guide](docs/migration/index.md).
+
+* **Pixi environment:** the pipeline runs through [Pixi](https://pixi.sh) (`pixi run snakemake ...`) on Snakemake 8.9.0. Slurm execution uses `snakemake-executor-plugin-slurm` (`executor: slurm`) instead of `slurm: True`.
+* **`sequencing_libraries` renamed to `comparisons`:** the old key is still accepted with a deprecation warning and will be removed in a future release.
+* **Paired-end must be declared:** set `protocol: pe` on each paired-end comparison; any other comparison is processed as single-end (1.x inferred this from the sample sheet).
+* **Auto-derived results subfolders:** `globals` only accepts `results_folder`. `reads_folder`, `qc_folder`, `log_folder`, `references_folder`, `tmp_folder` and `analysis_folder` were removed and are rejected by the config schema.
+* **Sample sheet drives input paths:** `filename_1` / `filename_2` (paired-end) or `filename` (single-end) now hold paths to the FASTQ files (absolute or relative to the working directory, extension optional), replacing `<reads_folder>/<library>/<stem>`. Missing files are reported before any job starts.
+* **DESeq2 defaults moved:** the top-level `deseq2` block moved to `defaults.deseq2` (or per comparison) and is rejected at top level; `deseq2.working_directory` was removed.
+* **`deseq2.reference_level` is required:** set it for every comparison (in `defaults.deseq2` or `comparisons[].deseq2`); a missing value is reported at start-up.
+* **Genome references:** `genome.label` is required. For `mm10`/`mm39` references are fetched automatically (Refgenie, UCSC RepeatMasker, GtRNAdb); any other label needs local `fasta_path` + `gtf_path` + `annotation_type` and `disable_TE_analysis` + `disable_tRNA_analysis`. `fasta_url`, `gtf_url`, `gtrnadb_url` and `rmsk_path` were removed; local files go in `fasta_path` + `gtf_path` + `annotation_type` (`ensembl`, `gencode` or `mgi`).
+
+### Highlights (2.0.0)
+
+* **Optional tool parameters:** `trimmomatic`, `star` and `bamCoverage` are optional and fall back to built-in defaults.
+* **Adaptive trimming:** `trimmomatic: {adaptive: true}` derives Trimmomatic parameters from the comparison's FastQC output; `extra_params` are merged into the derived (or, without `adaptive`, the default) steps.
+* **Deduplicated processing:** trimming and alignment outputs are content-hashed, so samples shared between comparisons are processed once.
+* **New options:** `defaults` (global `strandedness`, `starTE_random`, `starTE_multihit`, `deseq2`), per-comparison `strandedness`, `disable_salmonTE_analysis`, `tRNA_quantification` (`standard` or `mim-tRNA-seq`), `genome.selected_chromosomes`.
+
 ## [1.1.0](https://github.com/boulardlab/3t-seq/compare/v1.0.1...v1.1.0) (2024-03-12)
 
 

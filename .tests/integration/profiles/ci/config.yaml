@@ -1,0 +1,13 @@
+# GitHub-hosted runner (ubuntu-latest: 4 vCPU, 16 GB RAM).
+software-deployment-method: 
+  - conda
+  - apptainer
+show-failed-logs: True
+printshellcmds: True
+cores: 4
+jobs: 2
+conda-frontend: conda
+singularity-args: "--bind $PIXI_PROJECT_ROOT --bind $HOME"
+
+default-resources:
+  - "tmpdir='/tmp'"

@@ -1,0 +1,212 @@
+$schema: "http://json-schema.org/draft-04/schema#"
+description: "Configuration schema for the 3t-seq pipeline"
+type: object
+properties:
+  globals:
+    type: object
+    description: "Global settings affecting the pipeline paths."
+    properties:
+      results_folder:
+        type: string
+        description: "Path to the main results folder where all pipeline outputs will be saved."
+    required:
+      - results_folder
+    additionalProperties: false
+  defaults:
+    type: object
+    default: {}
+    description: "Global default parameters for all sequencing libraries."
+    properties:
+      strandedness:
+        type: integer
+        enum: [0, 1, 2]
+        default: 0
+        description: "Library strandedness (0: unstranded, 1: stranded, 2: reversely stranded)."
+      starTE_random:
+        type: object
+        default: {}
+        properties:
+          outFilterMultimapNmax:
+            type: integer
+            default: 5000
+          winAnchorMultimapNmax:
+            type: integer
+            default: 5000
+          alignTranscriptsPerWindowNmax:
+            type: integer
+            default: 300
+      starTE_multihit:
+        type: object
+        default: {}
+        properties:
+          outFilterMultimapNmax:
+            type: integer
+            default: 1
+          winAnchorMultimapNmax:
+            type: integer
+            default: 5000
+          alignTranscriptsPerWindowNmax:
+            type: integer
+            default: 3000
+      deseq2:
+        type: object
+        default: {}
+        description: "Default DESeq2 parameters."
+        properties:
+          test:
+            type: string
+            enum: ["Wald", "LRT"]
+            default: "Wald"
+          variable:
+            type: string
+            default: "genotype"
+          reference_level:
+            type: string
+            description: "Control level of 'variable'. Required for every comparison, here or in comparisons[].deseq2."
+        additionalProperties: false
+    additionalProperties: false
+  comparisons:
+    type: array
+    description: "List of comparisons to process. Each comparison groups a set of samples (via a sample sheet) with its alignment and differential expression settings."
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: "Name of the sequencing library."
+        sample_sheet:
+          type: string
+          description: "Path to the sample sheet CSV file."
+        protocol:
+          type: string
+          enum: ["pe", "se"]
+          description: "Sequencing protocol: 'pe' (paired-end, sample sheet needs filename_1 and filename_2 columns) or 'se' (single-end, sample sheet needs a filename column). Required: unlike 1.x it is not inferred from the sample sheet."
+        trimmomatic:
+          oneOf:
+            - type: string
+            - type: object
+              properties:
+                adaptive:
+                  type: boolean
+                  default: false
+                extra_params:
+                  type: string
+              additionalProperties: false
+          description: "Optional Trimmomatic steps: a fixed string (used as is), or an object whose extra_params are merged into the default steps, or into FastQC-derived steps when adaptive is true."
+        star:
+          type: string
+          description: "Optional custom STAR aligner parameters for single-copy genes."
+        starTE_random:
+          type: object
+          description: "Optional override for starTE random mode."
+        starTE_multihit:
+          type: object
+          description: "Optional override for starTE multihit mode."
+        strandedness:
+          type: integer
+          enum: [0, 1, 2]
+          description: "Library override for strandedness."
+        bamCoverage:
+          type: string
+          description: "Optional custom bamCoverage parameters."
+        deseq2:
+          type: object
+          description: "Optional library-level DESeq2 overrides."
+          properties:
+            test:
+              type: string
+              enum: ["Wald", "LRT"]
+            variable:
+              type: string
+            reference_level:
+              type: string
+          additionalProperties: false
+      required:
+        - name
+        - sample_sheet
+        - protocol
+      additionalProperties: false
+  genome:
+    type: object
+    description: "Genome references."
+    properties:
+      label:
+        type: string
+        pattern: "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+        description: "Genome label, used in reference file names. Must be 'mm10' or 'mm39' when references are fetched automatically (no fasta_path/gtf_path). With custom fasta_path + gtf_path any label made of letters, digits, '.', '_' and '-' is accepted. Required."
+      fasta_path:
+        type: string
+        description: "Local path to explicit genome fasta."
+      gtf_path:
+        type: string
+        description: "Local path to explicit genome GTF annotation."
+      annotation_type:
+        type: string
+        enum: ["mgi", "gencode", "ensembl"]
+        default: "ensembl"
+        description: "Type of genome annotation. Required if custom fasta/gtf are provided."
+      selected_chromosomes:
+        type: ["array", "null"]
+        items:
+          type: string
+        default: null
+        description: "List of chromosomes to process. If not provided, all chromosomes will be processed."
+    required:
+      - label
+    dependencies:
+      fasta_path: ["gtf_path", "annotation_type"]
+      gtf_path: ["fasta_path", "annotation_type"]
+    # Automatically fetched references only exist for mm10/mm39; any other
+    # label requires custom fasta_path + gtf_path.
+    anyOf:
+      - required: ["fasta_path", "gtf_path"]
+      - properties:
+          label:
+            enum: ["mm10", "mm39"]
+    additionalProperties: false
+  disable_TE_analysis:
+    type: boolean
+    default: false
+    description: "Disable TE analysis."
+  disable_salmonTE_analysis:
+    type: boolean
+    default: false
+    description: "Disable SalmonTE analysis."
+  disable_tRNA_analysis:
+    type: boolean
+    default: false
+    description: "Disable tRNA analysis."
+  tRNA_quantification:
+    type: object
+    default: {}
+    properties:
+      method:
+        type: string
+        enum: ["standard", "mim-tRNA-seq"]
+        default: "standard"
+        description: "Method for tRNA quantification."
+      mimseq_params:
+        type: object
+        default: {}
+        properties:
+          max_mismatches:
+            type: number
+            default: 0.1
+            description: "mimseq --max-mismatches: a fraction of read length (< 1) or a number of mismatches (>= 1)."
+          cluster_identity:
+            type: number
+            default: 0.95
+            description: "mimseq --cluster-id: identity threshold for clustering tRNA genes when building the index."
+          min_cov:
+            type: integer
+            default: 10
+            description: "Minimum coverage required for a tRNA to be quantified."
+        additionalProperties: false
+    required:
+      - method
+    additionalProperties: false
+required:
+  - globals
+  - comparisons
+  - genome
+additionalProperties: false

@@ -1,0 +1,5 @@
+formatter:
+  indent: 2
+  max_line_length: 120
+  retain_line_breaks_single: true
+  trim_trailing_whitespace: true

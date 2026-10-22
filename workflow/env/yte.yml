@@ -2,3 +2,4 @@ channels:
   - conda-forge
 dependencies:
   - yte=1.5.1
+  - setuptools<81.0.0

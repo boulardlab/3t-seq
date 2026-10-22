@@ -1,153 +1,100 @@
-# Configuration instructions
+See below for an example config file with explanation of each option and description of common use-cases. For a complete, exhaustive guide on all available parameters, please refer to the [Full Configuration Documentation](../docs/configuration/index.md).
 
-See below for an example config file with explanation of each option and description of common use-cases.
+Coming from 3t-seq 1.x? See the [migration guide](../docs/migration/index.md) for the old -> new key mapping.
 
-## A complete example
+## Configuration Validation
+
+3t-seq includes a built-in schema validator to ensure your `config.yaml` is correctly formatted before running the full pipeline. You can run the validator using:
+
+```bash
+pixi run lint
+```
+
+## Files in this folder
+
+| File | Purpose |
+| :--- | :--- |
+| [`config.yaml`](config.yaml) | Commented template with every option. Copy it (e.g. to `config/my_config.yaml`) and fill in the placeholders. |
+| [`examples/GSE130735.yaml`](examples/GSE130735.yaml) | Full-genome analysis of the public GSE130735 dataset that the integration test is subsampled from. |
+
+```bash
+cp config/config.yaml config/my_config.yaml
+pixi run snakemake --profile profile/default --configfile config/my_config.yaml
+```
+
+## A minimal example
 
 ```yaml
-# config/config.yaml
-
-# A list of datasets 
-# Every dataset is defined by a name, a path to a sample sheet, trimmomatic, star and bamCoverage options.
-# All these options are mandatory.
-sequencing_libraries:
-  - name: GSE13073
-    sample_sheet: sample-sheet.csv
-    trimmomatic: >-
-      "ILLUMINACLIP:TruSeq3-PE.fa:1:0:15:2
-       SLIDINGWINDOW:20:22
-       MAXINFO:20:0.6
-       LEADING:22
-       TRAILING:20
-       MINLEN:75"
-    star: >-
-      "--seedSearchStartLmax 30
-       --outFilterMismatchNoverReadLmax 0.04
-       --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 50 --normalizeUsing None"
-
-#   - name: ...
-#     sample_sheet: ...
-#     trimmomatic: ...
-#     star: ...
-#     bamCoverage: ...
-
-# Disable all functionalities related to TE analysis
-disable_TE_analysis: false
-
-# Disable tRNA analysis
-disable_tRNA_analysis: false
-
 globals:
-  # path to reads folder 
-  # NB: ./GSE13073 is expected to exist
-  reads_folder: .
-
-  # path to results folder
   results_folder: results/
 
-  # path to qc
-  qc_folder: results/qc
+# A list of comparisons to process.
+# Each item groups a set of samples, listed in 'sample_sheet', under a unique 'name'.
+# Tool parameter overrides (trimmomatic, star, bamCoverage, starTE_random, starTE_multihit, strandedness, deseq2) are optional per-comparison
+# and fall back to pipeline defaults defined in the schema if omitted.
+comparisons:
+  - name: GSE130735
+    protocol: pe              # required: pe (paired-end) or se (single-end)
+    sample_sheet: sample-sheet.csv
+    # Optional comparison-level overrides:
+    deseq2:
+      variable: cell_type     # This overrides the global default 'genotype' for this comparison
 
-  # path to log
-  log_folder: results/log
-
-  # path to references
-  references_folder: results/references
-
-  # temp folder
-  tmp_folder: /tmp
-
-  # path to analysis
-  analysis_folder: results/analysis
-
-# genome informations
 genome:
-  # genome label
   label: mm10
-
-  # annotation type
-  # can be ensembl, mgi, gencode
-  annotation_type: ensembl
-
-  # URL or path to genome sequence
-  fasta_url: <Genome fasta URL>
-  
-  # URL or path to genome annotation file
-  gtf_url: <Genome annotation URL>
-
-  # URL to gtRNAdb zip file
-  gtrnadb_url: <GtRNADb bundle URL>
-
-# Differential expression analysis parameters
-deseq2:
-  # wd
-  working_directory: ../../..  
-  
-  # DESeq2 test name, can be Wald or LRT
-  test: Wald
-  
-  # name of the column from sample sheet with experimental variable
-  variable: genotype
-
-  # base level from variable column
-  reference_level: wt
 ```
 
 ## How 3t-seq resolves reads paths
 
-The pipeline resolves reads paths starting from two bits of information:
-1. `reads_folder` in the `globals` sections
-2. The name of a library in `sequencing_libraries` list of objects
+The pipeline relies primarily on the paths provided in your sample sheet to locate input read files.
+For each sample, you can provide paths in the `filename` (for single-end) or `filename_1` and `filename_2` (for paired-end) columns. Which columns are read depends on the comparison's `protocol` in the config (`pe` for paired-end, otherwise single-end).
 
-In the example configuration above, `reads_folder: .` and `sequencing_libraries[0].name: GSE13073`. These resolve to `./GSE13073`. It is crucial that **this folder exists before starting the pipeline**. This is because in this folder, the pipeline will look for input files.
+These paths can be provided in several flexible formats:
+1. **Absolute Paths:** If an absolute path (e.g. `/data/my_experiment/reads/sample1_R1.fq.gz`) is provided, 3t-seq will use it directly.
+2. **Relative Paths:** If a relative path is provided, 3t-seq will resolve it relative to the current working directory.
 
-Another example:
-```yaml
-sequencing_libraries:
-  - name: first-batch
-    sample_sheet: sample-sheet-first-batch.csv
-    # [...]
-  
-  - name: second-batch
-    sample_sheet: sample-sheet-second-batch.csv
-    # [...]
+*Note:* You do not need to provide the file extension (`.fastq.gz`, `.fq.gz`, etc.) if you don't want to. 3t-seq will automatically test standard fastq extensions if the exact path specified doesn't exist.
 
-globals:
-  reads_folder: reads
-  # [...]
+Because 3t-seq now relies on explicit paths in the sample sheet, **you do not need to rename your raw data files or move them into rigid directory structures**.
+
+### Sample Sheet Format
+
+The sample sheet is a CSV file. It must contain a `name` column representing the sample ID, and either:
+- A `filename` column for single-end libraries.
+- `filename_1` and `filename_2` columns for paired-end libraries.
+
+*Example (Absolute Paths):*
+```csv
+name,filename_1,filename_2,genotype
+sampleA,/data/raw/batch1/A_read1.fq.gz,/data/raw/batch1/A_read2.fq.gz,WT
+sampleB,/data/raw/batch1/B_read1.fq.gz,/data/raw/batch1/B_read2.fq.gz,KO
 ```
 
-In this scenario, 3t-seq will look for the `reads` folder and inside of it will look for two folders names `first-batch` and `second-batch`: `reads/first-batch` and `reads/second-batch`. If any of the two is not detected, the pipeline will fail.
+## Built-in Reference Genomes via Refgenie
 
-### Naming convetion
+3t-seq now natively integrates with **Refgenie** to automatically retrieve and manage the supported reference genomes (`mm10` and `mm39`). 
 
-Reads files need to have one of the following extensions: `fq`, `fq.gz`, `fastq`, `fastq.gz`. For a given sequencing library, the pipeline expects files to have the same extension.
+To use this feature, simply provide the `label` in your configuration's `genome` section and omit `fasta_path` and `gtf_path`. The pipeline will automatically fetch the FASTA and GTF files for that genome and symlink them into your results directory. 
 
-For paired-end reads, the two mates should have one of the following idenfiers **before** the extension: `(_1, _2)`, `(_R1, _R2)`, `(_1_sequence, _2_sequence)`.
+*Note: You do not need to configure or set the `$REFGENIE` environment variable on your system; the pipeline handles initialization underneath the hood at runtime.*
 
+## How to use custom local reference files
 
-## How to use local reference files
-
-The `references_folder` can be outside of `results_folder`. For instance:
-```yaml
-globals:
-  # [...]
-  # path to results folder
-  results_folder: results/
-
-  # path to references
-  references_folder: /path/to/references
-```
-
-This allows users to host their own reference files locally and set `genome` informations accordingly
+If you prefer to use your own reference files, you can override the Refgenie downloads by providing absolute paths to your local `fasta_path` and `gtf_path`. Keep the `label`: it is required and is still used to fetch the matching RepeatMasker and GtRNAdb annotations.
 
 ```yaml
 genome:
-  # [...]
-  # This will evaluate to /path/to/references/custom-mm10.fa.gz
-  fasta_url: custom-mm10.fa.gz
+  # Required: mm10 or mm39
+  label: mm10
   
-  # This will evaluate to /path/to/references/custom-mm10.gtf.gz
-  gtf_url: custom-mm10.gtf.gz
+  # Provide an absolute path to your fasta:
+  fasta_path: /path/to/references/custom-mm10.fa
+  
+  # Provide an absolute path to your gtf:
+  gtf_path: /path/to/references/custom-mm10.gtf
+  
+  # Explicitly specify the annotation type (required for custom references)
+  annotation_type: ensembl
 ```
+
+`fasta_path`, `gtf_path` and `annotation_type` must be provided together; the configuration validator rejects a config that sets only some of them.

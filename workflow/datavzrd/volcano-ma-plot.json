@@ -68,7 +68,7 @@
             "name": "lfc_thr",
             "value": 0.5,
             "bind": {
-                "input": "number",
+                "input": "range",
                 "name": "Differentially expressed genes log2 fold change threshold ",
                 "min": 0,
                 "max": 5,
@@ -79,7 +79,7 @@
             "name": "padj_thr",
             "value": 0.05,
             "bind": {
-                "input": "number",
+                "input": "range",
                 "name": "Differentially expressed genes p-value threshold ",
                 "min": 0,
                 "max": 1,

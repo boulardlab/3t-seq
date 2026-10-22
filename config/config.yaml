@@ -1,52 +1,71 @@
-sequencing_libraries:
-  - name: GSE78551-subsample
-    # "sample_sheet" is a csv mapping FILENAMES without extensions to GENOTYPE
-    # E.g.
-    #  Name,Filename,Genotype
-    #  s01,some_complicate_filename_s01,WT
-    #  s02,some_complicate_filename_s02,WT
-    #  s03,some_complicate_filename_s03,KO
-    #  s04,some_complicate_filename_s04,KO
-    sample_sheet: tests/sample-sheet.csv
-    trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:0:15:2 SLIDINGWINDOW:20:22 MAXINFO:20:0.6 LEADING:22 TRAILING:20 MINLEN:50"
-    star: "--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40"
-    bamCoverage: "--binSize 25 --normalizeUsing None"
-    deseq2:
-      test: Wald
-      variable: cell_type
+# 3t-seq configuration template.
+#
+# Copy this file, fill in the placeholders and run:
+#   pixi run snakemake --profile <profile> --configfile my_config.yaml
+#
+# Every key is validated against workflow/schemas/config.schema.yaml, which also
+# holds the defaults for any optional key you leave out. Full reference:
+# docs/configuration/index.md. Coming from 1.x: docs/migration/index.md.
 
-disable_TE_analysis: false
-disable_tRNA_analysis: false
-
+# Required. All outputs go here. qc/, log/, references/, tmp/, analysis/, ...
+# are created inside it; they can no longer be set separately.
 globals:
-  reads_folder: tests
-  results_folder: tests/results/
-  qc_folder: tests/results/qc
-  log_folder: tests/results/log
-  references_folder: tests/results/references
-  tmp_folder: /tmp
-  analysis_folder: tests/results/analysis
+  results_folder: results/
 
+# Required. One entry per set of samples to process and compare.
+comparisons:
+  - name: my_experiment # used in output paths
+    # Read layout: "pe" for paired-end. Omit for single-end.
+    protocol: pe
+    # CSV with a "name" column, read paths ("filename_1"/"filename_2" for
+    # paired-end, "filename" for single-end) and your metadata columns.
+    # See config/README.md for the format.
+    sample_sheet: config/sample-sheet.csv
+    deseq2:
+      test: Wald # Wald or LRT
+      variable: genotype # sample sheet column to compare
+      reference_level: WT # baseline level of that column
+
+    # Optional per-comparison tool overrides (pipeline defaults apply otherwise):
+    # strandedness: 0 # 0 unstranded, 1 stranded, 2 reversely stranded
+    # trimmomatic: "ILLUMINACLIP:$CONDA_PREFIX/share/trimmomatic/adapters/TruSeq3-PE.fa:1:15:10 SLIDINGWINDOW:8:22 MINLEN:50"
+    # trimmomatic:            # or let 3t-seq derive the parameters from the data
+    #   adaptive: true
+    # star: "--outFilterMismatchNoverReadLmax 0.04"
+    # bamCoverage: "--binSize 10 --normalizeUsing None"
+
+# Required. Reference genome.
 genome:
-  label: hg38
-  annotation_type: other
+  # mm10 or mm39. FASTA and GTF are fetched with Refgenie; the label also
+  # selects the RepeatMasker and GtRNAdb annotations.
+  label: mm10
 
-  # URL for genome fasta file
-  fasta_url: https://s3.embl.de/boulard/GRCh38.p13.chr22.fa
+  # Optional: use your own FASTA/GTF instead of the Refgenie download.
+  # fasta_path, gtf_path and annotation_type must be set together.
+  # fasta_path: /path/to/genome.fa
+  # gtf_path: /path/to/annotation.gtf
+  # annotation_type: ensembl # mgi, gencode or ensembl
 
-  # URL for genome GTF file
-  gtf_url: https://s3.embl.de/boulard/gencode.v43.chr22.gtf
+  # Optional: restrict the analysis to some chromosomes (e.g. for testing).
+  # selected_chromosomes:
+  #   - chr19
 
-  # Get a RepeatMasker GTF file from UCSC genome browser
-  rmsk_path: /home/francesco/Projects/snakemake-rnaseq/tests/test-datasets-rnaseq/references/rmsk.gtf.gz
+# Optional: switch analysis branches off (all enabled by default).
+# disable_TE_analysis: false
+# disable_salmonTE_analysis: false
+# disable_tRNA_analysis: false
 
-  # URL to GtRNAdb files
-  gtrnadb_url: http://gtrnadb.ucsc.edu/genomes/eukaryota/Hsapi38/hg38-tRNAs.tar.gz
-  #gtrnadb_bed: ../../../data/references/tRNA/mm10-tRNAs.bed
+# Optional: tRNA quantification method (default: standard).
+# tRNA_quantification:
+#   method: mim-tRNA-seq # standard or mim-tRNA-seq
+#   mimseq_params:
+#     max_mismatches: 0.1
+#     cluster_identity: 0.95
+#     min_cov: 10
 
-deseq2:
-  working_directory: ../../..
-  #notebook_path: ../../../src/Rmd/deseq2_viz.rmd
-  test: Wald
-  reference_level: wt
-  variable: genotype
+# Optional: defaults applied to every comparison unless overridden there.
+# defaults:
+#   strandedness: 0
+#   deseq2:
+#     test: Wald
+#     variable: genotype

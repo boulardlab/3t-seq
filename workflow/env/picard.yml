@@ -1,4 +1,6 @@
 channels:
   - bioconda
+  - conda-forge
 dependencies:
+  - openjdk=17
   - picard=2.27.4

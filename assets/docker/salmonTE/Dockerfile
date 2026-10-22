@@ -7,22 +7,14 @@ RUN curl -LO "https://github.com/ftabaro/SalmonTE/archive/refs/heads/master.zip"
     rm -r SalmonTE-master/example SalmonTE-master/test
 
 
-FROM continuumio/miniconda3:23.3.1-0
+FROM condaforge/mambaforge:latest
 RUN conda update -y -n base -c defaults conda; \
     conda config --add channels conda-forge; \
     conda config --add channels bioconda; \
-    conda config --add channels anaconda
-RUN conda install -n base -y conda-libmamba-solver ; \
-    conda config --set solver libmamba
-RUN conda install -y  \
-    snakemake=7.28.3 \
-    pandas \
-    docopt \
-    r-base=4.2.3 \
-    r-scales \
-    r-writexls \
-    r-tidyverse \
-    bioconductor-deseq2
+    conda config --add channels anaconda && \
+    conda install -n base -y conda-libmamba-solver ; \
+    conda config --set solver libmamba && \
+    conda install -y  snakemake=7.28.3 pandas docopt r-base>4.4 r-scales r-writexls r-tidyverse bioconductor-deseq2 jq
     
 WORKDIR /opt
 COPY --from=0 /home/curl_user/SalmonTE-master ./SalmonTE

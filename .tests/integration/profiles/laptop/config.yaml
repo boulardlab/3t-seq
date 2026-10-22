@@ -1,0 +1,11 @@
+software-deployment-method: 
+  - conda
+  - apptainer
+show-failed-logs: True
+cores: 2
+jobs: 1
+conda-frontend: conda
+singularity-args: "--bind $PIXI_PROJECT_ROOT --bind $HOME"
+
+default-resources:
+  - "tmpdir='/tmp'"

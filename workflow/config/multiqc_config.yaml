@@ -1,0 +1,43 @@
+# Pipeline-level MultiQC configuration for 3t-seq
+no_version_check: true
+
+module_order:
+  - fastqc:
+      name: "FastQC (raw reads)"
+      anchor: "fastqc_raw"
+      path_filters:
+        - "*_raw_fastqc.zip"
+        - "*_raw_1_fastqc.zip"
+        - "*_raw_2_fastqc.zip"
+  - trimmomatic
+  - fastqc:
+      name: "FastQC (trimmed reads)"
+      anchor: "fastqc_trimmed"
+      path_filters:
+        - "*_trimmed_fastqc.zip"
+        - "*_trimmed_1_fastqc.zip"
+        - "*_trimmed_2_fastqc.zip"
+  - star
+  - fastqc:
+      name: "FastQC (aligned reads)"
+      anchor: "fastqc_aligned"
+      path_filters:
+        - "*.Aligned.sortedByCoord.out_fastqc.zip"
+  - fastqc:
+      name: "FastQC (deduplicated reads)"
+      anchor: "fastqc_markdup"
+      path_filters:
+        - "*.markdup_fastqc.zip"
+  - picard
+
+fn_clean_exts:
+  - ".fastq.gz"
+  - ".fq.gz"
+  - ".Aligned.sortedByCoord.out"
+  - ".markdup"
+  - "_fastqc"
+  - ".summary"
+  - ".stats"
+  - ".Log.final.out"
+  - ".txt.gz"
+  - "_sequence"

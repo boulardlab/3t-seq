@@ -1,0 +1,76 @@
+name: Container check
+
+# Gate: every pinned ghcr.io/boulardlab/* image must use an immutable tag and
+# exist in the registry, and the 3t-seq pin must match the env hash of a
+# Dockerfile that is up to date with the conda envs. On PRs the images are
+# built concurrently by build-3t-seq.yml / build-salmonte.yml, so the check
+# polls while those runs are in progress. Also callable from other workflows
+# (test.yml) so they start only once the images exist.
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+  packages: read
+  actions: read
+
+concurrency:
+  group: container-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dockerfile-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pixi
+        uses: prefix-dev/setup-pixi@v0.8.1
+        with:
+          pixi-version: v0.66.0
+          cache: true
+
+      - name: Regenerate Dockerfile and pin
+        run: pixi run containerize
+
+      - name: Check Dockerfile and pin are committed
+        run: |
+          if ! git diff --exit-code -- Dockerfile workflow/Snakefile; then
+            echo "::error::Dockerfile or its pin is stale. Run \`pixi run containerize\` and commit both files."
+            exit 1
+          fi
+
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check 3t-seq pin matches Dockerfile env hash
+        run: python3 .github/scripts/container_pin.py check
+
+      - name: Check pinned images
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [[ -n "$HEAD_SHA" ]]; then
+            bash .github/scripts/check-containers.sh --wait-minutes 210 --head-sha "$HEAD_SHA"
+          else
+            bash .github/scripts/check-containers.sh
+          fi

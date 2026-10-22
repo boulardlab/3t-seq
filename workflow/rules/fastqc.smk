@@ -1,57 +1,108 @@
 
 
-rule fastqc_raw:
+rule fastqc_raw_se:
     input:
-        get_fastq,
+        fastq=get_fastq,
     output:
-        fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.zip"),
-        report(
-            fastqc_raw_folder.joinpath("{serie}", "{sample}_fastqc.html"),
+        zip=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.zip"),
+        html=report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_fastqc.html"),
             category="FastQC",
             subcategory="Raw reads",
             labels={"serie": "{serie}", "sample": "{sample}"},
         ),
-    params:
-        fastqc_folder=lambda wildcards: os.path.join(fastqc_raw_folder, wildcards.serie),
-    threads: 4
-    conda:
-        "../env/qc.yml"
     log:
         log_folder.joinpath("fastqc/{serie}/{sample}.log"),
+    wildcard_constraints:
+        serie="|".join(
+            library_names_single if len(library_names_single) > 0 else ["none"]
+        ),
+    conda:
+        "../env/qc.yml"
+    threads: 8
     resources:
-        runtime=60,
+        runtime=get_fastqc_runtime,
         mem_mb=4000,
     shell:
         """
-        set -e 
-        fastqc -t {threads} -noextract -o {params.fastqc_folder} {input}
+        set -e
+        # Symlink input under the sample name so FastQC embeds the correct sample
+        # name inside the zip regardless of whether the original path is absolute
+        # or relative and regardless of the original filename.
+        src=$(realpath {input.fastq})
+        ext="${{src##*.}}"
+        [ "$ext" = "gz" ] && link={wildcards.sample}.fastq.gz || link={wildcards.sample}.fastq
+
+        # Per-job scratch dir under resources.tmpdir: rendered by Snakemake, so it
+        # does not depend on $TMPDIR being propagated into the container.
+        tmp=$(mktemp -d -p "{resources.tmpdir}")
+        trap 'rm -rf "$tmp"' EXIT
+        echo "Using scratch directory: $tmp" | tee -a {log}
+        ln -sf "$src" "$tmp/$link"
+        fastqc -t {threads} -noextract -o "$tmp" "$tmp/$link" | tee -a {log}
+
+        sleep $(( 5 + RANDOM % 5 ))
+        mv "$tmp/{wildcards.sample}_fastqc.zip" {output.zip}
+        mv "$tmp/{wildcards.sample}_fastqc.html" {output.html}
         """
 
 
-rule multiqc_raw:
+rule fastqc_raw_pe:
     input:
-        unpack(get_fastqc),
+        unpack(get_fastq_paired),
     output:
-        report(
-            multiqc_raw_folder.joinpath("{serie}", "multiqc_report.html"),
-            category="MultiQC",
+        zip1=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.zip"),
+        html1=report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_1_fastqc.html"),
+            category="FastQC",
             subcategory="Raw reads",
-            labels={"serie": "{serie}"},
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "1"},
         ),
-    params:
-        fastqc_folder=fastqc_raw_folder,
-        multiqc_folder=multiqc_raw_folder,
+        zip2=fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.zip"),
+        html2=report(
+            fastqc_raw_folder.joinpath("{serie}", "{sample}_raw_2_fastqc.html"),
+            category="FastQC",
+            subcategory="Raw reads",
+            labels={"serie": "{serie}", "sample": "{sample}", "mate": "2"},
+        ),
     log:
-        log_folder.joinpath("multiqc-raw", "multiqc-{serie}.log"),
+        log_folder.joinpath("fastqc/{serie}/{sample}_pe.log"),
+    wildcard_constraints:
+        serie="|".join(
+            library_names_paired if len(library_names_paired) > 0 else ["none"]
+        ),
     conda:
         "../env/qc.yml"
+    threads: 8
     resources:
-        runtime=20,
-        mem_mb=2048,
+        runtime=get_fastqc_runtime,
+        mem_mb=4000,
     shell:
         """
-        set -e 
-        multiqc --fullnames --dirs --export -f \
-        -o {params.multiqc_folder}/{wildcards.serie} \
-        {params.fastqc_folder}/{wildcards.serie} |& tee {log}
+        set -e
+
+        # Symlink inputs under the sample name so FastQC embeds the correct sample
+        # name inside the zip regardless of whether the original path is absolute
+        # or relative and regardless of the original filename.
+        src1=$(realpath {input.m1})
+        src2=$(realpath {input.m2})
+        ext1="${{src1##*.}}"
+        ext2="${{src2##*.}}"
+        [ "$ext1" = "gz" ] && link1={wildcards.sample}_1.fastq.gz || link1={wildcards.sample}_1.fastq
+        [ "$ext2" = "gz" ] && link2={wildcards.sample}_2.fastq.gz || link2={wildcards.sample}_2.fastq
+
+        # Per-job scratch dir under resources.tmpdir: rendered by Snakemake, so it
+        # does not depend on $TMPDIR being propagated into the container.
+        tmp=$(mktemp -d -p "{resources.tmpdir}")
+        trap 'rm -rf "$tmp"' EXIT
+        echo "Using scratch directory: $tmp" | tee -a {log}
+        ln -sf "$src1" "$tmp/$link1"
+        ln -sf "$src2" "$tmp/$link2"
+        fastqc -t {threads} -noextract -o "$tmp" "$tmp/$link1" "$tmp/$link2" | tee -a {log}
+
+        sleep $(( 5 + RANDOM % 5 ))
+        mv "$tmp/{wildcards.sample}_1_fastqc.zip" {output.zip1}
+        mv "$tmp/{wildcards.sample}_1_fastqc.html" {output.html1}
+        mv "$tmp/{wildcards.sample}_2_fastqc.zip" {output.zip2}
+        mv "$tmp/{wildcards.sample}_2_fastqc.html" {output.html2}
         """

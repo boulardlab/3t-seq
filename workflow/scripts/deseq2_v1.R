@@ -2,8 +2,21 @@ options(error = quote({
   fn <- "deseq2_emergency_dump"
   dump.frames(dumpto = fn, to.file = TRUE, include.GlobalEnv = TRUE)
   cat(sprintf("Emergency dump saved in %s.rds", fn), file = stderr())
+  # Flush and close the log sink opened below so error output actually lands
+  # in it before quit() tears down the process.
+  while (sink.number() > 0) sink()
+  while (sink.number(type = "message") > 0) sink(type = "message")
   quit(status = 1)
 }))
+
+# Snakemake does not redirect an R `script:` rule's stdout/stderr to its
+# log: file automatically -- without this, all script output (including
+# error tracebacks) only reaches the raw process stdout/stderr (e.g. a
+# cluster executor's own log), while the log: file promised by the rule
+# stays empty.
+log_conn <- file(snakemake@log[[1]], open = "wt")
+sink(log_conn, type = "output")
+sink(log_conn, type = "message")
 
 library(data.table)
 library(rtracklayer)
@@ -102,10 +115,23 @@ mat <- sapply(ls, function(p) {
   setNames(dt$V2, dt$V1)
 })
 
-colnames_order <- sapply(colnames(mat), grep, x = colData$name)
+# Match STAR count columns to sample sheet entries by exact name equality.
+# (Previously this used grep(sprintf("%s$", x), colData$name), an
+# end-anchored-only regex that also matches any name *ending* with x, e.g.
+# "3_2month" matching "23_2month" and "43_2month" too. With numeric sample
+# IDs that produces multiple hits per sample, sapply() can't simplify to a
+# vector, and the resulting list crashes the subscript below.)
+colnames_order <- match(colnames(mat), colData$name)
+if (anyNA(colnames_order)) {
+  stop(sprintf(
+    "STAR count sample(s) not found in sample sheet '%s': %s",
+    sample_sheet,
+    paste(colnames(mat)[is.na(colnames_order)], collapse = ", ")
+  ))
+}
 
 # Rename columns to match sample sheet sample column
-colnames(mat)[colnames_order] <- rownames(colData)
+colnames(mat) <- rownames(colData)[colnames_order]
 
 
 ## Extract annotations data for the quantified genes

@@ -1,0 +1,196 @@
+[workspace]
+name = "3t-seq"
+version = "2.0.0"  # x-release-please-version
+description = "3t-seq: a Snakemake pipeline for total RNA-seq analysis"
+authors = ["Francesco Tabaro"]
+channels = ["conda-forge", "bioconda"]
+platforms = ["osx-arm64", "linux-64"]
+
+[feature.snakemake.dependencies]
+snakemake = "==8.9.0"
+pandas = "*"
+pyyaml = "*"
+mamba = "*"
+conda = "*"
+
+[feature.dev.dependencies]
+snakefmt = ">=0.11.4"
+pre-commit = ">=4.5.1"
+pytest = ">=8.1.1"
+lychee = ">=0.23.0,<0.24"
+git-lfs = "*"
+
+[feature.docs.dependencies]
+mkdocs = "<2"
+mkdocs-material = "*"
+mkdocstrings-python = "*"
+mkdocs-glightbox = "*"
+mkdocs-git-revision-date-localized-plugin = "*"
+
+[environments]
+default = ["snakemake"]
+dev = ["snakemake", "dev"]
+docs = ["snakemake", "dev", "docs"]
+
+# Apptainer is not a pixi dependency: the conda-forge squashfuse_ll it pulls in
+# hangs on reads of SIF images (conda-forge/squashfuse-feedstock#21, #39).
+# Use the system / HPC module Apptainer (>= 1.2.5) instead.
+
+[target.osx-arm64.activation]
+scripts = ["scripts/macos-coreutils-setup.sh"]
+env = { PATH = "$PIXI_PROJECT_ROOT/.pixi/macos-shims:$PATH" }
+
+[feature.dev.tasks]
+format = "snakefmt workflow"
+format-check = "snakefmt --check --diff workflow"
+hooks = "pre-commit run --all-files"
+unit-test = "pytest -q .tests/unit"
+setup = "git lfs install && git lfs pull"
+
+[feature.docs.tasks]
+docs-serve = { cmd = "mkdocs serve", env = { NO_MKDOCS_2_WARNING = "1" } }
+docs-build = { cmd = "mkdocs build --strict", env = { NO_MKDOCS_2_WARNING = "1" } }
+
+[tasks]
+
+################################################################################
+# Linting
+################################################################################
+
+[tasks.lint]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--lint",
+]
+
+[[tasks.lint.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.lint.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc", "ci"]
+
+################################################################################
+# Containerize
+################################################################################
+
+[tasks.containerize]
+cmd = [
+    "snakemake",
+    "--quiet", "all",
+    "--directory", ".tests/integration",
+    "--configfile", ".tests/integration/configs/remote-references.yaml",
+    "--profile", ".tests/integration/profiles/laptop",
+    "--snakefile", "workflow/Snakefile",
+    "--containerize", 
+    "|", 
+    "tail", 
+    "-n", 
+    "+2", 
+    ">", 
+    "Dockerfile",
+    "&&",
+    "python", ".github/scripts/container_pin.py", "update"
+]
+
+################################################################################
+# Build conda envs
+################################################################################
+
+[tasks.build-conda-envs]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--configfile", ".tests/integration/configs/remote-references.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--conda-create-envs-only",
+    "--use-conda",
+    "--conda-frontend", "conda",
+]
+
+################################################################################
+# Dry-run
+################################################################################
+
+[tasks.dry-run]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "-n",
+]
+
+[[tasks.dry-run.args]]
+arg = "config"
+default = "remote-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.dry-run.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc", "ci"]
+
+################################################################################
+# Test
+################################################################################
+
+[tasks.test]
+depends-on = ["setup"]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+]
+
+[[tasks.test.args]]
+arg = "config"
+default = "local-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.test.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc", "ci"]
+
+################################################################################
+# Test report
+################################################################################
+
+[tasks.test-report]
+depends-on = ["test"]
+cmd = [
+    "snakemake",
+    "--directory", ".tests/integration",
+    "--conda-frontend", "conda",
+    "--workflow-profile", ".tests/integration/profiles/{{ profile }}",
+    "--configfile", ".tests/integration/configs/{{ config }}.yaml",
+    "--snakefile", "workflow/Snakefile",
+    "--report", "report.zip",
+]
+
+[[tasks.test-report.args]]
+arg = "config"
+default = "local-references"
+choices = ["remote-references", "local-references", "adaptive-trim"]
+
+[[tasks.test-report.args]]
+arg = "profile"
+default = "laptop"
+choices = ["laptop", "hpc", "ci"]
+
+[dependencies]
+snakemake-executor-plugin-slurm = { version = ">=2.8.0,<3", channel = "bioconda" }

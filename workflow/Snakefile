@@ -20,9 +20,6 @@ min_version("7.21.0")
 ################
 
 
-configfile: "config/config.yaml"
-
-
 #############################
 ## INCLUDE COMMON FUNCTIONS
 #############################
@@ -31,87 +28,79 @@ configfile: "config/config.yaml"
 include: "rules/common.smk"
 
 
+# Validate config: aliases renamed 1.x keys, rejects removed ones with
+# migration hints, applies schema defaults, checks genome support.
+schema_path = Path(workflow.basedir) / "schemas" / "config.schema.yaml"
+validate_config(config, str(schema_path))
+
+
 ###########################
 ## DEFINE PIPELINE CONTAINER
 ###########################
 
 
-containerized: "docker://ftabaro/rna-seq:1.3"
+containerized: "docker://ghcr.io/boulardlab/3t-seq:env-2a4c9ee664ce41a562c0007df6c2c4782f10edc9f14fb7c10de48cf954e15448"
 
 
 #######################
 ## DEFINE VARIABLES
 #######################
 
-
-date = datetime.now()
-timestamp = date.strftime("%Y-%m-%d")
-log_folder = Path(config["globals"]["log_folder"])
-log_folder = log_folder.joinpath(timestamp)
-
+# Date and basic folders
+timestamp = datetime.now().strftime("%Y-%m-%d")
 data_folder = Path(config["globals"]["results_folder"])
-qc_folder = Path(config["globals"]["qc_folder"])
-reads_folder = Path(config["globals"]["reads_folder"])
-references_folder = Path(config["globals"]["references_folder"])
-tmp_folder = Path(config["globals"]["tmp_folder"])
-analysis_folder = Path(config["globals"]["analysis_folder"])
+log_folder = data_folder / "log" / timestamp
+tmp_folder = data_folder / "tmp"
 
-raw_reads_folder = reads_folder
-trim_reads_folder = data_folder.joinpath("trim")
-rdata_folder = analysis_folder.joinpath("rdata")
-pictures_folder = analysis_folder.joinpath("pictures")
-tables_folder = analysis_folder.joinpath("tables")
-notebooks_folder = analysis_folder.joinpath("notebooks")
+# Quality Control
+qc_folder = data_folder / "qc"
+fastqc_raw_folder = qc_folder / "fastqc-raw"
+fastqc_trim_folder = qc_folder / "fastqc-trimmed"
+fastqc_markdup_folder = qc_folder / "fastqc-markdup"
+fastqc_star_folder = qc_folder / "star"
+multiqc_folder = qc_folder / "multiqc"
 
-fastqc_raw_folder = qc_folder.joinpath("fastqc-raw")
-fastqc_trim_folder = qc_folder.joinpath("fastqc-trimmed")
-fastqc_markdup_folder = qc_folder.joinpath("fastqc-markdup")
-fastqc_star_folder = qc_folder.joinpath("star")
+# Alignments and Analysis
+alignments_folder = data_folder / "alignments"
+star_folder = alignments_folder / "star"
+markdup_folder = alignments_folder / "star_markdup"
+starTE_folder = alignments_folder / "starTE"
+salmonTE_folder = data_folder / "salmonTE"
+trna_coverage_folder = data_folder / "tRNA_coverage"
+trim_reads_folder = data_folder / "trim"
 
-multiqc_folder = qc_folder.joinpath("multiqc")
-multiqc_raw_folder = multiqc_folder.joinpath("raw")
-multiqc_trim_folder = multiqc_folder.joinpath("trim")
-multiqc_star_folder = multiqc_folder.joinpath("star")
-multiqc_markdup_folder = multiqc_folder.joinpath("markdup")
+analysis_folder = data_folder / "analysis"
+rdata_folder = analysis_folder / "rdata"
+pictures_folder = analysis_folder / "pictures"
+tables_folder = analysis_folder / "tables"
+notebooks_folder = analysis_folder / "notebooks"
 
-alignments_folder = data_folder.joinpath("alignments")
-star_folder = alignments_folder.joinpath("star")
-markdup_folder = alignments_folder.joinpath("star_markdup")
-starTE_folder = alignments_folder.joinpath("starTE")
-salmonTE_folder = data_folder.joinpath("salmonTE")
-trna_coverage_folder = data_folder.joinpath("tRNA_coverage")
-deseq2_working_directory = Path(config["deseq2"]["working_directory"])
-# deseq2_notebook_input_path = Path(config["deseq2"]["notebook_path"])
+# References
+references_folder = data_folder / "references"
+rmsk_folder = references_folder / "rmsk"
+tRNA_annotation_dir = references_folder / "gtrnadb"
 
-## Generate paths for sequence data from links
-fasta_path = references_folder.joinpath(
-    get_filename(config["genome"]["fasta_url"], decompress=True)
-)
+genome_cfg = config["genome"]
+genome_label = genome_cfg["label"]
 
-gtf_path = references_folder.joinpath(
-    get_filename(config["genome"]["gtf_url"], decompress=True)
-)
+if "fasta_path" in genome_cfg:
+    fasta_path = references_folder / get_filename(genome_cfg["fasta_path"], decompress=True)
+else:
+    fasta_path = references_folder / genome_label / "fasta.fa"
 
-rmsk_folder = references_folder.joinpath("rmsk")
-tRNA_annotation_dir = references_folder.joinpath("gtrnadb")
+if "gtf_path" in genome_cfg:
+    gtf_path = references_folder / get_filename(genome_cfg["gtf_path"], decompress=True)
+else:
+    gtf_path = references_folder / genome_label / "annotation.gtf"
 
-## Get samples
-libraries = config["sequencing_libraries"]
+# Comparisons
+libraries = config["comparisons"]
+library_names_paired = [lib["name"] for lib in libraries if lib.get("protocol") == "pe"]
+library_names_single = [lib["name"] for lib in libraries if lib.get("protocol") == "se"]
 
-library_names_single = []
-library_names_paired = []
-
-for library in libraries:
-    libname = library["name"]
-    protocol = library["protocol"]
-    if protocol == "pe":
-        library_names_paired.append(libname)
-    else:
-        library_names_paired.append(libname)
-
-# Download all chromosomes if no specific chromosome was specified
-if not "selected_chromosomes" in config["genome"]:
-    config["genome"]["selected_chromosomes"] = None
+# Defaults and validation
+validate_sample_sheets()
+populate_sample_registry()
 
 ####################
 ## ONSTART BLOCK
@@ -120,8 +109,6 @@ if not "selected_chromosomes" in config["genome"]:
 ## These folders will be create at the beginning of the pipeline
 init_folders = [
     log_folder,
-    reads_folder,
-    raw_reads_folder,
     trim_reads_folder,
     multiqc_folder,
     alignments_folder,
@@ -156,13 +143,17 @@ wildcard_constraints:
     serie="|".join(library_names_single + library_names_paired),
     se_serie="|".join(library_names_single),
     pe_serie="|".join(library_names_paired),
-    method="multihit|random",
+    method="multihit|random|mimseq|standard",
     mate=r"_[MR][12](?:_sequence)?",
+    trim_hash="[a-f0-9]{16}",
+    align_hash="[a-f0-9]{16}",
+    starte_hash="[a-f0-9]{16}",
+    markdup_hash="[a-f0-9]{16}",
 
 
 include: "rules/download-references.smk"
 include: "rules/fastqc.smk"
-include: "rules/trim_single.smk"
+include: "rules/trimming.smk"
 include: "rules/star.smk"
 include: "rules/deseq2.smk"
 include: "rules/salmonTE.smk"
@@ -171,6 +162,7 @@ include: "rules/filter_bam.smk"
 include: "rules/picard_markdup.smk"
 include: "rules/make_bw.smk"
 include: "rules/coverage_tRNA.smk"
+include: "rules/multiqc.smk"
 
 
 rule all:

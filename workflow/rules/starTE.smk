@@ -1,45 +1,79 @@
-rule starTE_random:
+localrules:
+    yte_starTE_random,
+    datavzrd_starTE_random,
+    symlink_starTE_multihit,
+    symlink_starTE_random,
+
+
+rule starTE_shared_random:
+    """Deduplicated starTE alignment (random mode)."""
     input:
-        bam=get_star_input,
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
+        ),
         star_index_folder=references_folder.joinpath("STAR"),
     output:
-        starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
-    threads: 8
-    resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
-    params:
-        libtype=lambda wildcards: (
-            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+        bam=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "random", "{sample}.Aligned.out.bam"
+            )
         ),
-        alignments_folder=starTE_folder,
-    # shadow:
-    #     "full"
+        log=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "random", "{sample}.Log.final.out"
+            )
+        ),
+    log:
+        log_folder.joinpath("starTE/random/{starte_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    log:
-        starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
+    threads: 32
+    resources:
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
+    params:
+        libtype=lambda wildcards: (
+            "SINGLE"
+            if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False
+            else "PAIRED"
+        ),
+        out_prefix=lambda wildcards: str(
+            starTE_folder.joinpath(
+                "_shared", wildcards.starte_hash, "random", wildcards.sample
+            )
+        )
+        + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "outFilterMultimapNmax"
+        ),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "winAnchorMultimapNmax"
+        ),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_random", "alignTranscriptsPerWindowNmax"
+        ),
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
-         sleep 10
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
          
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
-            --outFilterMultimapNmax 5000 \
+            --outFilterMultimapNmax {params.outFilterMultimapNmax} \
             --outSAMmultNmax 1 \
             --outFilterMismatchNmax 3 \
             --outMultimapperOrder Random \
-            --winAnchorMultimapNmax 5000 \
+            --winAnchorMultimapNmax {params.winAnchorMultimapNmax} \
             --alignEndsType EndToEnd \
             --alignIntronMax 1 \
             --alignMatesGapMax 350 \
             --seedSearchStartLmax 30 \
             --alignTranscriptsPerReadNmax 30000 \
             --alignWindowsPerReadNmax 30000 \
-            --alignTranscriptsPerWindowNmax 300 \
+            --alignTranscriptsPerWindowNmax {params.alignTranscriptsPerWindowNmax} \
             --seedPerReadNmax 3000 \
             --seedPerWindowNmax 300 \
             --seedNoneLociPerWindow 1000 \
@@ -48,11 +82,39 @@ rule starTE_random:
             --outTmpDir $TMP_FOLDER \
             --runThreadN {threads} \
             --genomeDir {input.star_index_folder} \
-            --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/random/{wildcards.sample}. \
-            --readFilesIn {input.bam} \
-            --limitBAMsortRAM {resources.mem_mb} \
+            --outFileNamePrefix {params.out_prefix} \
+            --readFilesIn {input.fastq} \
+            --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
             --outBAMcompression -1
+
+         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
+
+rule symlink_starTE_random:
+    input:
+        bam=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "random",
+            ".Aligned.out.bam",
+        ),
+        log=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "random",
+            ".Log.final.out",
+        ),
+    output:
+        bam=starTE_folder.joinpath("{serie}/random/{sample}.Aligned.out.bam"),
+        log=starTE_folder.joinpath("{serie}/random/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/starTE/random/{serie}/{sample}.log"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.log} {output.log}
+        """
 
 
 rule featureCounts_random:
@@ -63,22 +125,26 @@ rule featureCounts_random:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/random.txt"),
-    conda:
-        "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/random.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 4
     resources:
         runtime=360,
-        mem_mb=16000,
+        mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
+    params:
+        strandedness=lambda wildcards: get_resolved_param(
+            wildcards, "strandedness", default=0
+        ),
     shell:
         """
          set -e 
-         featureCounts -M -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
+         featureCounts -p -M -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
         """
 
 
@@ -88,41 +154,36 @@ rule deseq2_starTE_random:
         sample_sheet=get_sample_sheet,
     output:
         dds=starTE_folder.joinpath("{serie}", "DESeq2", "dds_random.rds"),
-        deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt"),
-    params:
-        variable=lambda wildcards: get_deseq2_variable(wildcards),
-        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
+        deg_table=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv"),
+    log:
+        log_folder.joinpath("R/{serie}/deseq2-starTE-random.log"),
     conda:
         "../env/R.yml"
     threads: 4
     resources:
         runtime=40,
         mem_mb=20000,
-    log:
-        log_folder.joinpath("R/{serie}/deseq2-starTE-random.log"),
+    params:
+        variable=lambda wildcards: get_deseq2_variable(wildcards),
+        reference_level=lambda wildcards: get_deseq2_reference_level(wildcards),
     script:
         "../scripts/deseq2_starTE_random_v1.R"
 
 
-localrules:
-    yte_starTE_random,
-    datavzrd_starTE_random,
-
-
 rule yte_starTE_random:
     input:
-        datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt")],
+        datasets=[starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv")],
     output:
         starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
+    log:
+        log_folder.joinpath("starTE/random/{serie}/yte.log"),
+    conda:
+        "../env/yte.yml"
+    threads: 1
     params:
         template=Path(workflow.basedir) / "datavzrd/deg-plots-template.yaml",
         plot_name="starTE-random DESeq2",
         view_specs=[str(Path(workflow.basedir) / "datavzrd/volcano-ma-plot.json")],
-    conda:
-        "../env/yte.yml"
-    log:
-        log_folder.joinpath("starTE/random/{serie}/yte.log"),
-    threads: 1
     script:
         "../scripts/yte.py"
 
@@ -130,7 +191,7 @@ rule yte_starTE_random:
 rule datavzrd_starTE_random:
     input:
         config=starTE_folder.joinpath("{serie}", "datavzrd.yaml"),
-        dataset=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.txt"),
+        dataset=starTE_folder.joinpath("{serie}", "DESeq2", "lfc.csv"),
     output:
         report(
             directory(starTE_folder.joinpath("{serie}", "random", "datavzrd")),
@@ -142,50 +203,77 @@ rule datavzrd_starTE_random:
     log:
         log_folder.joinpath("starTE/random/{serie}/datavzrd.log"),
     wrapper:
-        "v2.6.0/utils/datavzrd"
+        "v9.4.1/utils/datavzrd"
 
 
-rule starTE_multihit:
+rule starTE_shared_multihit:
+    """Deduplicated starTE alignment (multihit mode)."""
     input:
-        bam=get_star_input,
-        star_index_folder=references_folder.joinpath("STAR"),
-    threads: 8
-    resources:
-        runtime=lambda wildcards, attempt: 1440 * attempt,
-        mem_mb=32000,
-    output:
-        starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
-    params:
-        libtype=lambda wildcards: (
-            "SINGLE" if wildcards.serie in library_names_single else "PAIRED"
+        fastq=lambda wildcards: get_star_input(
+            Struct(**HASH_TO_PARAMS["starTE"][wildcards.starte_hash])
         ),
-        alignments_folder=starTE_folder,
+        star_index_folder=references_folder.joinpath("STAR"),
+    output:
+        bam=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "multihit", "{sample}.Aligned.out.bam"
+            )
+        ),
+        log=protected(
+            starTE_folder.joinpath(
+                "_shared", "{starte_hash}", "multihit", "{sample}.Log.final.out"
+            )
+        ),
+    log:
+        log_folder.joinpath("starTE/multihit/{starte_hash}/{sample}.log"),
     conda:
         "../env/alignment.yml"
-    # shadow:
-    #     "full"
-    log:
-        starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
+    threads: 32
+    resources:
+        runtime=lambda wildcards, input, attempt: get_star_runtime(
+            wildcards, input.fastq, attempt
+        ),
+        mem_mb=lambda wildcards, input: get_star_mem_mb(wildcards, input.fastq),
+    params:
+        libtype=lambda wildcards: (
+            "SINGLE"
+            if HASH_TO_PARAMS["starTE"][wildcards.starte_hash]["paired"] == False
+            else "PAIRED"
+        ),
+        out_prefix=lambda wildcards: str(
+            starTE_folder.joinpath(
+                "_shared", wildcards.starte_hash, "multihit", wildcards.sample
+            )
+        )
+        + ".",
+        outFilterMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "outFilterMultimapNmax"
+        ),
+        winAnchorMultimapNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "winAnchorMultimapNmax"
+        ),
+        alignTranscriptsPerWindowNmax=lambda wildcards: get_resolved_param(
+            wildcards, "starTE_multihit", "alignTranscriptsPerWindowNmax"
+        ),
     shell:
         """
          set -e 
-         TMP_FOLDER=$(mktemp -u -p {resources.tmpdir})
-         sleep 10
+         TMP_FOLDER=$(mktemp -d -u -p {resources.tmpdir})
                   
          STAR \
             --outSAMtype BAM Unsorted \
             --runMode alignReads \
-            --outFilterMultimapNmax 1 \
+            --outFilterMultimapNmax {params.outFilterMultimapNmax} \
             --outFilterMismatchNmax 3 \
             --outMultimapperOrder Random \
-            --winAnchorMultimapNmax 5000 \
+            --winAnchorMultimapNmax {params.winAnchorMultimapNmax} \
             --alignEndsType EndToEnd \
             --alignIntronMax 1 \
             --alignMatesGapMax 350 \
             --seedSearchStartLmax 30 \
             --alignTranscriptsPerReadNmax 30000 \
             --alignWindowsPerReadNmax 30000 \
-            --alignTranscriptsPerWindowNmax 3000 \
+            --alignTranscriptsPerWindowNmax {params.alignTranscriptsPerWindowNmax} \
             --seedPerReadNmax 3000 \
             --seedPerWindowNmax 300 \
             --seedNoneLociPerWindow 1000 \
@@ -193,12 +281,40 @@ rule starTE_multihit:
             --runThreadN {threads} \
             --genomeDir {input.star_index_folder} \
             --readFilesCommand zcat \
-            --outFileNamePrefix {params.alignments_folder}/{wildcards.serie}/multihit/{wildcards.sample}. \
-            --readFilesIn {input.bam} \
-            --limitBAMsortRAM {resources.mem_mb} \
+            --outFileNamePrefix {params.out_prefix} \
+            --readFilesIn {input.fastq} \
+            --limitBAMsortRAM $(({resources.mem_mb} * 1024 * 1024)) \
             --genomeLoad NoSharedMemory \
             --outBAMcompression -1
+
+         [[ -d $TMP_FOLDER ]] && rm -r $TMP_FOLDER || exit 0
          """
+
+
+rule symlink_starTE_multihit:
+    input:
+        bam=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "multihit",
+            ".Aligned.out.bam",
+        ),
+        log=lambda wildcards: get_shared_starTE_path(
+            get_sample_hash(wildcards.serie, wildcards.sample, "starTE"),
+            wildcards.sample,
+            "multihit",
+            ".Log.final.out",
+        ),
+    output:
+        bam=starTE_folder.joinpath("{serie}/multihit/{sample}.Aligned.out.bam"),
+        log=starTE_folder.joinpath("{serie}/multihit/{sample}.Log.final.out"),
+    log:
+        log_folder.joinpath("symlink/starTE/multihit/{serie}/{sample}.log"),
+    shell:
+        """
+        ln -sfr {input.bam} {output.bam}
+        ln -sfr {input.log} {output.log}
+        """
 
 
 rule featureCounts_multihit:
@@ -209,20 +325,24 @@ rule featureCounts_multihit:
             sample=get_samples_names(wildcards),
         ),
         annotation=rmsk_folder.joinpath(
-            "{0}.{1}".format(config["genome"]["label"], "gtf")
+            "{0}.{1}".format(config["genome"].get("label", "custom"), "gtf")
         ),
     output:
         starTE_folder.joinpath("{serie}/featureCount/multihit.txt"),
-    conda:
-        "../env/alignment.yml"
     log:
         log_folder.joinpath("featureCounts/{serie}/multihit.log"),
+    conda:
+        "../env/alignment.yml"
     threads: 4
     resources:
         runtime=360,
-        mem_mb=16000,
+        mem_mb=lambda wildcards, input: get_featurecounts_mem_mb(wildcards, input.bam),
+    params:
+        strandedness=lambda wildcards: get_resolved_param(
+            wildcards, "strandedness", default=0
+        ),
     shell:
         """
          set -e 
-         featureCounts -M --fraction -F GTF -T {threads} -g repName -s 0 -a {input.annotation} -o {output} {input.bam}
+         featureCounts -p -M --fraction -F GTF -T {threads} -s {params.strandedness} -a {input.annotation} -o {output} -g repName {input.bam}
          """
