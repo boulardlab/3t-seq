@@ -176,9 +176,13 @@ A per-comparison value always takes precedence over the global default.
 | `deseq2.reference_level` | *(none)*, **required** | The baseline level of `variable` (fold-change denominator). Must be set per comparison or in `defaults.deseq2`. |
 
 !!! warning "`reference_level` is required"
-    The schema does not enforce `deseq2.reference_level` yet, so a config without it
-    passes validation. The run then stops when the DESeq2 and SalmonTE jobs are set up,
-    with `Parameter 'deseq2.reference_level' could not be resolved for comparison '<name>'. Please define it in your config under 'defaults' or within the 'comparisons' entry.`
+    A comparison whose `deseq2.reference_level` is set neither in its own `deseq2` nor in
+    `defaults.deseq2` is rejected at start-up:
+
+    ```text
+    Invalid config file:
+      comparisons '<name>': deseq2.reference_level is not set. Set it to the control level of deseq2.variable, under 'defaults.deseq2' or in the comparison's 'deseq2'.
+    ```
 
 ### Alignment overrides
 
@@ -187,7 +191,7 @@ A per-comparison value always takes precedence over the global default.
 | `strandedness` | `0` | Library strandedness: `0` unstranded, `1` forward, `2` reverse. Currently only used by featureCounts for the STAR-TE counts; gene counts use STAR's unstranded column. |
 | `trimmomatic` | TruSeq3 defaults | Fixed Trimmomatic string, or `{extra_params: "...", adaptive: true}`; see [Trimming](../modules/preprocessing.md#trimming-trimmomatic). |
 | `star` | `--seedSearchStartLmax 30 --outFilterMismatchNoverReadLmax 0.04 --winAnchorMultimapNmax 40` | Extra CLI flags passed to the STAR aligner. |
-| `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. |
+| `bamCoverage` | `--binSize 50 --normalizeUsing None` | Extra flags for `deeptools bamCoverage`. For `mm10`/`mm39` the effective genome size is added unless you set `--effectiveGenomeSize`; any other genome needs it for `--normalizeUsing RPGC` (see [Alignment](../modules/alignment.md#coverage-tracks-deeptools)). |
 
 ---
 
@@ -284,21 +288,10 @@ documentation for context.
     tRNA_quantification:
       method: standard          # default; or "mim-tRNA-seq"
       mimseq_params:            # used only with mim-tRNA-seq
-        max_mismatches: 2
-        cluster_identity: 0.8
-        min_cov: 10
+        max_mismatches: 0.1     # default; < 1 is a fraction of read length
+        cluster_identity: 0.95  # default
+        min_cov: 10             # default
     ```
 
     Use `mim-tRNA-seq` only if your libraries were prepared with the mim-tRNA-seq protocol.
-
-    !!! warning "`mimseq_params` defaults"
-        The values the run uses depend on whether `mimseq_params` is present:
-
-        | Config | `max_mismatches` | `cluster_identity` | `min_cov` |
-        | :--- | :--- | :--- | :--- |
-        | `mimseq_params` omitted | `0.1` | `0.95` | `10` |
-        | `mimseq_params: {}` (or some keys set) | `2` | `0.8` | `10` |
-
-        With the block present, the schema defaults fill in missing keys; without it the
-        rule's own fallbacks apply. Set the three values explicitly to be sure which ones
-        are used.
+    Keys you leave out of `mimseq_params` (or the whole block) take the defaults above.
