@@ -71,8 +71,17 @@ quantification step uses it.
 
 `bamCoverage` writes one bigWig per sample from the STAR sorted BAM. The per-comparison
 `bamCoverage` string is appended to the command; default
-`--binSize 50 --normalizeUsing None`. `--effectiveGenomeSize 2652783500` (mouse) is
-fixed; it only matters if you choose `--normalizeUsing RPGC`.
+`--binSize 50 --normalizeUsing None`.
+
+`--effectiveGenomeSize` only matters with `--normalizeUsing RPGC`. Unless you set it
+yourself, the pipeline adds the deepTools value for `mm10` (2652783500) and `mm39`
+(2654621783), and nothing for other genomes. On any other genome, RPGC without
+`--effectiveGenomeSize` is rejected at start-up:
+
+```text
+Invalid config file:
+  comparisons '<name>': bamCoverage uses RPGC normalisation, but there is no known effective genome size for genome.label '<label>'. Add '--effectiveGenomeSize <non-N bases>' to bamCoverage.
+```
 
 ## Parameters & Defaults
 
