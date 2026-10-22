@@ -36,14 +36,14 @@ local-cores: 2
 jobs: 1
 restart-times: 0
 printshellcmds: True
-use-conda: True
-use-singularity: True
-singularity-args: "--no-home"
+software-deployment-method:
+  - conda
+  - apptainer
+apptainer-args: "--no-home"
 ```
 
 It runs one job at a time on 2 cores. Raise `cores` (or pass `--cores N`) on a bigger
-machine. `use-conda` and `use-singularity` are the older spellings of
-`software-deployment-method: [conda, apptainer]`; Snakemake 8 still accepts them.
+machine.
 
 ```bash
 pixi run snakemake --profile profile/default --configfile my_config.yaml
