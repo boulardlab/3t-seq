@@ -168,6 +168,10 @@ allowed at that place. Re-check after editing with a dry-run
 
 - Missing required key (`globals.results_folder`, `genome.label`, or `comparisons`).
 - A comparison entry missing `name`, `sample_sheet` or `protocol`.
+- No `deseq2.reference_level` for a comparison (neither in the comparison nor in
+  `defaults.deseq2`).
+- `bamCoverage` with `--normalizeUsing RPGC` but no `--effectiveGenomeSize`, on a genome
+  other than `mm10`/`mm39`.
 - `fasta_path` provided without `gtf_path` (or vice versa), or without `annotation_type`.
 - `genome.label` other than `mm10`/`mm39` without `fasta_path` and `gtf_path`.
 - A 1.x key still present (e.g. `globals.reads_folder`, `globals.qc_folder`). See
