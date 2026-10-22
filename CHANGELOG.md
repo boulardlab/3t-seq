@@ -9,7 +9,6 @@
 * **tRNA coverage:** the chromosome filter matched by prefix (`chr1` also selected `chr10`–`chr19`), duplicating tRNA rows ([#52](https://github.com/boulardlab/3t-seq/issues/52)).
 * **bamCoverage:** the mouse effective genome size is only added for `mm10`/`mm39`; RPGC on other genomes needs an explicit `--effectiveGenomeSize` ([#54](https://github.com/boulardlab/3t-seq/issues/54)).
 * **mim-tRNA-seq defaults** are defined once in the schema (`max_mismatches` 0.1, `cluster_identity` 0.95, `min_cov` 10); before, an empty `mimseq_params` gave 2 / 0.8.
-* **SalmonTE quantified only the first FASTQ** of each comparison, as a single-end sample, so SalmonTE results from earlier versions are not usable; re-run SalmonTE ([#57](https://github.com/boulardlab/3t-seq/pull/57)).
 * **SalmonTE:** condition file with sample sheets that have a `condition` column ([#8](https://github.com/boulardlab/3t-seq/issues/8)); automatically disabled with a warning for genomes without a SalmonTE index ([#4](https://github.com/boulardlab/3t-seq/issues/4)).
 * **`profile/default`** uses the Snakemake 8 keys `software-deployment-method` and `apptainer-args` ([#55](https://github.com/boulardlab/3t-seq/issues/55)).
 
