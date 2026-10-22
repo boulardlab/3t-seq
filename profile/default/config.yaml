@@ -4,6 +4,7 @@ jobs: 1
 restart-times: 0
 #reason: True
 printshellcmds: True
-use-conda: True
-use-singularity: True
-singularity-args: "--no-home"
+software-deployment-method:
+  - conda
+  - apptainer
+apptainer-args: "--no-home"

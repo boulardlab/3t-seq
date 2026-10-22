@@ -13,16 +13,13 @@ rule coverage:
         runtime=120,
         mem_mb=16000,
     params:
-        others=lambda wildcards: get_params(
-            wildcards, "bamCoverage", default="--binSize 50 --normalizeUsing None"
-        ),
+        others=get_bamcoverage_params,
     shell:
         """
 
         bamCoverage -b {input.bam} \
         -o {output} -of bigwig \
         -p {threads} \
-        --effectiveGenomeSize 2652783500 \
         {params.others} |& \
         tee {log}
         """
