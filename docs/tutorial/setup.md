@@ -126,10 +126,13 @@ set of alignment parameters, and one DESeq2 contrast.
 | `bamCoverage` | No | `--binSize 50 --normalizeUsing None` | Extra flags for deeptools bamCoverage. |
 
 !!! warning "`reference_level` is required"
-    The schema does not enforce `deseq2.reference_level` yet, so a config without it
-    passes validation. The run then stops when the DESeq2 and SalmonTE jobs are set up,
-    with `Parameter 'deseq2.reference_level' could not be resolved for comparison '<name>'. Please define it in your config under 'defaults' or within the 'comparisons' entry.`
-    Set it for every comparison, or once under `defaults.deseq2`.
+    Set it for every comparison, or once under `defaults.deseq2`. A comparison without it
+    is rejected at start-up:
+
+    ```text
+    Invalid config file:
+      comparisons '<name>': deseq2.reference_level is not set. Set it to the control level of deseq2.variable, under 'defaults.deseq2' or in the comparison's 'deseq2'.
+    ```
 
 ### The `genome` section
 
