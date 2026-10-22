@@ -23,6 +23,7 @@ rule derive_trim_params:
     conda:
         "../env/qc.yml"
     params:
+        script=str(Path(workflow.basedir, "scripts", "derive_trim_params.py")),
         is_paired_flag=lambda wildcards: (
             "--is-paired"
             if HASH_TO_PARAMS["trim"][wildcards.trim_hash].get("paired", False)
@@ -39,7 +40,7 @@ rule derive_trim_params:
         ),
     shell:
         """
-        python workflow/scripts/derive_trim_params.py \
+        python "{params.script}" \
             --fastqc {input.fastqc} \
             {params.is_paired_flag} \
             --extra-params "{params.extra_params}" \

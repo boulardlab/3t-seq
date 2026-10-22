@@ -6,11 +6,9 @@ set -x
 T=$(mktemp)
 SORTED=$(mktemp -p ${snakemake_resources[tmpdir]})
 
-CHROMOSOMES=$(awk '{print $1}' "${snakemake_input[genome]}")
-
-for C in $CHROMOSOMES; do
-    awk -v j="$C" '$1~j' "${snakemake_input[annotation]}" >> $T
-done 
+# Keep tRNA lines whose chromosome is in the .genome file (exact match, #52)
+awk 'NR == FNR { keep[$1]; next } $1 in keep' \
+    "${snakemake_input[genome]}" "${snakemake_input[annotation]}" > "$T"
 
 bedtools sort -faidx "${snakemake_input[genome]}" -i $T > $SORTED
 

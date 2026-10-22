@@ -64,6 +64,10 @@ MIGRATION_GUIDE = (
 # are fetched automatically. Keep in sync with the genome.label anyOf in the schema.
 AUTO_FETCH_GENOMES = ("mm10", "mm39")
 
+# deepTools effective genome sizes (non-N bases) for bamCoverage, keyed by
+# genome.label. Other genomes must set --effectiveGenomeSize for RPGC (#54).
+EFFECTIVE_GENOME_SIZES = {"mm10": 2652783500, "mm39": 2654621783}
+
 _DERIVED_FOLDER_HINT = (
     "Output folders are now derived from 'globals.results_folder'; remove this key."
 )
@@ -255,6 +259,62 @@ def disable_unsupported_salmonTE(config: dict) -> None:
         )
 
 
+def check_comparison_params(config: dict) -> None:
+    """Fail early on per-comparison settings the schema cannot express.
+
+    - deseq2.reference_level must resolve (comparison, then defaults) for every
+      comparison: all DESeq2 scripts relevel on it.
+    - bamCoverage RPGC normalisation needs --effectiveGenomeSize when the genome
+      label has no known effective size (EFFECTIVE_GENOME_SIZES).
+
+    Raises:
+        WorkflowError: listing every offending comparison.
+    """
+    default_ref = (
+        (config.get("defaults") or {}).get("deseq2", {}).get("reference_level")
+    )
+    label = config["genome"]["label"]
+    problems = []
+    for comparison in config["comparisons"]:
+        name = comparison["name"]
+        ref = (comparison.get("deseq2") or {}).get("reference_level", default_ref)
+        if ref is None:
+            problems.append(
+                f"comparisons '{name}': deseq2.reference_level is not set. Set it to "
+                "the control level of deseq2.variable, under 'defaults.deseq2' or "
+                "in the comparison's 'deseq2'."
+            )
+        bam_coverage = comparison.get("bamCoverage", "")
+        if (
+            "RPGC" in bam_coverage
+            and "--effectiveGenomeSize" not in bam_coverage
+            and label not in EFFECTIVE_GENOME_SIZES
+        ):
+            problems.append(
+                f"comparisons '{name}': bamCoverage uses RPGC normalisation, but there "
+                f"is no known effective genome size for genome.label '{label}'. "
+                "Add '--effectiveGenomeSize <non-N bases>' to bamCoverage."
+            )
+    if problems:
+        raise WorkflowError("Invalid config file:\n  " + "\n  ".join(problems))
+
+
+def get_bamcoverage_params(wildcards) -> str:
+    """bamCoverage options for a comparison, with the effective genome size added.
+
+    The size from EFFECTIVE_GENOME_SIZES is appended unless the user set
+    --effectiveGenomeSize; for other genomes nothing is added (check_comparison_params
+    rejects RPGC without it).
+    """
+    others = get_params(
+        wildcards, "bamCoverage", default="--binSize 50 --normalizeUsing None"
+    )
+    size = EFFECTIVE_GENOME_SIZES.get(config["genome"]["label"])
+    if size is not None and "--effectiveGenomeSize" not in others:
+        others = f"{others} --effectiveGenomeSize {size}"
+    return others
+
+
 def validate_config(config: dict, schema_path: str) -> None:
     """Validate the user config, apply schema defaults, and check genome support.
 
@@ -305,6 +365,7 @@ def validate_config(config: dict, schema_path: str) -> None:
     apply_schema_defaults(config, schema_path)
     disable_unsupported_salmonTE(config)
     check_genome_support(config)
+    check_comparison_params(config)
 
 
 def giga_to_byte(g):
@@ -682,6 +743,18 @@ def populate_sample_registry():
         lib_starTE_random = get_resolved_param(w, "starTE_random", default={})
         lib_starTE_multihit = get_resolved_param(w, "starTE_multihit", default={})
 
+        # Adaptive parameters are derived from the FastQC of the whole comparison,
+        # so the pool of raw inputs is part of the trim hash: a sample shared by
+        # two adaptive comparisons with different sample sets is trimmed per pool.
+        adaptive_pool = None
+        if isinstance(trim_params, dict) and trim_params.get("adaptive"):
+            filename_cols = ["filename_1", "filename_2"] if is_paired else ["filename"]
+            adaptive_pool = sorted(
+                str(resolve_raw_read_path(serie, r.get(col)))
+                for _, r in df.iterrows()
+                for col in filename_cols
+            )
+
         for _, row in df.iterrows():
             sample_name = row["name"]
 
@@ -695,6 +768,8 @@ def populate_sample_registry():
                 inputs = {"f": str(resolve_raw_read_path(serie, row.get("filename")))}
 
             trim_data = {"inputs": inputs, "params": trim_params, "paired": is_paired}
+            if adaptive_pool is not None:
+                trim_data["adaptive_pool"] = adaptive_pool
             trim_hash = calculate_content_hash(trim_data)
 
             # --- Alignment Hash (STAR) ---
@@ -733,6 +808,8 @@ def populate_sample_registry():
                     "serie": serie,
                     "sample": sample_name,
                     "paired": is_paired,
+                    # read by get_trimmomatic_command / get_trimmomatic_adaptive_input
+                    "params": trim_params,
                 }
 
             if align_hash not in HASH_TO_PARAMS["alignment"]:

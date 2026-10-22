@@ -147,9 +147,9 @@ rule build_mimseq_index:
         mem_mb=16000,
     params:
         species="custom",
-        cluster_id=lambda wildcards: config.get("tRNA_quantification", {})
-        .get("mimseq_params", {})
-        .get("cluster_identity", 0.95),
+        cluster_id=lambda wildcards: config["tRNA_quantification"]["mimseq_params"][
+            "cluster_identity"
+        ],
     shell:
         """
         set -e
@@ -175,12 +175,12 @@ rule run_mimseq:
         mem_mb=32000,
     params:
         species="custom",
-        max_mismatches=lambda wildcards: config.get("tRNA_quantification", {})
-        .get("mimseq_params", {})
-        .get("max_mismatches", 0.1),
-        min_cov=lambda wildcards: config.get("tRNA_quantification", {})
-        .get("mimseq_params", {})
-        .get("min_cov", 10),
+        max_mismatches=lambda wildcards: config["tRNA_quantification"][
+            "mimseq_params"
+        ]["max_mismatches"],
+        min_cov=lambda wildcards: config["tRNA_quantification"]["mimseq_params"][
+            "min_cov"
+        ],
         out_dir=lambda wildcards, output: Path(output.count_file).parent,
     shell:
         """
