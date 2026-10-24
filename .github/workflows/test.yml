@@ -74,7 +74,10 @@ jobs:
   e2e:
     name: e2e
     needs: images
-    runs-on: ubuntu-latest
+    # Pinned: ppa:apptainer/ppa has no 26.04 build yet, so on ubuntu-latest
+    # apt installs Ubuntu's apptainer 1.4.5, which extracts the SIF to disk
+    # and runs out of space.
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
