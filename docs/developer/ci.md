@@ -117,6 +117,7 @@ On a release PR, the new SalmonTE image can still be in the build.
 The job also does these steps:
 
 - It checks out the Git LFS test data.
+- It runs on `ubuntu-24.04`, not `ubuntu-latest`. The PPA has no Ubuntu 26.04 build yet. On 26.04, apt installs Ubuntu's own Apptainer 1.4.5 instead. That build extracts the image to disk and fails with "Disk quota exceeded".
 - It installs Apptainer from `ppa:apptainer/ppa`, not from conda-forge. See [Troubleshooting](troubleshooting.md#apptainer-job-hangs-in-a-container).
 - It sets `kernel.apparmor_restrict_unprivileged_userns=0`. Rootless Apptainer needs this on Ubuntu 24.04.
 - It keeps the pulled images in the GitHub Actions cache. The cache key is a hash of the pins.
